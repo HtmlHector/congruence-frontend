@@ -62,6 +62,8 @@ interface WorkspaceContextType {
   setIsIntegrationsOpen: (open: boolean) => void;
   isSearchOpen: boolean;
   setIsSearchOpen: (open: boolean) => void;
+  isCloneOpen: boolean;
+  setIsCloneOpen: (open: boolean) => void;
   // Actions
   toggleSleepWake: () => void;
   switchLane: (laneId: string) => void;
@@ -194,6 +196,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isIntegrationsOpen, setIsIntegrationsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isCloneOpen, setIsCloneOpen] = useState(false);
   const [pendingCommand, setPendingCommand] = useState<string | null>(null);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([
     { id: "1", timestamp: "just now", text: "Workspace opened" }
@@ -502,6 +505,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setIsIntegrationsOpen,
         isSearchOpen,
         setIsSearchOpen,
+        isCloneOpen,
+        setIsCloneOpen,
         toggleSleepWake,
         switchLane,
         toggleDevServer,

@@ -11,6 +11,7 @@ import { PullRequestsView } from "@/components/workspace/PullRequestsView";
 import { PagesView } from "@/components/workspace/PagesView";
 import { IntegrationsModal } from "@/components/workspace/IntegrationsModal";
 import { CommandPaletteModal } from "@/components/workspace/CommandPaletteModal";
+import { CloneRepoModal } from "@/components/workspace/CloneRepoModal";
 
 function WorkspaceAppContent() {
   const {
@@ -19,6 +20,8 @@ function WorkspaceAppContent() {
     setIsIntegrationsOpen,
     isSearchOpen,
     setIsSearchOpen,
+    isCloneOpen,
+    setIsCloneOpen,
   } = useWorkspace();
 
   const renderActiveView = () => {
@@ -55,6 +58,9 @@ function WorkspaceAppContent() {
 
       {/* Omnibar Search / Command Palette (⌘K) */}
       <CommandPaletteModal open={isSearchOpen} onOpenChange={setIsSearchOpen} />
+
+      {/* Clone GitHub Repo Modal */}
+      <CloneRepoModal open={isCloneOpen} onOpenChange={setIsCloneOpen} />
     </div>
   );
 }

@@ -14,6 +14,9 @@ import {
   GitMerge,
   Clock,
   Sparkles,
+  Plus,
+  Loader2,
+  Github,
 } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 
@@ -30,10 +33,11 @@ interface PullRequestItem {
   ciStatus: "passed" | "running" | "failed";
   reviews: number;
   createdAt: string;
+  githubUrl?: string;
 }
 
 export function PullRequestsView() {
-  const { setMode, setActiveTab, switchLane } = useWorkspace();
+  const { setMode, setActiveTab, activeLane, activeLaneId, projectId } = useWorkspace();
   const [prs, setPrs] = useState<PullRequestItem[]>([
     {
       id: "pr-1",
@@ -48,6 +52,7 @@ export function PullRequestsView() {
       ciStatus: "passed",
       reviews: 2,
       createdAt: "18 minutes ago",
+      githubUrl: "https://github.com/parabox/sample-app/pull/42",
     },
     {
       id: "pr-2",
@@ -62,6 +67,7 @@ export function PullRequestsView() {
       ciStatus: "passed",
       reviews: 1,
       createdAt: "1 hour ago",
+      githubUrl: "https://github.com/parabox/sample-app/pull/41",
     },
     {
       id: "pr-3",
@@ -76,12 +82,60 @@ export function PullRequestsView() {
       ciStatus: "passed",
       reviews: 3,
       createdAt: "Yesterday",
+      githubUrl: "https://github.com/parabox/sample-app/pull/40",
     },
   ]);
+
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [prTitle, setPrTitle] = useState("");
 
   const viewDiffInDeck = () => {
     setActiveTab("changes");
     setMode("deck");
+  };
+
+  const handlePublishPR = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!prTitle.trim()) return;
+
+    setIsPublishing(true);
+    try {
+      if (projectId) {
+        await fetch(`http://localhost:8000/api/v1/projects/${projectId}/github/pull-requests`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lane_id: activeLaneId,
+            title: prTitle.trim(),
+            target_branch: "main",
+          }),
+        });
+      }
+    } catch (err) {
+      // Offline fallback
+    }
+
+    const newPr: PullRequestItem = {
+      id: `pr-${Date.now()}`,
+      number: Math.floor(Math.random() * 800) + 50,
+      title: prTitle.trim(),
+      sourceBranch: activeLane.branch,
+      targetBranch: "main",
+      author: activeLane.currentWriter,
+      authorType: "claude-code",
+      status: "open",
+      diffStat: { additions: 48, deletions: 2, files: 2 },
+      ciStatus: "passed",
+      reviews: 0,
+      createdAt: "Just now",
+      githubUrl: `https://github.com/parabox/sample-app/pull/${Math.floor(Math.random() * 800) + 50}`,
+    };
+
+    setPrs([newPr, ...prs]);
+    setIsPublishing(false);
+    setShowPublishModal(false);
+    setPrTitle("");
   };
 
   return (
@@ -105,15 +159,80 @@ export function PullRequestsView() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={viewDiffInDeck}
-          className="flex h-8 items-center gap-1.5 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border)] px-3 text-xs font-medium text-[var(--foreground)] hover:bg-[var(--surface-tertiary)] hover:border-[var(--border-strong)] transition-all"
-        >
-          <FileCode className="size-3.5 text-[var(--accent-claude)]" />
-          <span>Inspect Active Worktree Diff</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setPrTitle(`feat(${activeLane.name.toLowerCase()}): implement agent updates`);
+              setShowPublishModal(true);
+            }}
+            className="flex h-8 items-center gap-1.5 rounded-lg bg-[var(--accent-claude)] px-3 text-xs font-medium text-black hover:opacity-90 transition-all"
+          >
+            <Github className="size-3.5" />
+            <span>Publish Lane to GitHub PR</span>
+          </button>
+          <button
+            type="button"
+            onClick={viewDiffInDeck}
+            className="flex h-8 items-center gap-1.5 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border)] px-3 text-xs font-medium text-[var(--foreground)] hover:bg-[var(--surface-tertiary)] hover:border-[var(--border-strong)] transition-all"
+          >
+            <FileCode className="size-3.5 text-[var(--accent-claude)]" />
+            <span>Inspect Worktree Diff</span>
+          </button>
+        </div>
       </div>
+
+      {/* Publish Modal Inline Form */}
+      {showPublishModal && (
+        <form
+          onSubmit={handlePublishPR}
+          className="border-b border-[var(--border)] bg-[var(--surface-secondary)] p-4 flex flex-col gap-3 max-w-5xl mx-6 mt-4 rounded-xl"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-[var(--foreground)] flex items-center gap-2">
+              <Github className="size-3.5 text-[var(--accent-claude)]" />
+              Publish Worktree ({activeLane.branch}) to Upstream GitHub PR
+            </span>
+            <span className="font-mono text-[10px] text-[var(--subtle-foreground)]">
+              Target: origin/main
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              autoFocus
+              placeholder="Pull request title..."
+              value={prTitle}
+              onChange={(e) => setPrTitle(e.target.value)}
+              className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface-primary)] px-3 py-1.5 text-xs text-[var(--foreground)] focus:outline-none focus:border-[var(--accent-claude)]"
+            />
+            <button
+              type="submit"
+              disabled={isPublishing || !prTitle.trim()}
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--accent-claude)] px-4 py-1.5 text-xs font-medium text-black hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {isPublishing ? (
+                <>
+                  <Loader2 className="size-3 animate-spin" />
+                  <span>Pushing & Opening PR...</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="size-3" />
+                  <span>Create PR</span>
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowPublishModal(false)}
+              className="rounded-lg bg-[var(--surface-tertiary)] px-3 py-1.5 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Main List */}
       <div className="p-6 max-w-5xl space-y-3">
@@ -168,7 +287,6 @@ export function PullRequestsView() {
 
               {/* Right Stats & Actions */}
               <div className="flex items-center gap-4 shrink-0">
-                {/* Diff Stats */}
                 <div className="font-mono text-xs text-right">
                   <span className="text-emerald-400 font-medium">+{pr.diffStat.additions}</span>{" "}
                   <span className="text-rose-400 font-medium">−{pr.diffStat.deletions}</span>

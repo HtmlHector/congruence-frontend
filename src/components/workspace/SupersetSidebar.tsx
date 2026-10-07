@@ -19,11 +19,21 @@ import {
   SlidersHorizontal,
   Key,
   Lock,
+  Github,
 } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 
 export function SupersetSidebar() {
-  const { lanes, activeLaneId, switchLane, mode, setMode, setIsIntegrationsOpen, setIsSearchOpen } = useWorkspace();
+  const {
+    lanes,
+    activeLaneId,
+    switchLane,
+    mode,
+    setMode,
+    setIsIntegrationsOpen,
+    setIsSearchOpen,
+    setIsCloneOpen,
+  } = useWorkspace();
   const [sessionsOpen, setSessionsOpen] = useState(true);
   const [projectsOpen, setProjectsOpen] = useState(true);
 
@@ -68,8 +78,8 @@ export function SupersetSidebar() {
         </div>
       </div>
 
-      {/* New Workspace Action Button */}
-      <div className="px-2 pt-2 pb-1">
+      {/* New Workspace & Clone Repo Action Buttons */}
+      <div className="px-2 pt-2 pb-1 space-y-1">
         <button
           type="button"
           onClick={() => setMode("hub")}
@@ -77,6 +87,14 @@ export function SupersetSidebar() {
         >
           <Plus className="size-3 text-[var(--muted-foreground)]" />
           <span>New Workspace</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsCloneOpen(true)}
+          className="flex h-6.5 w-full items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border)]/60 text-[var(--muted-foreground)] hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)] transition-all text-[10px]"
+        >
+          <Github className="size-3" />
+          <span>Clone from GitHub</span>
         </button>
       </div>
 
