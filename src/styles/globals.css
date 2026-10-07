@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #faf9f6;
+  --color-ink: #252522;
+  --color-muted: #73736b;
+  --color-line: #deded5;
+  --color-link: #354b42;
+
+  --color-background: var(--bg-canvas);
+  --color-foreground: var(--ink-primary);
+  --color-card: var(--bg-surface);
+  --color-card-foreground: var(--ink-primary);
+  --color-popover: var(--bg-surface);
+  --color-popover-foreground: var(--ink-primary);
+  --color-primary: var(--accent-primary);
+  --color-primary-foreground: #faf9f6;
+  --color-secondary: var(--bg-subtle);
+  --color-secondary-foreground: var(--ink-primary);
+  --color-border: var(--border-line);
+  --color-input: var(--border-strong);
+  --color-ring: var(--accent-focus);
+
+  --font-serif: var(--font-newsreader), Georgia, serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+}
+
+:root {
+  /* Parabox Canonical Palette */
+  --bg-canvas: #faf9f6;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f0eee6;
+  --bg-selection: #dedfd2;
+
+  --ink-primary: #252522;
+  --ink-secondary: #55574f;
+  --ink-muted: #73736b;
+  --ink-inverted: #faf9f6;
+
+  --border-line: #deded5;
+  --border-strong: #c7c9bb;
+
+  --accent-primary: #354b42;
+  --accent-hover: #263831;
+  --accent-focus: #354b42;
+
+  --status-success: #2e5939;
+  --status-warning: #8c6314;
+  --status-error: #9e2a2b;
+  --status-info: #2b506e;
+
+  /* Layout Constants */
+  --rail-width: 160px;
+  --rail-gap: 56px;
+  --container-max: 980px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-canvas);
+  color: var(--ink-primary);
+  font-family: var(--font-sans);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  color: var(--ink-primary);
+}
+
+::selection {
+  background: var(--bg-selection);
+  color: var(--ink-primary);
+}
+
+a {
+  color: inherit;
+  text-decoration-color: #a5aba1;
+  text-underline-offset: 4px;
+}
+
+a:hover {
+  color: var(--accent-primary);
+  text-decoration-color: currentColor;
+}
