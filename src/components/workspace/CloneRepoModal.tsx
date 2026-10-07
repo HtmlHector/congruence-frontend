@@ -153,7 +153,7 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs animate-in fade-in" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-[var(--border-strong)] bg-[#0d0e12] p-6 shadow-2xl focus:outline-none animate-in zoom-in-95 flex flex-col max-h-[85vh]">
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-[var(--border-strong)] bg-[var(--surface-primary)] p-6 shadow-2xl focus:outline-none animate-in zoom-in-95 flex flex-col max-h-[85vh]">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
             <div className="flex items-center gap-3">
@@ -220,7 +220,7 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
             {tab === "github" ? (
               !ghStatus?.connected ? (
                 /* Disconnected State */
-                <div className="flex flex-col items-center justify-center text-center p-8 border border-dashed border-[var(--border)] rounded-xl bg-[var(--surface-primary)] space-y-4 my-2">
+                <div className="flex flex-col items-center justify-center text-center p-8 border border-dashed border-[var(--border)] rounded-xl bg-[var(--surface-secondary)] space-y-4 my-2">
                   <div className="size-12 rounded-full bg-[var(--surface-tertiary)] flex items-center justify-center text-[var(--foreground)]">
                     <Github className="size-6" />
                   </div>
@@ -235,13 +235,14 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
                   <button
                     type="button"
                     onClick={handleConnectGithub}
-                    className="flex items-center gap-2 rounded-lg bg-[var(--foreground)] px-4 py-2 text-xs font-semibold text-[var(--background)] hover:opacity-90 transition-opacity"
+                    className="flex items-center gap-2 rounded-lg bg-[var(--foreground)] px-4 py-2 text-xs font-semibold text-[var(--background)] hover:opacity-90 transition-opacity cursor-pointer"
                   >
                     <Github className="size-4" />
                     <span>Authorize with GitHub</span>
                   </button>
                 </div>
               ) : (
+
                 /* Connected State with Repo List */
                 <div className="space-y-3">
                   {/* Status header & Search bar */}

@@ -2,11 +2,18 @@
  * Typed API client for Congruence Backend.
  */
 
-export const API_BASE_URL =
+const rawApiUrl =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+export const API_BASE_URL = rawApiUrl.endsWith("/api/v1")
+  ? rawApiUrl
+  : `${rawApiUrl.replace(/\/+$/, "")}/api/v1`;
 
-export const WS_BASE_URL =
+const rawWsUrl =
   process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/api/v1";
+export const WS_BASE_URL = rawWsUrl.endsWith("/api/v1")
+  ? rawWsUrl
+  : `${rawWsUrl.replace(/\/+$/, "")}/api/v1`;
+
 
 export interface ProjectData {
   id: string;
