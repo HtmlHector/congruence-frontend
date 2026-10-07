@@ -12,9 +12,14 @@ export function ActorSidebar() {
     revokeControl,
     toggleAllowWatchers,
     activityEvents,
+    setIsIntegrationsOpen,
   } = useWorkspace();
 
   const [selectedWriter, setSelectedWriter] = useState(activeLane.currentWriter);
+
+  React.useEffect(() => {
+    setSelectedWriter(activeLane.currentWriter);
+  }, [activeLane.currentWriter]);
 
   const handleGrant = () => {
     grantControl(selectedWriter);
@@ -31,12 +36,25 @@ export function ActorSidebar() {
       <div className="border-b border-[var(--border)] p-3">
         <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-[var(--muted-foreground)] mb-2.5">
           <span>In this workspace</span>
-          <span className="font-mono text-[9px]">{actors.length}</span>
+          <button
+            type="button"
+            onClick={() => setIsIntegrationsOpen(true)}
+            className="text-[9px] text-[var(--accent-claude)] hover:underline cursor-pointer"
+          >
+            Connect / Vault ↗
+          </button>
         </div>
 
         <div className="space-y-2">
           {actors.map((actor) => (
-            <div key={actor.id} className="flex items-center justify-between">
+            <div
+              key={actor.id}
+              onClick={() => actor.id !== "act_you" && setIsIntegrationsOpen(true)}
+              className={`flex items-center justify-between p-1 rounded transition-colors ${
+                actor.id !== "act_you" ? "hover:bg-[var(--wash)] cursor-pointer" : ""
+              }`}
+              title={actor.id !== "act_you" ? "Click to configure API credentials & OAuth" : undefined}
+            >
               <div className="flex items-center gap-2 min-w-0">
                 <span
                   className={`flex size-5 shrink-0 items-center justify-center rounded-[var(--radius-xs)] font-mono text-[10px] font-bold ${actor.badgeBg} ${actor.badgeFg}`}

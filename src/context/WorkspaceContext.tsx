@@ -42,9 +42,12 @@ export interface ActivityEvent {
   text: string;
 }
 
+export type WorkspaceViewMode = "hub" | "deck" | "automations" | "tasks" | "pull-requests" | "pages";
+
 interface WorkspaceContextType {
-  mode: "hub" | "deck";
-  setMode: (mode: "hub" | "deck") => void;
+  projectId: string | null;
+  mode: WorkspaceViewMode;
+  setMode: (mode: WorkspaceViewMode) => void;
   hostState: "awake" | "asleep" | "waking" | "sleeping";
   activeLaneId: string;
   activeLane: WorkLaneData;
@@ -55,6 +58,10 @@ interface WorkspaceContextType {
   activityEvents: ActivityEvent[];
   isProductModalOpen: boolean;
   setIsProductModalOpen: (open: boolean) => void;
+  isIntegrationsOpen: boolean;
+  setIsIntegrationsOpen: (open: boolean) => void;
+  isSearchOpen: boolean;
+  setIsSearchOpen: (open: boolean) => void;
   // Actions
   toggleSleepWake: () => void;
   switchLane: (laneId: string) => void;
@@ -65,7 +72,12 @@ interface WorkspaceContextType {
   toggleAllowWatchers: (val: boolean) => void;
   submitPrompt: (promptText: string, harness: string, model: string, effort: string) => void;
   toggleTaskCompletion: (taskId: string) => void;
+  pendingCommand: string | null;
+  clearPendingCommand: () => void;
+  executeTerminalCommand: (command: string) => void;
 }
+
+const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
 
 const initialLanes: WorkLaneData[] = [
   {
@@ -82,16 +94,16 @@ const initialLanes: WorkLaneData[] = [
     previewState: "saved",
     changesCount: 0,
     tasks: [
-      { id: "1", text: "Find the first good idea", completed: true, statusLabel: "Done" },
-      { id: "2", text: "Make something small", completed: false, statusLabel: "Today" },
-      { id: "3", text: "Share it with someone", completed: false, statusLabel: "Next" },
+      { id: "1", text: "Fix mobile padding on hero banner", completed: true, statusLabel: "Done in main" },
+      { id: "2", text: "Wire Clerk Auth callback handler", completed: false, statusLabel: "Ready for review" },
+      { id: "3", text: "Audit design tokens against Hallmark rules", completed: false, statusLabel: "Pending" },
     ],
     terminalLogs: [
-      "admin@congruence:~/sample-app (main)$ git status",
+      "admin@congruence:~/sample-app$ git status",
       "On branch main",
       "Your branch is up to date with 'origin/main'.",
       "nothing to commit, working tree clean",
-      "admin@congruence:~/sample-app (main)$",
+      "admin@congruence:~/sample-app$ ",
     ],
   },
   {
@@ -106,45 +118,38 @@ const initialLanes: WorkLaneData[] = [
     allowWatchers: true,
     isDevRunning: false,
     previewState: "saved",
-    changesCount: 1,
+    changesCount: 2,
     tasks: [
-      { id: "1", text: "Find the first good idea", completed: true, statusLabel: "Done" },
-      { id: "2", text: "Make something small (refactored by Claude)", completed: true, statusLabel: "Done" },
-      { id: "3", text: "Share it with someone", completed: false, statusLabel: "Next" },
+      { id: "4", text: "Implement interactive Anthropic OAuth", completed: true, statusLabel: "Completed" },
+      { id: "5", text: "Refactor terminal resize message handler", completed: false, statusLabel: "In progress" },
     ],
     terminalLogs: [
-      "claude@congruence:~/sample-app/lanes/claude-progress (claude/progress)$ claude code",
-      "[Claude Code 1.0.12] Authenticated with Anthropic account.",
-      "Reading repository structure...",
-      "Found 1 file to improve: src/components/Fieldnotes.tsx",
-      "Applying patch to improve task completed state transition.",
-      "✓ Edit complete. 1 file changed (+12, -4).",
+      "claude@congruence:~/sample-app (worktree: claude/progress)$ claude --effort high",
+      "Claude Code (v0.2.29) initialized in worktree isolation.",
+      "Reading src/components/workspace/TerminalPane.tsx...",
+      "claude@congruence:~/sample-app $ ",
     ],
   },
   {
     id: "codex-lane",
-    name: "Codex",
-    branch: "codex/copy",
+    name: "OpenAI Codex",
+    branch: "codex/refactor",
     badge: "O",
-    badgeBg: "bg-[rgba(16,185,129,0.15)]",
-    badgeFg: "text-[var(--accent-codex)]",
+    badgeBg: "bg-[rgba(59,130,246,0.15)]",
+    badgeFg: "text-blue-400",
     status: "Ready",
     currentWriter: "Codex",
-    allowWatchers: true,
+    allowWatchers: false,
     isDevRunning: false,
     previewState: "saved",
-    changesCount: 2,
+    changesCount: 1,
     tasks: [
-      { id: "1", text: "Find the first good idea", completed: true, statusLabel: "Done" },
-      { id: "2", text: "Craft high-conviction micro-copy", completed: false, statusLabel: "In progress" },
-      { id: "3", text: "Share with product reviewers", completed: false, statusLabel: "Next" },
+      { id: "6", text: "Add AES-256-GCM vault encryption layer", completed: true, statusLabel: "Done" },
     ],
     terminalLogs: [
-      "codex@congruence:~/sample-app/lanes/codex-copy (codex/copy)$ codex exec 'refine copy'",
-      "[Codex CLI] Initializing session in worktree /lanes/codex-copy...",
-      "Analyzing headline and status labels.",
-      "Replacing generic task placeholders with precise editorial directives.",
-      "Changes staged for branch codex/copy.",
+      "codex@congruence:~/sample-app (worktree: codex/refactor)$ codex exec",
+      "Refactoring src/infrastructure/vault/crypto.py...",
+      "Done.",
     ],
   },
 ];
@@ -153,8 +158,8 @@ const initialActors: WorkspaceActor[] = [
   {
     id: "actor-you",
     name: "You",
-    role: "Owner · full access",
-    statusText: "Here",
+    role: "Repo Owner",
+    statusText: "Active in pair lane",
     badge: "Y",
     badgeBg: "bg-[var(--surface-tertiary)]",
     badgeFg: "text-[var(--foreground)]",
@@ -162,39 +167,117 @@ const initialActors: WorkspaceActor[] = [
   {
     id: "actor-claude",
     name: "Claude Code",
-    role: "Your account · demo identity",
-    statusText: "Idle",
+    role: "Autonomous CLI Agent",
+    statusText: "Ready in claude/progress",
     badge: "C",
     badgeBg: "bg-[rgba(232,128,74,0.15)]",
     badgeFg: "text-[var(--accent-claude)]",
   },
   {
     id: "actor-codex",
-    name: "Codex",
-    role: "Your account · demo identity",
+    name: "OpenAI Codex",
+    role: "Fast Refactoring CLI",
     statusText: "Idle",
     badge: "O",
-    badgeBg: "bg-[rgba(16,185,129,0.15)]",
-    badgeFg: "text-[var(--accent-codex)]",
+    badgeBg: "bg-[rgba(59,130,246,0.15)]",
+    badgeFg: "text-blue-400",
   },
 ];
 
-const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
-
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<"hub" | "deck">("deck");
+  const [mode, setMode] = useState<WorkspaceViewMode>("deck");
   const [hostState, setHostState] = useState<"awake" | "asleep" | "waking" | "sleeping">("awake");
-  const [activeLaneId, setActiveLaneId] = useState<string>("pair-lane");
   const [lanes, setLanes] = useState<WorkLaneData[]>(initialLanes);
-  const [actors] = useState<WorkspaceActor[]>(initialActors);
+  const [actors, setActors] = useState<WorkspaceActor[]>(initialActors);
+  const [activeLaneId, setActiveLaneId] = useState<string>("pair-lane");
   const [activeTab, setActiveTab] = useState<"preview" | "terminal" | "changes">("preview");
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [isIntegrationsOpen, setIsIntegrationsOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [pendingCommand, setPendingCommand] = useState<string | null>(null);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([
-    { id: "1", timestamp: "just now", text: "Workspace opened" },
-    { id: "2", timestamp: "just now", text: "Files and demo identities loaded" },
+    { id: "1", timestamp: "just now", text: "Workspace opened" }
   ]);
 
-  const activeLane = lanes.find((l) => l.id === activeLaneId) || lanes[0];
+  const [projectId, setProjectId] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        let res = await fetch("http://localhost:8000/api/v1/projects");
+        let projs = await res.json();
+        let projId = null;
+        if (projs && projs.length > 0) {
+          projId = projs[0].id;
+        } else {
+          res = await fetch("http://localhost:8000/api/v1/projects", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: "Sample App",
+              slug: "sample-app",
+              repo_full_name: "parabox/sample-app",
+              default_branch: "main",
+              visibility: "private"
+            })
+          });
+          const newProj = await res.json();
+          projId = newProj.id;
+        }
+        setProjectId(projId);
+
+        const lanesRes = await fetch(`http://localhost:8000/api/v1/projects/${projId}/lanes`);
+        const lanesData = await lanesRes.json();
+        
+        if (lanesData && lanesData.length > 0) {
+          const mappedLanes: WorkLaneData[] = lanesData.map((l: any) => {
+            const matchingInit = initialLanes.find((init) => init.name === l.name);
+            return {
+              id: l.id,
+              name: l.name,
+              branch: l.branch_name,
+              badge: l.is_pair_lane ? "P" : (l.name.includes("Codex") ? "O" : "C"),
+              badgeBg: l.is_pair_lane ? "bg-[var(--surface-tertiary)]" : (l.name.includes("Codex") ? "bg-[rgba(59,130,246,0.15)]" : "bg-[rgba(232,128,74,0.15)]"),
+              badgeFg: l.is_pair_lane ? "text-[var(--foreground)]" : (l.name.includes("Codex") ? "text-blue-400" : "text-[var(--accent-claude)]"),
+              status: l.status === "ready" ? "Ready" : l.status,
+              currentWriter: "You",
+              allowWatchers: true,
+              isDevRunning: false,
+              previewState: "saved",
+              changesCount: matchingInit?.changesCount || 0,
+              tasks: matchingInit?.tasks || [],
+              terminalLogs: matchingInit?.terminalLogs || ["Connected to real terminal..."]
+            };
+          });
+          setLanes(mappedLanes);
+          setActiveLaneId((prev) => {
+            const found = mappedLanes.find((m) => m.id === prev || m.name === prev);
+            return found ? found.id : mappedLanes[0].id;
+          });
+        }
+
+        const actorsRes = await fetch(`http://localhost:8000/api/v1/projects/${projId}/actors`);
+        const actorsData = await actorsRes.json();
+        if (actorsData && actorsData.length > 0) {
+          setActors(actorsData.map((a: any) => ({
+            id: a.id,
+            name: a.display_name,
+            role: a.role,
+            statusText: a.presence,
+            badge: a.actor_type === "human" ? "Y" : "C",
+            badgeBg: "bg-[var(--surface-tertiary)]",
+            badgeFg: "text-[var(--foreground)]"
+          })));
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    load();
+  }, []);
+
+  const activeLane = lanes.find((l) => l.id === activeLaneId) || lanes[0] || {} as WorkLaneData;
+
 
   const logActivity = (text: string) => {
     setActivityEvents((prev) => [
@@ -377,9 +460,32 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     logActivity(`Launched ${harness} on new worktree lane: agent/${slug}`);
   };
 
+  const executeTerminalCommand = (command: string) => {
+    logActivity(`Executed command in active lane: ${command}`);
+    setPendingCommand(command);
+    setLanes((prev) =>
+      prev.map((lane) =>
+        lane.id === activeLaneId
+          ? {
+              ...lane,
+              terminalLogs: [
+                ...lane.terminalLogs,
+                `admin@congruence:~/sample-app (${lane.branch})$ ${command}`,
+              ],
+            }
+          : lane
+      )
+    );
+  };
+
+  const clearPendingCommand = () => {
+    setPendingCommand(null);
+  };
+
   return (
     <WorkspaceContext.Provider
       value={{
+        projectId,
         mode,
         setMode,
         hostState,
@@ -392,6 +498,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         activityEvents,
         isProductModalOpen,
         setIsProductModalOpen,
+        isIntegrationsOpen,
+        setIsIntegrationsOpen,
+        isSearchOpen,
+        setIsSearchOpen,
         toggleSleepWake,
         switchLane,
         toggleDevServer,
@@ -401,6 +511,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         toggleAllowWatchers,
         submitPrompt,
         toggleTaskCompletion,
+        pendingCommand,
+        clearPendingCommand,
+        executeTerminalCommand,
       }}
     >
       {children}

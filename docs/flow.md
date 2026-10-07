@@ -15,8 +15,9 @@
 | **SCR-01** | `/` | **Landing & Concept Surface** | Articulate value proposition, show architecture, and host the interactive preview | Click "Explore the demo", read workflow & details, toggle FAQ accordions |
 | **SCR-02A** | `/workspace#hub` | **Superset Agent Hub & Omnibar** | Central dispatch center featuring the `{< >}` glyph, starter prompt chips, and floating multi-harness omnibar | Type task prompt, switch harness (`Claude` / `Codex`), adjust effort/model, launch task |
 | **SCR-02B** | `/workspace#deck` | **Multi-Lane Execution Deck (Split View)** | Active execution canvas combining multi-worktree lanes, terminal PTY, private HTTPS preview, and lane leases | Switch lanes, toggle Preview/Terminal/Changes, Run dev server, Grant/Revoke writer leases, Sleep/Wake host |
-| **SCR-03** | `/workspace#modal-info` | **Product Details Modal** | Technical architecture breakdown (Control plane, Sprite host, Vault, Security) | Read technical specs, close modal |
+| **SCR-03** | `/workspace#modal-info` | **Product Details Modal** | Technical architecture breakdown (Control plane, Sprite host, Host Custody, Security) | Read technical specs, close modal |
 | **SCR-04** | Responsive `/workspace` | **Mobile Execution View** | Focused, high-efficiency mobile experience for inspecting previews, observing terminals, and granting leases | Switch between Preview and Terminal tabs, Tap Grant/Revoke, Wake host |
+| **SCR-05** | `/workspace#modal-connect` | **Connect Agent Modal** | Authenticate a CLI harness on the host via the vendor's own login. Congruence stores nothing. | Select harness, Run host login, Open vendor sign-in on any device, Disconnect |
 
 ---
 
@@ -41,6 +42,17 @@ flowchart TD
     M --> N["Live Preview Window Renders App ('Fieldnotes')"]
     K -- "Switch Lane" --> O["Select 'Claude Code' or 'Codex' Lane"]
     O --> P["Context Switches to Isolated Worktree on Dedicated Branch"]
+    K -- "Click 'Connect agent' on a Harness Row" --> AA["Open Connect Agent Modal (SCR-05)"]
+    AA --> AB{"Host State?"}
+    AB -- Asleep --> AC["Wake Host (< 12s), show Waking State"]
+    AC --> AD
+    AB -- Awake --> AD["Run Vendor Login in Host PTY (e.g. claude login)"]
+    AD --> AE["Host Daemon Detects Loopback Callback Port"]
+    AE --> AF["Issue Single-Use Private Callback URL (expires 10 min)"]
+    AF --> AG["User Opens Vendor Sign-in On Their Own Device"]
+    AG --> AH["Vendor Writes Credential to Host $HOME; We Never See It"]
+    AH --> AI["Close Callback Port; Mark Harness Connected"]
+    AI --> AJ["Harness Ready: Dispatch Task in Omnibar"]
     K -- "Manage Writer Control" --> Q["Open Lane Control Panel"]
     Q --> R["Select Actor from Dropdown & Click 'Grant Control'"]
     R --> S["Actor receives exclusive write lease; Owner can Revoke"]
@@ -166,6 +178,42 @@ When inspecting or running an active worktree session:
 
 ---
 
+### 3.4 SCR-05: Connect Agent Modal (`/workspace#modal-connect`)
+
+Reached by clicking a harness row (e.g. `Claude Code` in the right sidebar `IN THIS WORKSPACE` panel) or a `Connect agent` affordance in the Omnibar harness selector. Rendered as a centered modal over the Execution Deck, max-width `440px`.
+
+**Trust framing is the primary design goal.** A developer is being asked to authorise billable agent access from a web app they have used for two weeks. The modal must earn that trust before asking for anything.
+
+* **Header:**
+  - Title: `Connect Claude Code`
+  - Close: `×` button, top-right.
+* **Trust Panel (always visible, above the fold):**
+  - Body copy, plain and specific: *"Congruence never sees your Claude credentials. Your browser opens Anthropic's own sign-in page, and the token is written straight to this workspace's disk. Anthropic keeps billing your existing plan."*
+  - Explicit non-claim: *"We can't restore these credentials later, because we never hold them."*
+* **Harness Selector:** segmented control, `Claude Code` / `Codex`. Selecting one updates the copy to name the correct vendor and sign-in domain. Do not show harnesses that have no host login flow without explaining why.
+* **Primary Action:** `Connect Claude Code` (verb + object, per copy rules). On click:
+  - Host asleep → button becomes `Waking workspace…` (disabled, spinner) until awake.
+  - Host awake → button becomes `Waiting for you…` and the Authorize panel appears.
+* **Authorize Panel (appears after the CLI starts, `state: awaiting_user`):**
+  - Line 1, label + link: `Open Anthropic sign-in` → the single-use callback URL, `target="_blank"`, `rel="noopener noreferrer"`.
+  - Line 2, secondary: `Copy code` for the device-code path, shown only when the CLI prints one.
+  - Line 3, monospace expiry: `This link expires in 9:41` (live countdown, ≤ 10 min).
+  - Never render the URL as a bare text input the user might paste elsewhere; present it as a labelled action.
+* **Connected State (`state: connected`):**
+  - Row shows provider mark + `Connected`, plus `Signed in on the host · survives sleep`.
+  - Action: `Disconnect` (destructive, requires confirm).
+  - **Disconnect confirm copy must state irreversibility plainly:** *"This deletes the credential from the workspace disk. Congruence can't restore it, you'll need to sign in again with Anthropic."* Confirm button: `Disconnect`, cancel: `Keep connected`.
+* **Error State (`state: error`):**
+  - Inline, below the harness selector, `text-[var(--accent-danger)]`.
+  - Message is specific and actionable: *"Claude Code isn't installed on this host."* → *"Install it from the workspace terminal, then try again."* Never a generic "Something went wrong."
+  - Action: `Retry` and `Open terminal`.
+
+**States to design:** default, waking, awaiting_user (with countdown), connected, error (per-cause), host-asleep-on-open, and mid-disconnect-confirm. All eight interaction states from the design system apply (`hover`, `focus-visible`, `active`, `disabled`, `loading`).
+
+**Accessibility:** the countdown is `aria-live="polite"` but throttled to announce only at 5 min and 1 min remaining, not every second. The modal traps focus and returns it to the invoking harness row on close. The sign-in link has an accessible name that includes the vendor (`Open Anthropic sign-in`), not just "Open link".
+
+---
+
 ## 4. Alternate & Edge State Specifications
 
 ### 4.1 Hub to Execution Transition
@@ -184,6 +232,18 @@ When inspecting or running an active worktree session:
    - Host wakes (< 15s simulation).
    - Files and tool credentials verify as preserved.
    - User clicks `Run dev` to restart ephemeral services.
+
+### 4.3 Connect Agent Edge Cases
+
+| Situation | Behaviour |
+| :--- | :--- |
+| Host asleep when modal opens | Auto-wake, `Waking workspace…`. Do not fail with an error the user must retry. |
+| User closes the modal mid-handshake | Callback port stays bound until expiry, then reaped. Reopening shows the same pending URL. Resumable, not restart-only. |
+| Callback URL expires unused | Inline `This link expired`, single action `Generate a new link`. The host-side partial state is cleaned up. |
+| CLI not installed on host | Error names the missing binary and offers `Open terminal` to install it. |
+| User has API billing, not a subscription | Vendor's own API-key login still works, executed on the host. We never persist the key; copy must not imply the subscription covers it. |
+| Harness already connected | Modal opens in `connected` state with `Disconnect` as the only action. Never re-prompt. |
+| Credential revoked at the vendor mid-session | Host probe flips state to `disconnected` on next check; harness surfaces its own auth error in the terminal. We do not attempt re-auth silently. |
 
 ---
 

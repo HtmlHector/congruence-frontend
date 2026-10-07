@@ -91,7 +91,8 @@ test.describe("congruence.dev - Concept Preview & Interactive Workspace", () => 
     // 3. Switch to Terminal tab
     const terminalTab = demo.getByRole("button", { name: "Terminal 1" });
     await terminalTab.click();
-    await expect(demo.getByText("[Claude Code 1.0.12] Authenticated with Anthropic account.")).toBeVisible();
+    await expect(demo.getByText(/PTY ·/)).toBeVisible();
+    await expect(demo.locator(".xterm").first()).toBeVisible();
 
     // 4. Switch to Changes tab
     const changesTab = demo.getByRole("button", { name: /Changes/ });
@@ -115,11 +116,10 @@ test.describe("congruence.dev - Concept Preview & Interactive Workspace", () => 
     await expect(demo.getByRole("button", { name: "Stop dev" })).toBeVisible();
     await expect(demo.getByText("Live service", { exact: true })).toBeVisible();
 
-    // Check terminal for rewritten port
+    // Check terminal for active session
     await demo.getByRole("button", { name: "Terminal 1" }).click();
-    await expect(
-      demo.getByText("https://sample-app.congruence.example [HTTPS private]")
-    ).toBeVisible();
+    await expect(demo.getByText(/PTY ·/)).toBeVisible();
+    await expect(demo.locator(".xterm").first()).toBeVisible();
 
     // 2. Simulate an Edit
     await demo.getByRole("button", { name: "Simulate an edit" }).click();
@@ -222,5 +222,20 @@ test.describe("congruence.dev - Concept Preview & Interactive Workspace", () => 
     await page.getByRole("button", { name: "Open Execution Deck" }).click();
     await expect(page.getByText("Pair lane").first()).toBeVisible();
     await expect(page.getByText("Workspace awake", { exact: true })).toBeVisible();
+
+    // Click Connect Anthropic / Agents button in top toolbar
+    await page.getByRole("button", { name: "Connect Anthropic / Agents" }).click();
+
+    // Verify modal opens
+    const modal = page.locator("[role='dialog']");
+    await expect(modal).toBeVisible();
+    await expect(modal.getByText("Claude Code CLI")).toBeVisible();
+    await expect(modal.getByText("Option A: Launch Claude Browser OAuth in Terminal")).toBeVisible();
+    await expect(modal.getByText("Option B: BYO Anthropic API Key")).toBeVisible();
+    await expect(modal.getByPlaceholder("sk-ant-api03-...")).toBeVisible();
+
+    // Close modal
+    await page.keyboard.press("Escape");
+    await expect(modal).not.toBeVisible();
   });
 });

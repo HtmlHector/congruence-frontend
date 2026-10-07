@@ -53,10 +53,22 @@ export function Header() {
             <span className="hidden md:inline">GitHub</span>
           </a>
           <Link
-            href="/workspace"
+            href="/sign-in"
+            className="hover:text-[var(--foreground)] transition-colors hidden sm:inline-block font-mono text-[11px]"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/sign-up"
             className="rounded-full bg-[var(--foreground)] px-3.5 py-1.5 font-sans text-xs font-medium text-[var(--background)] hover:bg-[var(--primary-hover)] hover:shadow-sm transition-all"
           >
-            Explore the demo
+            Sign up
+          </Link>
+          <Link
+            href="/workspace"
+            className="hidden md:inline-flex rounded-full border border-[var(--border)] px-3 py-1 font-mono text-[11px] text-[var(--foreground)] hover:bg-[var(--surface-secondary)] transition-all"
+          >
+            Live Demo
           </Link>
         </nav>
       </div>

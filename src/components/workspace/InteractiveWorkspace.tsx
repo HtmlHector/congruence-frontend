@@ -5,9 +5,10 @@ import { useWorkspace } from "@/context/WorkspaceContext";
 import { SupersetSidebar } from "./SupersetSidebar";
 import { PromptHub } from "./PromptHub";
 import { ExecutionDeck } from "./ExecutionDeck";
+import { IntegrationsModal } from "./IntegrationsModal";
 
 export function InteractiveWorkspace() {
-  const { mode } = useWorkspace();
+  const { mode, isIntegrationsOpen, setIsIntegrationsOpen } = useWorkspace();
 
   return (
     <div
@@ -50,6 +51,9 @@ export function InteractiveWorkspace() {
           {mode === "hub" ? <PromptHub /> : <ExecutionDeck />}
         </div>
       </div>
+
+      {/* Integrations & Vault Modal */}
+      <IntegrationsModal open={isIntegrationsOpen} onOpenChange={setIsIntegrationsOpen} />
 
       {/* Workspace Caption Note matching the mockup */}
       <p className="mt-3 text-center text-xs text-[var(--subtle-foreground)] font-mono">

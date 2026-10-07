@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@xterm/xterm/css/xterm.css";
 
 @theme {
   --color-background: var(--background);
@@ -294,46 +295,57 @@
   }
 }
 
-* {
-  box-sizing: border-box;
-}
+/*
+ * Base element styles MUST live inside `@layer base`.
+ *
+ * In Tailwind v4 an unlayered rule outranks every `@layer`, regardless of
+ * specificity. The old unlayered `a { color: inherit }` therefore beat
+ * `text-[var(--ink-inverted)]` in the utilities layer, and every inverted
+ * button rendered its label in the same colour as its own background. Wrapping
+ * these in `@layer base` restores the intended precedence: utilities win.
+ */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
 
-body {
-  margin: 0;
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-  line-height: 1.55;
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-}
+  body {
+    margin: 0;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
 
-::selection {
-  background: var(--selection-bg);
-  color: var(--selection-fg);
-}
+  ::selection {
+    background: var(--selection-bg);
+    color: var(--selection-fg);
+  }
 
-a {
-  color: inherit;
-  text-decoration: none;
-  transition: color 0.15s ease;
-}
+  a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
 
-/* Custom scrollbars for terminals and lists */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+  /* Custom scrollbars for terminals and lists */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 3px;
-}
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 3px;
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Lock, Info, Moon, Sun, ArrowLeft, SlidersHorizontal } from "lucide-react";
+import { Lock, Info, Moon, Sun, ArrowLeft, SlidersHorizontal, Key } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { LanesSidebar } from "./LanesSidebar";
 import { CenterCanvas } from "./CenterCanvas";
@@ -14,6 +14,7 @@ export function ExecutionDeck() {
     hostState,
     toggleSleepWake,
     setIsProductModalOpen,
+    setIsIntegrationsOpen,
     setMode,
   } = useWorkspace();
 
@@ -58,11 +59,27 @@ export function ExecutionDeck() {
             />
             <span className="text-[var(--muted-foreground)]">
               {hostState === "awake" && "Workspace awake"}
-              {hostState === "asleep" && "Workspace asleep"}
+              {hostState === "asleep" && (
+                <>
+                  <span>Workspace asleep</span>
+                  <span className="ml-1 text-[var(--accent-amber)]">(Host Asleep)</span>
+                </>
+              )}
               {hostState === "sleeping" && "Putting to sleep..."}
               {hostState === "waking" && "Waking host..."}
             </span>
           </div>
+
+          {/* Connect Agents & Vault Trigger */}
+          <button
+            type="button"
+            onClick={() => setIsIntegrationsOpen(true)}
+            className="flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[rgba(232,128,74,0.3)] bg-[rgba(232,128,74,0.08)] px-2.5 py-1 font-sans text-xs text-[var(--accent-claude)] hover:bg-[rgba(232,128,74,0.16)] transition-all cursor-pointer"
+            title="Connect Anthropic (Claude Code), OpenAI, and GitHub"
+          >
+            <Key className="size-3" />
+            <span className="font-medium">Connect Anthropic / Agents</span>
+          </button>
 
           {/* Sleep / Wake Power Button */}
           <button

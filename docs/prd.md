@@ -44,7 +44,7 @@
 * **Service:** A process listening on a port, published as a private, authenticated HTTPS URL.
 * **Grant:** Explicit, scoped, revocable write leases granted to an actor on a specific lane. Watch is the default; write is a grant.
 * **Publication:** The pull request flow back to GitHub. GitHub remains the single source of truth.
-* **Vault:** Credential storage that securely injects tokens into `$HOME` on the host without exposing secrets to raw git trees.
+* **Host Custody:** The rule that Congruence never stores, proxies, or transits an agent credential. The user authenticates the CLI itself (`claude login`, `codex login`) on the host; the resulting token is written by the vendor's own tooling into that host's `$HOME` on durable disk. Congruence's control plane has no table, column, or field that can hold a token, and its API surface has no endpoint that accepts one.
 
 ---
 
@@ -52,7 +52,7 @@
 1. **Continuity:** Close the tab or laptop. Files, harness logins, and toolchain remain. Compute may sleep.
 2. **A Browser is Enough:** No required companion app or desktop client.
 3. **Harness Neutrality:** Congruence does not write an agent loop. It hosts `claude`, `codex`, `opencode`, `aider`, and a shell.
-4. **Account Custody:** The vault injects into `$HOME`. Anthropic and OpenAI still bill the user directly. We never resell tokens or tax inference.
+4. **Host Custody:** We hold no credential. The user runs the vendor's own login on the host, so Anthropic and OpenAI continue to bill the user directly under their existing Claude Max or ChatGPT plan. We never resell tokens, tax inference, or proxy a completion in our own name. There is no secret to leak because there is no secret we hold. See `trd.md` §7.
 5. **Concurrent Actors:** N humans and M harnesses can collaborate in one project.
 6. **Isolated Mutation:** Two writers do not share a dirty tree unless someone puts them in the same lane. A collision is our bug.
 7. **Addressable Result:** If a process listens, it has a private HTTPS URL every authorized team member can open.
@@ -98,7 +98,8 @@
 | **Workspace Continuity (Sleep/Wake)** | Persistent disk preserves repo, mise toolchains, and `$HOME` logins across sleep cycles. | P0 (POC) |
 | **Interactive Concept Preview** | High-fidelity simulated workspace on `congruence.dev` for rapid product evaluation. | P0 (POC) |
 | **GitHub App Integration** | Seamless clone, webhook branch sync, and direct `gh pr create` publication. | P1 (Pilot) |
-| **Vault Credential Injection** | Retains Claude Code, Codex, and Git credentials securely in `$HOME` without git leaks. | P1 (Pilot) |
+| **Host-Native Agent Login** | User authenticates `claude` / `codex` on the host itself; the vendor writes the token to `$HOME` on durable disk. Congruence stores nothing. | P1 (Pilot) |
+| **OAuth Callback Bridging** | Publishes the CLI's loopback callback port as an authenticated private service URL so a browser on any device can complete the vendor handshake. | P1 (Pilot) |
 | **WebSocket Session Gateway** | Low-latency PTY streaming and terminal presence. | P1 (Pilot) |
 | **Spend Visibility & Egress Limits** | Explicit display of awake host cost; bounded network blast radius. | P2 (Scale) |
 | **Pluggable HostBackend** | Railway Sandboxes for swarm/lane forks; custom docker sandbox backends. | P2 (Scale) |
@@ -107,7 +108,8 @@
 
 ## 8. Out of Scope for Version One
 * **Proprietary Agent Brain:** Congruence orchestrates standard CLI harnesses; it does not build or sell a model.
-* **Token Resale / Inference Metering:** Users bring their existing Claude Max, ChatGPT Plus, or API keys.
+* **Token Resale / Inference Metering:** Users bring their existing Claude Max or ChatGPT Plus subscription by logging the CLI in on the host. We hold no key.
+* **Holding Agent Credentials:** No BYO-key vault, no OAuth token custody, no encrypted secret table. Rejected deliberately, not deferred: it would contradict Invariant 3 and 4, and a stolen key store is a breach we can never fully undo. See `trd.md` §7.2.
 * **Full Cloud IDE Editor:** The editor is an optional view; harnesses and terminals edit the disk.
 * **Live Process Memory Across Sleep:** Running RAM processes (`npm run dev`) are ephemeral; disk, git, and credentials survive.
 
@@ -141,6 +143,17 @@
 * **Acceptance Criteria:**
   - Adding a new agent lane creates an isolated git worktree at `/lanes/<id>` on a separate `agent/*` branch.
   - Each lane maintains its own PTY session and terminal tab.
+
+### Story 2b: Connect a Subscription Without Giving Up the Key
+* **As an** engineer with a Claude Max subscription who distrusts pasting credentials into web apps,
+* **I want to** sign in to Claude Code through the vendor's own page, from my phone if I like,
+* **So that** my existing plan keeps working and Congruence never holds anything I could lose.
+* **Acceptance Criteria:**
+  - Connecting runs the vendor's own login on the host; Congruence stores no token and exposes no endpoint that accepts one.
+  - The vendor's authorization page opens on the user's own device, not inside an iframe on our domain.
+  - After sleep/wake the harness reports authenticated without a second sign-in.
+  - Disconnecting removes the host's `$HOME` credential and is irreversible from Congruence's side by design: we cannot restore it because we never had it.
+  - A user on API billing with no subscription is a supported, clearly-signposted path via the vendor's own API-key login, still never persisted by us.
 
 ### Story 3: Grant and Revoke Scoped Lane Control
 * **As a** workspace owner pairing with a teammate or testing an autonomous CLI,

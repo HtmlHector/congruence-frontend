@@ -17,32 +17,46 @@ import {
   Loader2,
   Folder,
   SlidersHorizontal,
+  Key,
+  Lock,
 } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 
 export function SupersetSidebar() {
-  const { lanes, activeLaneId, switchLane, setMode } = useWorkspace();
+  const { lanes, activeLaneId, switchLane, mode, setMode, setIsIntegrationsOpen, setIsSearchOpen } = useWorkspace();
   const [sessionsOpen, setSessionsOpen] = useState(true);
   const [projectsOpen, setProjectsOpen] = useState(true);
 
-  // Static mock sessions from superset.sh image
-  const staticSessions = [
-    { id: "s1", title: "fix onboarding crash", diff: "+46 −1", state: "loading" },
-    { id: "s2", title: "billing webhooks", diff: "+193", state: "live" },
-    { id: "s3", title: "refactor auth flow", diff: "+394 −23", state: "idle" },
-    { id: "s4", title: "speed up cold start", diff: "+33", state: "ping" },
-  ];
+  const dynamicSessions = lanes.map((l) => ({
+    id: l.id,
+    title: l.name,
+    diff: l.branch,
+    state: l.status === "Ready" ? "live" : "loading"
+  }));
 
   return (
     <aside className="flex h-full w-[232px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface-sidebar)] text-[11px] select-none">
-      {/* Top OS Window Dots & Navigation Controls */}
+      {/* Top Sidebar Header & Navigation Controls */}
       <div className="flex h-11 items-center justify-between px-3 border-b border-[var(--border)]/40">
-        <div className="flex items-center gap-1.5">
-          <div className="size-2.5 rounded-full bg-[#FF5F57]/80 hover:opacity-100 transition-opacity" />
-          <div className="size-2.5 rounded-full bg-[#FEBC2E]/80 hover:opacity-100 transition-opacity" />
-          <div className="size-2.5 rounded-full bg-[#28C840]/80 hover:opacity-100 transition-opacity" />
+        <div className="flex items-center gap-2">
+          <div className="flex h-4 w-4 flex-col justify-center gap-[2px] rounded-[2px] bg-[var(--surface-tertiary)] p-0.5 border border-[var(--border)]">
+            <span className="h-[1.5px] w-full rounded-full bg-[var(--foreground)]" />
+            <span className="h-[1.5px] w-3/4 rounded-full bg-[var(--muted-foreground)]" />
+            <span className="h-[1.5px] w-full rounded-full bg-[var(--foreground)]" />
+          </div>
+          <span className="font-mono text-[11px] font-medium tracking-tight text-[var(--foreground)]">
+            congruence
+          </span>
         </div>
         <div className="flex items-center gap-1 text-[var(--muted-foreground)]">
+          <button
+            type="button"
+            onClick={() => setIsIntegrationsOpen(true)}
+            title="Connected Integrations & Vault"
+            className="p-1 hover:text-[var(--foreground)] transition-colors rounded"
+          >
+            <Key className="size-3" />
+          </button>
           <button
             type="button"
             onClick={() => setMode("hub")}
@@ -70,7 +84,7 @@ export function SupersetSidebar() {
       <div className="space-y-0.5 px-1.5 py-1">
         <button
           type="button"
-          onClick={() => setMode("hub")}
+          onClick={() => setIsSearchOpen(true)}
           className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)] transition-colors"
         >
           <Search className="size-3.5" />
@@ -81,41 +95,74 @@ export function SupersetSidebar() {
         <button
           type="button"
           onClick={() => setMode("deck")}
-          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--foreground)] bg-[var(--wash)] transition-colors"
+          className={`flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 transition-colors ${
+            mode === "deck"
+              ? "text-[var(--foreground)] bg-[var(--wash)] font-medium"
+              : "text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)]"
+          }`}
         >
-          <Layers className="size-3.5 text-[var(--accent-claude)]" />
+          <Layers className={`size-3.5 ${mode === "deck" ? "text-[var(--accent-claude)]" : ""}`} />
           <span>Workspaces</span>
         </button>
 
         <button
           type="button"
-          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)] transition-colors"
+          onClick={() => setIsIntegrationsOpen(true)}
+          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--accent-claude)] hover:bg-[var(--wash)] transition-colors font-medium"
         >
-          <Zap className="size-3.5" />
+          <Key className="size-3.5 text-[var(--accent-claude)]" />
+          <span>Integrations & Vault</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMode("automations")}
+          className={`flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 transition-colors ${
+            mode === "automations"
+              ? "text-[var(--foreground)] bg-[var(--wash)] font-medium"
+              : "text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)]"
+          }`}
+        >
+          <Zap className={`size-3.5 ${mode === "automations" ? "text-[var(--accent-claude)]" : ""}`} />
           <span>Automations</span>
         </button>
 
         <button
           type="button"
-          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)] transition-colors"
+          onClick={() => setMode("tasks")}
+          className={`flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 transition-colors ${
+            mode === "tasks"
+              ? "text-[var(--foreground)] bg-[var(--wash)] font-medium"
+              : "text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)]"
+          }`}
         >
-          <CheckSquare className="size-3.5" />
+          <CheckSquare className={`size-3.5 ${mode === "tasks" ? "text-[var(--accent-claude)]" : ""}`} />
           <span>Tasks</span>
         </button>
 
         <button
           type="button"
-          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)] transition-colors"
+          onClick={() => setMode("pull-requests")}
+          className={`flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 transition-colors ${
+            mode === "pull-requests"
+              ? "text-[var(--foreground)] bg-[var(--wash)] font-medium"
+              : "text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)]"
+          }`}
         >
-          <GitPullRequest className="size-3.5" />
+          <GitPullRequest className={`size-3.5 ${mode === "pull-requests" ? "text-[var(--accent-claude)]" : ""}`} />
           <span>Pull requests</span>
         </button>
 
         <button
           type="button"
-          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)] transition-colors"
+          onClick={() => setMode("pages")}
+          className={`flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 transition-colors ${
+            mode === "pages"
+              ? "text-[var(--foreground)] bg-[var(--wash)] font-medium"
+              : "text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)]"
+          }`}
         >
-          <FileText className="size-3.5" />
+          <FileText className={`size-3.5 ${mode === "pages" ? "text-[var(--accent-claude)]" : ""}`} />
           <span>Pages</span>
         </button>
       </div>
@@ -169,7 +216,7 @@ export function SupersetSidebar() {
               <span className="px-2 font-mono text-[9px] uppercase tracking-wider text-[var(--subtle-foreground)] block mb-1">
                 Recent Tasks
               </span>
-              {staticSessions.map((s) => (
+              {dynamicSessions.map((s) => (
                 <div
                   key={s.id}
                   className="flex h-6.5 cursor-pointer items-center gap-2 rounded px-2 text-[11px] text-[var(--muted-foreground)] hover:bg-[var(--wash-subtle)] hover:text-[var(--foreground)] transition-colors"
@@ -212,8 +259,9 @@ export function SupersetSidebar() {
         </div>
         <button
           type="button"
+          onClick={() => setIsIntegrationsOpen(true)}
           className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors p-1"
-          title="Team settings"
+          title="Connected Integrations & Vault"
         >
           <Settings className="size-3.5" />
         </button>

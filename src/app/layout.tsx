@@ -42,16 +42,20 @@ export default function RootLayout({
      * Both were here and both pinned every surface to the obsidian palette.
      *
      * Clerk is wired to the app tokens rather than a fixed `@clerk/themes`
-     * import, so Clerk chrome follows the same OS preference. No Clerk
-     * component is rendered today, but this keeps that from becoming a
-     * second dark-only island later.
+     * import, so Clerk chrome follows the same OS preference. Clerk renders
+     * the whole /login card, so leaving it on a hard-coded dark theme would
+     * have made auth the one dark-only island on the site.
      */
     <ClerkProvider
       appearance={{
         variables: {
           colorPrimary: "var(--primary)",
           colorBackground: "var(--surface-card)",
-          colorNeutral: "var(--muted-foreground)",
+          // Clerk mixes its neutral down to 62% alpha for secondary labels
+          // (the social buttons). Pointing that at --foreground rather than
+          // --muted-foreground is what keeps them above 4.5:1 in both modes;
+          // at --muted-foreground they measured ~2.8:1.
+          colorNeutral: "var(--foreground)",
         },
       }}
     >

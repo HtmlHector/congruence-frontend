@@ -33,26 +33,59 @@ for (const scheme of ["dark", "light"]) {
 
     // Find text that has collapsed to (near) the same colour as its backdrop.
     const problems = await page.evaluate(() => {
-      const lum = (c) => {
-        const m = c.match(/\d+(\.\d+)?/g);
-        if (!m) return null;
-        const [r, g, b] = m.slice(0, 3).map(Number);
+      // Normalise ANY CSS colour (rgb, oklch, oklab, color-mix, ...) to sRGB by
+      // letting the canvas do the conversion. Hand-parsing oklab() and
+      // color-mix() output silently produced nonsense ratios.
+      const cv = document.createElement("canvas");
+      cv.width = cv.height = 1;
+      const ctx = cv.getContext("2d", { willReadFrequently: true });
+
+      const toRGBA = (css) => {
+        ctx.clearRect(0, 0, 1, 1);
+        ctx.fillStyle = "#000";
+        ctx.fillStyle = css;
+        // A rejected value leaves fillStyle as the sentinel "#000".
+        const normalised = ctx.fillStyle;
+        if (normalised === "#000000" && !/^#0{3,6}$|black|rgb\(0,\s*0,\s*0\)/.test(css)) {
+          return null;
+        }
+        ctx.clearRect(0, 0, 1, 1);
+        ctx.fillStyle = css;
+        ctx.fillRect(0, 0, 1, 1);
+        const d = ctx.getImageData(0, 0, 1, 1).data;
+        return [d[0], d[1], d[2], d[3] / 255];
+      };
+
+      const lum = ([r, g, b]) => {
         const f = (v) => {
           v /= 255;
           return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
         };
         return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
       };
-      const ratio = (a, b) => {
-        const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+
+      // Composite a translucent layer over an opaque backdrop.
+      const over = (fg, bg) => {
+        const a = fg[3];
+        if (a >= 1) return fg;
+        return [0, 1, 2].map((i) => fg[i] * a + bg[i] * (1 - a));
+      };
+
+      const ratio = (fgCss, bgCss) => {
+        const fg = toRGBA(fgCss);
+        const bg = toRGBA(bgCss);
+        if (!fg || !bg) return null;
+        const f = over(fg, bg);
+        const [x, y] = [lum(f), lum(bg)].sort((p, q) => q - p);
         return (x + 0.05) / (y + 0.05);
       };
-      // Walk up for the first non-transparent background.
+
+      // Walk up for the first backdrop that actually paints something.
       const bgOf = (el) => {
         let n = el;
         while (n && n !== document.documentElement) {
-          const bg = getComputedStyle(n).backgroundColor;
-          if (bg && !/rgba\(0, 0, 0, 0\)|transparent/.test(bg)) return bg;
+          const c = toRGBA(getComputedStyle(n).backgroundColor);
+          if (c && c[3] > 0.95) return getComputedStyle(n).backgroundColor;
           n = n.parentElement;
         }
         return getComputedStyle(document.body).backgroundColor;
@@ -72,6 +105,7 @@ for (const scheme of ["dark", "light"]) {
         if (r.width < 2 || r.height < 2) continue;
 
         const cr = ratio(st.color, bgOf(el));
+        if (cr === null) continue;
         const size = parseFloat(st.fontSize);
         const bold = parseInt(st.fontWeight, 10) >= 700;
         const large = size >= 24 || (size >= 18.66 && bold);
@@ -87,7 +121,6 @@ for (const scheme of ["dark", "light"]) {
           });
         }
       }
-      // De-duplicate identical (text, ratio) reports.
       const seen = new Set();
       return out.filter((p) => {
         const k = `${p.text}|${p.ratio}`;

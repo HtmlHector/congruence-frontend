@@ -12,19 +12,33 @@
 ## System
 
 * **Genre:** Precision Obsidian Agent Workspace (Superset-inspired CLI Orchestrator)
-* **Macrostructure:** Deep dark multi-pane execution environment. Left collapsible navigation sidebar with Workspaces, Tasks, and Worktree Sessions (`+46 -1`); Center canvas hosting the `{< >}` prompt hub, floating omnibar, and multi-lane execution deck (Terminal PTY, live HTTPS preview, Git diff).
-* **Theme:** Deep Obsidian & Precision Monochrome (Canvas `#0A0A0C`, Sidebar `#0E0E12`, Card surface `#121216`, Hairline border `#222227`, Foreground `#EDEDED`, Muted text `#71717A`, Claude Anthropic Amber `#E8804A`, Emerald status `#10B981`)
+* **Macrostructure:** Multi-pane execution environment, dual-mode. Left collapsible navigation sidebar with Workspaces, Tasks, and Worktree Sessions (`+46 -1`); Center canvas hosting the `{< >}` prompt hub, floating omnibar, and multi-lane execution deck (Terminal PTY, live HTTPS preview, Git diff).
+* **Theme:** Deep Obsidian (dark) **and** Paper Neutral (light), selected by the OS. Dark values (Canvas `#0A0A0C`, Sidebar `#0E0E12`, Card surface `#121216`, Hairline border `#222227`, Foreground `#EDEDED`, Muted text `#878790`, Claude Anthropic Amber `#E8804A`, Emerald status `#10B981`). Light values are re-picked, not derived (Canvas `#F4F4F5`, Card surface `#FDFDFD`, Hairline border `#DCDCE1`, Foreground `#17171A`, Muted text `#5C5C64`, Claude Amber `#A94E19`, Emerald status `#047857`).
+  - **Selection:** `prefers-color-scheme` only. There is no in-app toggle, no persisted preference, and no JavaScript in the critical path, so there is no flash-of-wrong-theme and no hydration mismatch. Dark is the `:root` base (and the no-media-query fallback); light is the `@media (prefers-color-scheme: light)` override.
 * **Axes:**
   - *Density:* High-precision technical density (11px/12px monospace chips, diff badges `+46 -1`, compact worktree trees)
-  - *Contrast:* Ultra-High dark mode (WCAG AAA white/light-gray on obsidian)
+  - *Contrast:* Ultra-High in both modes. Dark holds white/light-gray on obsidian; light holds off-black ink on paper. Body text is never below 4.5:1 in either mode, verified by `npm run audit:contrast` and `npm run audit:theme`.
   - *Corner Radius:* Subtle geometric precision (`4px` to `6px` for cards/inputs, `12px` to `14px` for the floating omnibar pill, `2px` for monospace status chips)
-  - *Texture:* Matte Obsidian with hairline borders (`1px solid #222227`), crisp top inset highlights (`inset 0 1px 0 rgba(255,255,255,0.06)`), and zero fuzzy neon gradients.
+  - *Texture:* Matte Obsidian with hairline borders, crisp top inset highlights, and zero fuzzy neon gradients.
+
+### Mode-independent token families
+
+Three families in `globals.css` are deliberately **not** overridden by the light block. Adding them to the light override is the main way to break this system:
+
+| Family | Why it is mode-independent | Rule |
+| :--- | :--- | :--- |
+| `--radius-*` | Geometry | Never reference a colour to set a radius. |
+| `--wash-*`, `--edge-hairline` | Derived from `--foreground` via `color-mix()` | Replaces hardcoded `bg-white/[0.0x]` hover states. Because it mixes the foreground, it inverts on its own. **Never write `bg-white/[0.04]`.** |
+| `--surface-terminal`, `--terminal-*`, `--diff-*-bg`, `--diff-*-fg` | Terminal and git-diff panes stay dark in both modes, like a real terminal or `git diff` viewer | Panes must consume this family, **not** `--foreground` / `--muted-foreground` / `--surface-inset`, which invert and would leave near-black text on a near-black pane. |
+
+Semantic aliases (`--ink-primary`, `--ink-muted`, `--bg-canvas`, `--bg-surface`, `--border-line`, `--accent-primary`, `--status-success`, `--status-error`) exist because `/dashboard` and `rail-sidebar` were authored against that vocabulary. They only reference other custom properties, so they are correct in both modes with no duplication. Prefer the canonical token in new code.
+
 
 ---
 
 ## 2. Design Tokens (`:root`)
 
-The following copy-pasteable CSS variables block governs the design system, matching the dark obsidian aesthetic of Superset (`superset.sh`):
+The governing source of truth is **`src/styles/globals.css`**. The block below is the historical dark-mode excerpt and is kept for reference only; do not paste it into a project, because it predates the light palette and the three mode-independent token families described above.
 
 ```css
 :root {

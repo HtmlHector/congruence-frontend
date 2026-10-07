@@ -14,12 +14,12 @@ erDiagram
     ORGANIZATION ||--o{ PROJECT : owns
     PROJECT ||--|| HOST : provisions
     PROJECT ||--o{ ACTOR : includes
-    PROJECT ||--o{ VAULT_SECRET : retains
     HOST ||--|{ LANE : contains
     HOST ||--o{ SERVICE : publishes
     LANE ||--o{ GRANT : authorizes
     ACTOR ||--o{ GRANT : receives
     LANE ||--o{ PUBLICATION : exports
+    LANE ||--o{ HARNESS_AUTH : reports
 
     ORGANIZATION {
         string id PK
@@ -100,13 +100,14 @@ erDiagram
         timestamp started_at
     }
 
-    VAULT_SECRET {
+    HARNESS_AUTH {
         string id PK
-        string project_id FK
-        string key_name "e.g. ANTHROPIC_API_KEY, GITHUB_TOKEN"
-        string encrypted_value
-        string injection_path "e.g. $HOME/.claude.json"
-        timestamp updated_at
+        string lane_id FK
+        string harness "claude | codex | opencode | aider"
+        string state "disconnected | awaiting_user | connected | error"
+        boolean is_reported_by_host "always true; see note"
+        timestamp checked_at
+        timestamp connected_at
     }
 
     PUBLICATION {
@@ -183,6 +184,19 @@ Addressable listening network ports:
 * `address_subdomain` (`varchar(128)`): e.g. `sample-app-3000`.
 * `access_mode` (`enum`): `'private' | 'public_timeboxed'`.
 * `is_active` (`boolean`): Whether dev process is currently bound to port.
+* `service_kind` (`enum`, new): `'app' | 'oauth_callback'`. Marks a short-lived, single-use surface created only to bridge a CLI's loopback OAuth callback (see `trd.md` §7.2). Such services are forced `private`, forced single-use, expire within 10 minutes, and are never listed in the normal preview UI.
+
+### 2.7 Harness Auth (`harness_auth`)
+Reports whether a lane's CLI harness is authenticated, **without storing the credential**:
+* `id` (`uuid`, PK).
+* `lane_id` (`uuid`, FK): Lane whose `$HOME` holds the credential.
+* `harness` (`enum`): `'claude' | 'codex' | 'opencode' | 'aider'`.
+* `state` (`enum`): `'disconnected' | 'awaiting_user' | 'connected' | 'error'`.
+* `is_reported_by_host` (`boolean`): Always `true`. Present to make the trust model explicit in the schema itself.
+* `checked_at` (`timestamp`): Last host probe (e.g. presence of `~/.claude/.credentials.json`).
+* `connected_at` (`timestamp`, nullable).
+
+**This table holds no secret by construction.** Every field is an enum, a boolean, a foreign key, or a timestamp. There is no ciphertext column, because the control plane has no key with which to encrypt or decrypt. The credential lives only in the host's `$HOME`, which is why this row is *reported* by the host rather than *known* by us. It is safe to log, replicate, and expose to project members; a compromised database reveals nothing an attacker could use to reach Anthropic or OpenAI.
 
 ---
 
@@ -232,5 +246,30 @@ export interface ActivityEvent {
   timestamp: string;
   message: string;
   actorId?: string;
+}
+
+/**
+ * Harness connection state. Mirrors `harness_auth` in the database.
+ *
+ * Note what is absent: there is no `token`, `apiKey`, `credential`, or
+ * `secret` field, and there never will be. Do not add one. The control plane
+ * cannot hold an agent credential; the vendor's CLI writes it directly to the
+ * host's `$HOME`. See `trd.md` §7 and `prd.md` Invariant 4.
+ */
+export type HarnessKind = 'claude' | 'codex' | 'opencode' | 'aider';
+export type HarnessAuthState =
+  | 'disconnected'
+  | 'awaiting_user'
+  | 'connected'
+  | 'error';
+
+export interface HarnessConnection {
+  harness: HarnessKind;
+  state: HarnessAuthState;
+  /** Short-lived, single-use URL bridging the CLI's loopback OAuth callback.
+   *  Present only while `state === 'awaiting_user'`. Never log or persist. */
+  authorizeUrl?: string;
+  expiresAt?: string;
+  errorMessage?: string;
 }
 ```

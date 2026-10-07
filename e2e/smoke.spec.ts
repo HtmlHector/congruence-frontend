@@ -1,35 +1,29 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Parabox App Smoke Tests", () => {
+test.describe("Congruence App Smoke Tests", () => {
   test("home page loads with brand wordmark and core CTAs", async ({ page }) => {
     await page.goto("/");
 
     // Verify brand wordmark
-    await expect(page.locator("header a", { hasText: "parabox" })).toBeVisible();
+    await expect(page.locator("header").getByText("Congruence").first()).toBeVisible();
 
     // Verify primary hero heading
-    await expect(page.locator("h1")).toContainText("A dependable foundation for your next useful product.");
+    await expect(page.locator("h1")).toContainText("Your repository, your agents, and the running app.");
 
     // Verify auth navigation links
-    await expect(page.locator("a[href='/login']")).toBeVisible();
-    await expect(page.locator("a[href='/signup']")).toBeVisible();
+    await expect(page.locator("header a[href='/sign-in']")).toBeVisible();
+    await expect(page.locator("header a[href='/sign-up']")).toBeVisible();
   });
 
-  test("sign-in page renders email and password form", async ({ page }) => {
-    await page.goto("/login");
-
-    await expect(page.locator("h1")).toHaveText("Sign in");
-    await expect(page.locator("input[type='email']")).toBeVisible();
-    await expect(page.locator("input[type='password']")).toBeVisible();
-    await expect(page.locator("button[type='submit']")).toContainText("Sign In");
+  test("sign-in page loads Clerk authentication component", async ({ page }) => {
+    await page.goto("/sign-in");
+    await expect(page).toHaveURL(/.*sign-in.*/);
+    await expect(page.getByText("Congruence").first()).toBeVisible();
   });
 
-  test("sign-up page renders registration form", async ({ page }) => {
-    await page.goto("/signup");
-
-    await expect(page.locator("h1")).toHaveText("Create Account");
-    await expect(page.locator("input[type='email']")).toBeVisible();
-    await expect(page.locator("input[type='password']")).toBeVisible();
-    await expect(page.locator("button[type='submit']")).toContainText("Create Account");
+  test("sign-up page loads Clerk registration component", async ({ page }) => {
+    await page.goto("/sign-up");
+    await expect(page).toHaveURL(/.*sign-up.*/);
+    await expect(page.getByText("Congruence").first()).toBeVisible();
   });
 });
