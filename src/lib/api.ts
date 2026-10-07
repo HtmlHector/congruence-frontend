@@ -95,10 +95,13 @@ export interface IntegrationsStatusData {
   project_id: string;
   github: {
     connected: boolean;
+    username?: string | null;
     app_id: string;
+    app_slug?: string;
     install_url: string;
     repo: string | null;
   };
+
   harnesses: Record<
     string,
     {
@@ -136,6 +139,33 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   return response.json() as Promise<T>;
+}
+
+export interface GitHubStatusData {
+  connected: boolean;
+  username: string | null;
+  avatar_url: string | null;
+  github_user_id: string | null;
+  scope?: string | null;
+  app_slug?: string;
+  app_id?: string;
+}
+
+export interface GitHubRepoItem {
+  id: number;
+  name: string;
+  full_name: string;
+  owner: string;
+  owner_avatar?: string;
+  private: boolean;
+  html_url: string;
+  clone_url: string;
+  default_branch: string;
+  description: string | null;
+  updated_at: string;
+  pushed_at?: string;
+  stargazers_count?: number;
+  fork?: boolean;
 }
 
 export const api = {
@@ -219,4 +249,17 @@ export const api = {
     ),
   getHarnessLoginStatus: (laneId: string, harness: string) =>
     request<{ state: string }>(`/integrations/harnesses/${harness}/login/${laneId}`),
+
+  // GitHub Integration & OAuth
+  getGithubConnectUrl: () =>
+    request<{ provider: string; authorize_url: string; client_id: string; app_slug: string }>(
+      "/integrations/github/connect"
+    ),
+  getGithubStatus: () => request<GitHubStatusData>("/integrations/github/status"),
+  getGithubRepos: () => request<GitHubRepoItem[]>("/integrations/github/repos"),
+  disconnectGithub: () =>
+    request<{ connected: boolean; disconnected: boolean }>("/integrations/github/disconnect", {
+      method: "DELETE",
+    }),
 };
+

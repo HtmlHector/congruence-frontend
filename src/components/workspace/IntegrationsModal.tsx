@@ -61,7 +61,7 @@ export function IntegrationsModal({ open, onOpenChange }: IntegrationsModalProps
         </DialogHeader>
 
         <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
-          {/* 1. GitHub App Integration */}
+          {/* 1. GitHub App & OAuth Integration */}
           <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-card)] p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -69,14 +69,26 @@ export function IntegrationsModal({ open, onOpenChange }: IntegrationsModalProps
                   <Github className="size-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-medium text-[var(--foreground)]">GitHub Repository</h4>
+                  <h4 className="text-xs font-medium text-[var(--foreground)]">GitHub Repository & OAuth</h4>
                   <p className="text-[11px] text-[var(--muted-foreground)]">
-                    App installation and pull request publisher
+                    {statusData?.github?.username
+                      ? `Connected as @${statusData.github.username}`
+                      : "Repository access and pull request publisher"}
                   </p>
                 </div>
               </div>
-              <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(16,185,129,0.12)] px-2 py-0.5 text-[10px] font-mono text-[var(--accent-codex)] border border-[rgba(16,185,129,0.2)]">
-                <CheckCircle2 className="size-3" /> Connected
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-mono ${
+                statusData?.github?.connected
+                  ? "bg-[rgba(16,185,129,0.12)] text-[var(--accent-codex)] border border-[rgba(16,185,129,0.2)]"
+                  : "bg-[var(--surface-tertiary)] text-[var(--muted-foreground)] border border-[var(--border)]"
+              }`}>
+                {statusData?.github?.connected ? (
+                  <>
+                    <CheckCircle2 className="size-3" /> Connected
+                  </>
+                ) : (
+                  "Not Connected"
+                )}
               </span>
             </div>
 
@@ -100,12 +112,13 @@ export function IntegrationsModal({ open, onOpenChange }: IntegrationsModalProps
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-[var(--accent-claude)] hover:underline"
                 >
-                  <span>Reauthorize</span>
+                  <span>Reauthorize GitHub App</span>
                   <ExternalLink className="size-3" />
                 </a>
               )}
             </div>
           </div>
+
 
           {/* 2. Anthropic Claude Code */}
           <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-card)] p-4 space-y-3">
