@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
-import { Newsreader, Inter } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import "@/styles/globals.css";
-
-const newsreader = Newsreader({
-  subsets: ["latin"],
-  variable: "--font-newsreader",
-  display: "swap",
-});
 
 const inter = Inter({
   subsets: ["latin"],
@@ -15,9 +9,24 @@ const inter = Inter({
   display: "swap",
 });
 
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "Parabox App",
-  description: "Built on the Parabox Foundation with Next.js, Supabase, and Stripe.",
+  title: "congruence.dev — Your repository, your agents, and the running app. In one place.",
+  description:
+    "A shared browser workspace for the coding agents you already use. Keep the files, terminal, and live preview together, then pick up from another device.",
+  keywords: [
+    "coding agents",
+    "Claude Code",
+    "Codex",
+    "git worktrees",
+    "browser workspace",
+    "congruence",
+  ],
 };
 
 export default function RootLayout({
@@ -26,17 +35,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${newsreader.variable} ${inter.variable}`}>
-      <body className="min-h-screen bg-[var(--bg-canvas)] text-[var(--ink-primary)] antialiased">
+    <html
+      lang="en"
+      className={`dark ${inter.variable} ${jetbrainsMono.variable}`}
+      style={{ colorScheme: "dark" }}
+    >
+      <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)] font-sans antialiased selection:bg-[var(--accent-claude-subtle)] selection:text-white">
         {children}
         <Toaster
           position="bottom-right"
           toastOptions={{
             style: {
-              background: "var(--bg-surface)",
-              color: "var(--ink-primary)",
-              border: "1px solid var(--border-line)",
+              background: "var(--surface-primary)",
+              color: "var(--foreground)",
+              border: "1px solid var(--border)",
               fontFamily: "var(--font-sans)",
+              borderRadius: "var(--radius-md)",
             },
           }}
         />

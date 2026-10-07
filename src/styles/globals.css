@@ -1,58 +1,92 @@
 @import "tailwindcss";
 
 @theme {
-  --color-paper: #faf9f6;
-  --color-ink: #252522;
-  --color-muted: #73736b;
-  --color-line: #deded5;
-  --color-link: #354b42;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--surface-card);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--surface-primary);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input-border);
+  --color-ring: var(--ring);
 
-  --color-background: var(--bg-canvas);
-  --color-foreground: var(--ink-primary);
-  --color-card: var(--bg-surface);
-  --color-card-foreground: var(--ink-primary);
-  --color-popover: var(--bg-surface);
-  --color-popover-foreground: var(--ink-primary);
-  --color-primary: var(--accent-primary);
-  --color-primary-foreground: #faf9f6;
-  --color-secondary: var(--bg-subtle);
-  --color-secondary-foreground: var(--ink-primary);
-  --color-border: var(--border-line);
-  --color-input: var(--border-strong);
-  --color-ring: var(--accent-focus);
-
-  --font-serif: var(--font-newsreader), Georgia, serif;
-  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-mono), "IBM Plex Mono", "JetBrains Mono", monospace;
 }
 
 :root {
-  /* Parabox Canonical Palette */
-  --bg-canvas: #faf9f6;
-  --bg-surface: #ffffff;
-  --bg-subtle: #f0eee6;
-  --bg-selection: #dedfd2;
+  /* Obsidian Dark Canvas & Surfaces (Superset Style Default) */
+  --background: #0A0A0C;
+  --foreground: #EDEDED;
 
-  --ink-primary: #252522;
-  --ink-secondary: #55574f;
-  --ink-muted: #73736b;
-  --ink-inverted: #faf9f6;
+  --surface-sidebar: #0E0E12;
+  --surface-primary: #121216;
+  --surface-secondary: #18181D;
+  --surface-tertiary: #202026;
+  --surface-omnibar: #16161B;
+  --surface-card: #131318;
+  --surface-inset: #0C0C0F;
 
-  --border-line: #deded5;
-  --border-strong: #c7c9bb;
+  /* Borders & Dividers */
+  --border: #222227;
+  --border-subtle: #1A1A1F;
+  --border-strong: #33333A;
+  --border-focus: #FFFFFF;
 
-  --accent-primary: #354b42;
-  --accent-hover: #263831;
-  --accent-focus: #354b42;
+  /* Primary Interactive Elements */
+  --primary: #EDEDED;
+  --primary-foreground: #0A0A0C;
+  --primary-hover: #FFFFFF;
 
-  --status-success: #2e5939;
-  --status-warning: #8c6314;
-  --status-error: #9e2a2b;
-  --status-info: #2b506e;
+  --secondary: #1C1C22;
+  --secondary-foreground: #EDEDED;
+  --secondary-hover: #26262E;
 
-  /* Layout Constants */
-  --rail-width: 160px;
-  --rail-gap: 56px;
-  --container-max: 980px;
+  /* Muted Text & Accents */
+  --muted: #1A1A20;
+  --muted-foreground: #71717A;
+  --subtle-foreground: #52525B;
+
+  /* Provider Brand Colors */
+  --accent-claude: #E8804A; /* Anthropic Claude Coral / Amber */
+  --accent-claude-subtle: rgba(232, 128, 74, 0.12);
+  --accent-codex: #10B981;  /* OpenAI Codex Emerald */
+  --accent-codex-subtle: rgba(16, 185, 129, 0.12);
+  --accent-opencode: #60A5FA;
+  --accent-aider: #A78BFA;
+
+  /* Status Indicators */
+  --status-awake: #10B981;
+  --status-asleep: #71717A;
+  --status-running: #E8804A;
+  --diff-add: #22C55E;
+  --diff-del: #EF4444;
+
+  /* Inputs & Forms */
+  --input: #121216;
+  --input-border: #26262C;
+  --ring: #EDEDED;
+
+  /* Geometry & Radius */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-omnibar: 14px;
+  --radius-pill: 9999px;
+  --radius: 6px;
+
+  /* Shadows (Subtle, Crisp Inset Hairline Highlights) */
+  --shadow-frame: 0 16px 40px -12px rgba(0, 0, 0, 0.6), 0 32px 90px -24px rgba(0, 0, 0, 0.75);
+  --shadow-omnibar: 0 12px 32px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --shadow-dropdown: 0 8px 24px -4px rgba(0, 0, 0, 0.6);
 }
 
 * {
@@ -61,32 +95,40 @@
 
 body {
   margin: 0;
-  background-color: var(--bg-canvas);
-  color: var(--ink-primary);
+  background-color: var(--background);
+  color: var(--foreground);
   font-family: var(--font-sans);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-serif);
-  font-weight: 500;
-  letter-spacing: -0.025em;
-  color: var(--ink-primary);
+  overflow-x: hidden;
 }
 
 ::selection {
-  background: var(--bg-selection);
-  color: var(--ink-primary);
+  background: rgba(232, 128, 74, 0.25);
+  color: #FFFFFF;
 }
 
 a {
   color: inherit;
-  text-decoration-color: #a5aba1;
-  text-underline-offset: 4px;
+  text-decoration: none;
+  transition: color 0.15s ease;
 }
 
-a:hover {
-  color: var(--accent-primary);
-  text-decoration-color: currentColor;
+/* Custom scrollbars for terminals and lists */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #222227;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #33333A;
 }
