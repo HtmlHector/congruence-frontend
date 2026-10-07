@@ -77,11 +77,14 @@
   --secondary-hover: #26262e;
 
   /* Muted Text & Accents
-   * muted-foreground 4.76:1 on --background
-   * subtle-foreground 5.77:1 on --background (was 2.59:1, failed AA) */
+   * muted-foreground  5.54:1 on --background, 4.55:1 on --surface-tertiary
+   * subtle-foreground 6.56:1 on --background, 5.39:1 on --surface-tertiary
+   * (subtle-foreground was #52525B at 2.59:1 and failed AA; both steps are
+   * now verified across every surface they sit on, see
+   * scripts/contrast-audit.mjs) */
   --muted: #1a1a20;
-  --muted-foreground: #7c7c85;
-  --subtle-foreground: #8a8a93;
+  --muted-foreground: #878790;
+  --subtle-foreground: #94949d;
 
   /* Provider Brand Colors */
   --accent-claude: #e8804a; /* Anthropic Claude Coral / Amber */
@@ -101,14 +104,21 @@
 
   /* Status Indicators */
   --status-awake: #10b981;
-  --status-asleep: #7c7c85;
+  --status-asleep: #878790;
   --status-running: #e8804a;
   --diff-add: #22c55e;
   --diff-del: #ef4444;
+  /* Diff colour used as small bold TEXT on a 20% wash of itself. --diff-add
+   * only reaches 3.8:1 there in light mode, so these steps are darker. */
+  --diff-add-ink: #22c55e;
+  --diff-del-ink: #f87171;
 
-  /* Inputs & Forms */
+  /* Inputs & Forms
+   * input-border identifies the control itself, so it is held to 3:1
+   * (WCAG 1.4.11) against --input. The decorative --border above is a hairline
+   * separator and is intentionally far below that. */
   --input: #121216;
-  --input-border: #26262c;
+  --input-border: #63636b;
   --ring: #ededed;
 
   /* Selection */
@@ -239,7 +249,7 @@
     --secondary-foreground: #17171a;
     --secondary-hover: #dfdfe4;
 
-    /* muted-foreground 5.32:1 · subtle-foreground 5.05:1 on --background */
+    /* muted-foreground 6.03:1 · subtle-foreground 5.18:1 on --background */
     --muted: #efeff2;
     --muted-foreground: #5c5c64;
     --subtle-foreground: #66666e;
@@ -263,9 +273,11 @@
     --status-running: #a94e19;
     --diff-add: #15803d; /* 4.52:1 */
     --diff-del: #b91c1c;
+    --diff-add-ink: #14532d; /* 6.82:1 on its own 20% wash */
+    --diff-del-ink: #7f1d1d;
 
     --input: #fdfdfd;
-    --input-border: #d2d2d9;
+    --input-border: #8a8a93;
     --ring: #17171a;
 
     --selection-bg: rgba(169, 78, 25, 0.18);

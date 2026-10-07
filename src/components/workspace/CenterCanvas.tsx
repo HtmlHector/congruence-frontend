@@ -82,7 +82,7 @@ export function CenterCanvas() {
             <span
               className={`font-mono text-[9px] px-1 rounded ${
                 activeLane.changesCount > 0
-                  ? "bg-[var(--diff-add)]/20 text-[var(--diff-add)] font-bold"
+                  ? "bg-[var(--diff-add)]/20 text-[var(--diff-add-ink)] font-bold"
                   : "text-[var(--subtle-foreground)]"
               }`}
             >

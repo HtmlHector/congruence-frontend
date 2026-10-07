@@ -42,8 +42,9 @@ test.describe("congruence.dev - Concept Preview & Interactive Workspace", () => 
     // Toggle accordion item 2
     const faqItem2 = page.getByRole("button", { name: "Are you building another coding agent?" });
     await expect(faqItem2).toBeVisible();
+    await faqItem2.scrollIntoViewIfNeeded();
     await faqItem2.click();
-    await expect(page.getByText("No. The planned product uses existing CLI harnesses")).toBeVisible();
+    await expect(page.getByText(/No\. The planned product uses existing CLI harnesses/)).toBeVisible();
 
     // 7. Footer
     await expect(page.locator("footer")).toContainText("congruence.dev");
