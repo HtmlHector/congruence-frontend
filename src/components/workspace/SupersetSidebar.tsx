@@ -12,6 +12,8 @@ import {
   SlidersHorizontal,
   Key,
   Github,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 
@@ -26,11 +28,115 @@ export function SupersetSidebar() {
     setIsIntegrationsOpen,
     setIsSearchOpen,
     setIsCloneOpen,
+    sidebarCollapsed,
+    toggleSidebar,
   } = useWorkspace();
   const [workspacesOpen, setWorkspacesOpen] = useState(true);
 
+  if (sidebarCollapsed) {
+    return (
+      <aside className="flex h-full w-[48px] shrink-0 flex-col items-center border-r border-[var(--border)] bg-[var(--surface-sidebar)] py-3 text-[11px] select-none transition-all duration-200">
+        {/* Top Expand Button */}
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          title="Expand sidebar (⌘B)"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)] transition-colors"
+        >
+          <PanelLeftOpen className="size-4" />
+        </button>
+
+        <div className="my-2 h-[1px] w-6 bg-[var(--border)]/60" />
+
+        {/* Quick Actions */}
+        <div className="flex flex-col items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setMode("hub")}
+            title="New Workspace"
+            className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--surface-secondary)] border border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--surface-tertiary)] transition-colors"
+          >
+            <Plus className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsCloneOpen(true)}
+            title="Clone from GitHub"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)] transition-colors"
+          >
+            <Github className="size-3.5" />
+          </button>
+        </div>
+
+        <div className="my-2 h-[1px] w-6 bg-[var(--border)]/60" />
+
+        {/* Navigation Icons */}
+        <div className="flex flex-col items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setIsSearchOpen(true)}
+            title="Search (⌘K)"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)] transition-colors"
+          >
+            <Search className="size-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("deck")}
+            title="Workspaces"
+            className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+              mode === "deck"
+                ? "bg-[var(--wash)] text-[var(--foreground)]"
+                : "text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)]"
+            }`}
+          >
+            <Layers className={`size-4 ${mode === "deck" ? "text-[var(--accent-claude)]" : ""}`} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsIntegrationsOpen(true)}
+            title="Integrations & Keys"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--accent-claude)] hover:bg-[var(--wash)] transition-colors"
+          >
+            <Key className="size-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("pull-requests")}
+            title="Pull Requests"
+            className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+              mode === "pull-requests"
+                ? "bg-[var(--wash)] text-[var(--foreground)]"
+                : "text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)]"
+            }`}
+          >
+            <GitPullRequest className={`size-4 ${mode === "pull-requests" ? "text-[var(--accent-claude)]" : ""}`} />
+          </button>
+        </div>
+
+        {/* Bottom Profile / Settings */}
+        <div className="mt-auto flex flex-col items-center gap-2 pt-2 border-t border-[var(--border)]/60">
+          <div
+            title={project?.name || "Workspace"}
+            className="flex size-6 items-center justify-center rounded bg-[var(--surface-tertiary)] border border-[var(--border)] font-mono text-[9px] font-bold text-[var(--foreground)]"
+          >
+            {(project?.name || "WS").slice(0, 2).toUpperCase()}
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsIntegrationsOpen(true)}
+            title="Settings"
+            className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors p-1"
+          >
+            <Settings className="size-3.5" />
+          </button>
+        </div>
+      </aside>
+    );
+  }
+
   return (
-    <aside className="flex h-full w-[232px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface-sidebar)] text-[11px] select-none">
+    <aside className="flex h-full w-[232px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface-sidebar)] text-[11px] select-none transition-all duration-200">
       {/* Top Sidebar Header & Navigation Controls */}
       <div className="flex h-11 items-center justify-between px-3 border-b border-[var(--border)]/40">
         <div className="flex items-center gap-2">
@@ -54,11 +160,11 @@ export function SupersetSidebar() {
           </button>
           <button
             type="button"
-            onClick={() => setMode("hub")}
-            title="Prompt Hub"
+            onClick={toggleSidebar}
+            title="Collapse sidebar (⌘B)"
             className="p-1 hover:text-[var(--foreground)] transition-colors rounded"
           >
-            <SlidersHorizontal className="size-3" />
+            <PanelLeftClose className="size-3.5" />
           </button>
         </div>
       </div>
@@ -181,7 +287,6 @@ export function SupersetSidebar() {
           </div>
         )}
       </div>
-
 
       {/* Bottom Profile Footer */}
       <div className="flex h-12 items-center justify-between border-t border-[var(--border)] px-3 bg-[var(--surface-sidebar)]">

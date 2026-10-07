@@ -42,7 +42,11 @@ interface WorkspaceContextType {
   setIsSearchOpen: (open: boolean) => void;
   isCloneOpen: boolean;
   setIsCloneOpen: (open: boolean) => void;
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: (collapsed: boolean) => void;
+  toggleSidebar: () => void;
   isLoading: boolean;
+
   // Actions
   refreshProjectData: () => Promise<void>;
   toggleSleepWake: () => Promise<void>;
@@ -71,9 +75,27 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [isIntegrationsOpen, setIsIntegrationsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCloneOpen, setIsCloneOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [pendingCommand, setPendingCommand] = useState<string | null>(null);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed((prev) => !prev);
+  }, []);
+
+  // Keyboard shortcut ⌘B / Ctrl+B to toggle sidebar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [toggleSidebar]);
+
 
   const [projectId, setProjectId] = useState<string | null>(null);
   const [project, setProject] = useState<ProjectData | null>(null);
@@ -346,7 +368,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setIsSearchOpen,
         isCloneOpen,
         setIsCloneOpen,
+        sidebarCollapsed,
+        setSidebarCollapsed,
+        toggleSidebar,
         isLoading,
+
         refreshProjectData,
         toggleSleepWake,
         switchLane,
