@@ -17,17 +17,17 @@ import { useWorkspace } from "@/context/WorkspaceContext";
 
 export function SupersetSidebar() {
   const {
-    lanes,
-    activeLaneId,
-    switchLane,
+    projects,
+    project,
+    projectId,
+    switchProject,
     mode,
     setMode,
     setIsIntegrationsOpen,
     setIsSearchOpen,
     setIsCloneOpen,
-    project,
   } = useWorkspace();
-  const [sessionsOpen, setSessionsOpen] = useState(true);
+  const [workspacesOpen, setWorkspacesOpen] = useState(true);
 
   return (
     <aside className="flex h-full w-[232px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface-sidebar)] text-[11px] select-none">
@@ -131,33 +131,33 @@ export function SupersetSidebar() {
         </button>
       </div>
 
-      {/* SESSIONS / Worktrees Section */}
+      {/* WORKSPACES / Projects Section */}
       <div className="mt-3 flex-1 overflow-y-auto px-1.5 scrollbar-thin">
         <div
-          onClick={() => setSessionsOpen(!sessionsOpen)}
+          onClick={() => setWorkspacesOpen(!workspacesOpen)}
           className="flex h-6 cursor-pointer items-center gap-1.5 px-2 text-[10px] font-mono uppercase tracking-[0.08em] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
         >
-          {sessionsOpen ? <ChevronDown className="size-2.5" /> : <ChevronRight className="size-2.5" />}
-          <span>Worktrees</span>
+          {workspacesOpen ? <ChevronDown className="size-2.5" /> : <ChevronRight className="size-2.5" />}
+          <span>Workspaces</span>
           <span className="ml-auto font-mono text-[9px] text-[var(--subtle-foreground)]">
-            {lanes.length}
+            {projects.length}
           </span>
         </div>
 
-        {sessionsOpen && (
+        {workspacesOpen && (
           <div className="mt-1 space-y-0.5">
-            {lanes.length === 0 ? (
+            {projects.length === 0 ? (
               <div className="px-2 py-3 text-[10px] text-[var(--muted-foreground)] text-center">
-                No active worktrees
+                No active workspaces
               </div>
             ) : (
-              lanes.map((lane) => {
-                const isActive = lane.id === activeLaneId;
+              projects.map((p) => {
+                const isActive = p.id === projectId;
                 return (
                   <div
-                    key={lane.id}
+                    key={p.id}
                     onClick={() => {
-                      switchLane(lane.id);
+                      switchProject(p.id);
                       setMode("deck");
                     }}
                     className={`group relative flex h-7 cursor-pointer items-center gap-2 rounded px-2 text-[11px] transition-all ${
@@ -166,10 +166,13 @@ export function SupersetSidebar() {
                         : "text-[var(--muted-foreground)] hover:bg-[var(--wash-subtle)] hover:text-[var(--foreground)]"
                     }`}
                   >
-                    <span className="size-1.5 rounded-full shrink-0 bg-[var(--status-awake)]" />
-                    <span className="truncate">{lane.name}</span>
-                    <span className="ml-auto font-mono text-[9px] text-[var(--subtle-foreground)] tabular-nums">
-                      {lane.branch}
+                    <span
+                      className={`size-1.5 rounded-full shrink-0 ${
+                        isActive ? "bg-emerald-400" : "bg-[var(--muted-foreground)]"
+                      }`}
+                    />
+                    <span className="truncate" title={p.repo_full_name || p.name}>
+                      {p.name || p.repo_full_name}
                     </span>
                   </div>
                 );
@@ -178,6 +181,7 @@ export function SupersetSidebar() {
           </div>
         )}
       </div>
+
 
       {/* Bottom Profile Footer */}
       <div className="flex h-12 items-center justify-between border-t border-[var(--border)] px-3 bg-[var(--surface-sidebar)]">
