@@ -106,8 +106,8 @@ export function CenterCanvas() {
             disabled={hostState === "asleep"}
             className={`flex items-center gap-1.5 rounded-[var(--radius-sm)] border px-3 py-1 font-sans text-xs font-medium transition-all ${
               activeLane.isDevRunning
-                ? "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
-                : "bg-[var(--foreground)] border-transparent text-[var(--background)] hover:bg-white"
+                ? "bg-[var(--accent-danger-wash)] border-[var(--accent-danger-border)] text-[var(--accent-danger)] hover:bg-[var(--accent-danger-border)]"
+                : "bg-[var(--foreground)] border-transparent text-[var(--background)] hover:bg-[var(--primary-hover)]"
             } disabled:opacity-30 disabled:cursor-not-allowed`}
           >
             {activeLane.isDevRunning ? (

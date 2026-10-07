@@ -7,17 +7,22 @@ import {
   OctagonX,
   TriangleAlert,
 } from "lucide-react"
-import { useTheme } from "next-themes"
 import { Toaster as Sonner } from "sonner"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
+/**
+ * Toasts follow the OS colour scheme.
+ *
+ * There is no `next-themes` provider in this app on purpose: theme is driven
+ * entirely by `prefers-color-scheme` in CSS, so there is no React state to
+ * read. Sonner's own `"system"` theme resolves the same media query, which
+ * keeps toasts in step with the token palette.
+ */
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
-
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme="system"
       className="toaster group"
       icons={{
         success: <CircleCheck className="h-4 w-4" />,
@@ -26,6 +31,13 @@ const Toaster = ({ ...props }: ToasterProps) => {
         error: <OctagonX className="h-4 w-4" />,
         loading: <LoaderCircle className="h-4 w-4 animate-spin" />,
       }}
+      style={
+        {
+          "--normal-bg": "var(--surface-primary)",
+          "--normal-text": "var(--foreground)",
+          "--normal-border": "var(--border)",
+        } as React.CSSProperties
+      }
       toastOptions={{
         classNames: {
           toast:

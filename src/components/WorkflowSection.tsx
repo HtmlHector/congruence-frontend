@@ -75,7 +75,7 @@ export function WorkflowSection() {
                 <span className="font-mono text-xs text-[var(--accent-claude)] block mb-3">
                   {step.num}
                 </span>
-                <h4 className="text-sm font-medium text-[var(--foreground)] mb-2 group-hover:text-white transition-colors">
+                <h4 className="text-sm font-medium text-[var(--foreground)] mb-2 group-hover:text-[var(--foreground-strong)] transition-colors">
                   {step.title}
                 </h4>
                 <p className="text-xs text-[var(--muted-foreground)] leading-relaxed">

@@ -54,7 +54,7 @@ export function Header() {
           </a>
           <Link
             href="/workspace"
-            className="rounded-full bg-[var(--foreground)] px-3.5 py-1.5 font-sans text-xs font-medium text-[var(--background)] hover:bg-white hover:shadow-sm transition-all"
+            className="rounded-full bg-[var(--foreground)] px-3.5 py-1.5 font-sans text-xs font-medium text-[var(--background)] hover:bg-[var(--primary-hover)] hover:shadow-sm transition-all"
           >
             Explore the demo
           </Link>

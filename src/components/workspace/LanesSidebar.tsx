@@ -56,7 +56,7 @@ export function LanesSidebar() {
                 className={`group flex cursor-pointer items-center justify-between rounded-[var(--radius-sm)] border p-2 transition-all ${
                   isActive
                     ? "border-[var(--border-strong)] bg-[var(--surface-primary)] shadow-xs"
-                    : "border-transparent bg-transparent hover:bg-white/[0.03] text-[var(--muted-foreground)]"
+                    : "border-transparent bg-transparent hover:bg-[var(--wash-subtle)] text-[var(--muted-foreground)]"
                 }`}
               >
                 <div className="flex items-center gap-2 min-w-0">

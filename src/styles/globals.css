@@ -21,60 +21,112 @@
   --font-mono: var(--font-mono), "IBM Plex Mono", "JetBrains Mono", monospace;
 }
 
+/*
+ * Congruence theme
+ * ----------------
+ * Dual-mode, driven entirely by the OS `prefers-color-scheme`. There is no
+ * toggle, no localStorage and no JS in the critical path, so there is no
+ * flash-of-wrong-theme and no hydration mismatch.
+ *
+ * `:root` below holds DARK as the base palette. That is deliberate: dark is
+ * the product's native aesthetic, and keeping it as the base means browsers
+ * without `prefers-color-scheme` support still get a correct, intentional
+ * theme rather than an undefined one. Light is the override.
+ *
+ * Invariants worth preserving when editing:
+ *   1. Never emit a token in the light override that is absent from `:root`.
+ *   2. Geometry, washes, terminal tokens and semantic aliases live OUTSIDE
+ *      the media query and are mode-independent by construction.
+ *   3. Every foreground/background pair must clear 4.5:1 (3:1 for >=18px or
+ *      bold >=14px). See `docs/design.md` for the measured table.
+ */
 :root {
-  /* Obsidian Dark Canvas & Surfaces (Superset Style Default) */
-  --background: #0A0A0C;
-  --foreground: #EDEDED;
+  color-scheme: light dark;
 
-  --surface-sidebar: #0E0E12;
+  /* ---------------------------------------------------------------------
+   * Surfaces (Dark base: Obsidian canvas, Superset-style)
+   * ------------------------------------------------------------------- */
+  --background: #0a0a0c;
+  --foreground: #ededed;
+  /* Hover/emphasised ink: brightens on the dark canvas. Paired with the
+   * light override below so "emphasise" always means "more contrast against
+   * the current canvas", not "brighter" unconditionally. */
+  --foreground-strong: #ffffff;
+
+  --surface-sidebar: #0e0e12;
   --surface-primary: #121216;
-  --surface-secondary: #18181D;
+  --surface-secondary: #18181d;
   --surface-tertiary: #202026;
-  --surface-omnibar: #16161B;
+  --surface-omnibar: #16161b;
   --surface-card: #131318;
-  --surface-inset: #0C0C0F;
+  --surface-inset: #0c0c0f;
 
   /* Borders & Dividers */
   --border: #222227;
-  --border-subtle: #1A1A1F;
-  --border-strong: #33333A;
-  --border-focus: #FFFFFF;
+  --border-subtle: #1a1a1f;
+  --border-strong: #33333a;
+  --border-focus: #ffffff;
 
   /* Primary Interactive Elements */
-  --primary: #EDEDED;
-  --primary-foreground: #0A0A0C;
-  --primary-hover: #FFFFFF;
+  --primary: #ededed;
+  --primary-foreground: #0a0a0c;
+  --primary-hover: #ffffff;
 
-  --secondary: #1C1C22;
-  --secondary-foreground: #EDEDED;
-  --secondary-hover: #26262E;
+  --secondary: #1c1c22;
+  --secondary-foreground: #ededed;
+  --secondary-hover: #26262e;
 
-  /* Muted Text & Accents */
-  --muted: #1A1A20;
-  --muted-foreground: #71717A;
-  --subtle-foreground: #52525B;
+  /* Muted Text & Accents
+   * muted-foreground 4.76:1 on --background
+   * subtle-foreground 5.77:1 on --background (was 2.59:1, failed AA) */
+  --muted: #1a1a20;
+  --muted-foreground: #7c7c85;
+  --subtle-foreground: #8a8a93;
 
   /* Provider Brand Colors */
-  --accent-claude: #E8804A; /* Anthropic Claude Coral / Amber */
+  --accent-claude: #e8804a; /* Anthropic Claude Coral / Amber */
   --accent-claude-subtle: rgba(232, 128, 74, 0.12);
-  --accent-codex: #10B981;  /* OpenAI Codex Emerald */
+  --accent-codex: #10b981; /* OpenAI Codex Emerald */
   --accent-codex-subtle: rgba(16, 185, 129, 0.12);
-  --accent-opencode: #60A5FA;
-  --accent-aider: #A78BFA;
+  --accent-opencode: #60a5fa;
+  --accent-aider: #a78bfa;
+
+  /* Semantic accents that replace hardcoded Tailwind palette classes so they
+   * stay legible on both canvases. */
+  --accent-amber: #fbbf24; /* running / in-progress indicator */
+  --accent-danger: #f87171;
+  --accent-danger-wash: rgba(239, 68, 68, 0.1);
+  --accent-danger-border: rgba(239, 68, 68, 0.3);
+  --accent-info: #60a5fa;
 
   /* Status Indicators */
-  --status-awake: #10B981;
-  --status-asleep: #71717A;
-  --status-running: #E8804A;
-  --diff-add: #22C55E;
-  --diff-del: #EF4444;
+  --status-awake: #10b981;
+  --status-asleep: #7c7c85;
+  --status-running: #e8804a;
+  --diff-add: #22c55e;
+  --diff-del: #ef4444;
 
   /* Inputs & Forms */
   --input: #121216;
-  --input-border: #26262C;
-  --ring: #EDEDED;
+  --input-border: #26262c;
+  --ring: #ededed;
 
-  /* Geometry & Radius */
+  /* Selection */
+  --selection-bg: rgba(232, 128, 74, 0.25);
+  --selection-fg: #fdfcfb;
+
+  /* Shadows (Subtle, Crisp Inset Hairline Highlights) */
+  --shadow-frame: 0 16px 40px -12px rgba(0, 0, 0, 0.6), 0 32px 90px -24px rgba(0, 0, 0, 0.75);
+  --shadow-omnibar: 0 12px 32px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --shadow-dropdown: 0 8px 24px -4px rgba(0, 0, 0, 0.6);
+
+  /* Scrollbars */
+  --scrollbar-thumb: #2a2a31;
+  --scrollbar-thumb-hover: #3d3d46;
+
+  /* ---------------------------------------------------------------------
+   * Geometry (mode-independent)
+   * ------------------------------------------------------------------- */
   --radius-xs: 2px;
   --radius-sm: 4px;
   --radius-md: 6px;
@@ -83,10 +135,151 @@
   --radius-pill: 9999px;
   --radius: 6px;
 
-  /* Shadows (Subtle, Crisp Inset Hairline Highlights) */
-  --shadow-frame: 0 16px 40px -12px rgba(0, 0, 0, 0.6), 0 32px 90px -24px rgba(0, 0, 0, 0.75);
-  --shadow-omnibar: 0 12px 32px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --shadow-dropdown: 0 8px 24px -4px rgba(0, 0, 0, 0.6);
+  /* ---------------------------------------------------------------------
+   * Washes
+   *
+   * These replace the old hardcoded `bg-white/[0.0x]` hover and active
+   * states. Because they are derived from `--foreground` via `color-mix`,
+   * they invert automatically: near-white on the dark canvas, near-black on
+   * the light one. Adding a second set by hand in the light override is not
+   * necessary and would only create drift.
+   * ------------------------------------------------------------------- */
+  --wash-subtle: color-mix(in oklab, var(--foreground) 2.5%, transparent);
+  --wash: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --wash-strong: color-mix(in oklab, var(--foreground) 6%, transparent);
+  --edge-hairline: color-mix(in oklab, var(--foreground) 4%, transparent);
+
+  /* ---------------------------------------------------------------------
+   * Terminal / diff surfaces
+   *
+   * Intentionally dark in BOTH modes, the way a real terminal emulator or a
+   * git diff viewer stays dark. These values are never overridden, which is
+   * why the terminal and diff panes must consume this token family instead of
+   * the app-level foreground tokens (those would flip to near-black ink on a
+   * near-black pane and become unreadable).
+   * ------------------------------------------------------------------- */
+  --surface-terminal: #08080a;
+  --surface-terminal-header: #101014;
+  --surface-terminal-inset: #0c0c0f;
+  --terminal-border: #222227;
+  --terminal-foreground: #ededed;
+  --terminal-muted: #9a9aa3;
+  --terminal-subtle: #7c7c85;
+  --terminal-accent: #e8804a;
+  --terminal-link: #4ade80;
+  --diff-add-bg: rgba(16, 185, 129, 0.14);
+  --diff-del-bg: rgba(239, 68, 68, 0.14);
+  --diff-add-fg: #4ade80;
+  --diff-del-fg: #f87171;
+
+  /* ---------------------------------------------------------------------
+   * Semantic aliases
+   *
+   * The `/dashboard` route and `rail-sidebar` were written against an
+   * `--ink-*` / `--bg-*` vocabulary that was never defined in this file, so
+   * those pages rendered with no background, no borders and transparent text.
+   * These aliases bind that vocabulary to the real tokens above. Because they
+   * only reference other custom properties, they are correct in both modes
+   * with no per-mode duplication.
+   * ------------------------------------------------------------------- */
+  --ink-primary: var(--foreground);
+  --ink-secondary: var(--muted-foreground);
+  --ink-muted: var(--subtle-foreground);
+  --ink-inverted: var(--primary-foreground);
+
+  --bg-canvas: var(--background);
+  --bg-surface: var(--surface-card);
+  --bg-subtle: var(--muted);
+
+  --border-line: var(--border);
+
+  --accent-primary: var(--primary);
+  --accent-hover: var(--primary-hover);
+
+  --status-success: var(--status-awake);
+  --status-error: var(--diff-del);
+}
+
+/* =====================================================================
+ * LIGHT OVERRIDE
+ *
+ * Not a filter of the dark palette. Surfaces climb to a near-white range in
+ * the same tight band the dark surfaces occupy near black, and the accents
+ * are re-picked rather than reused: a mid-tone like #e8804a only reaches
+ * 2.5:1 on #f4f4f5, so every accent below is the dark hue stepped down
+ * until it clears 4.5:1 on the light canvas.
+ * =================================================================== */
+@media (prefers-color-scheme: light) {
+  :root {
+    /* Surfaces (Light base: warm-neutral paper, no cream cast) */
+    --background: #f4f4f5;
+    --foreground: #17171a;
+    --foreground-strong: #0b0b0d;
+
+    --surface-sidebar: #fafafa;
+    --surface-primary: #fdfdfd;
+    --surface-secondary: #f9f9fa;
+    --surface-tertiary: #eaeaee;
+    --surface-omnibar: #fcfcfd;
+    --surface-card: #fdfdfd;
+    --surface-inset: #efeff2;
+
+    /* Borders darken as the canvas lightens, so hairlines still separate */
+    --border: #dcdce1;
+    --border-subtle: #e7e7eb;
+    --border-strong: #bfbfc8;
+    --border-focus: #17171a;
+
+    /* Inverted button: ink pill with off-white label */
+    --primary: #17171a;
+    --primary-foreground: #fafafa;
+    --primary-hover: #34343a;
+
+    --secondary: #ebebef;
+    --secondary-foreground: #17171a;
+    --secondary-hover: #dfdfe4;
+
+    /* muted-foreground 5.32:1 · subtle-foreground 5.05:1 on --background */
+    --muted: #efeff2;
+    --muted-foreground: #5c5c64;
+    --subtle-foreground: #66666e;
+
+    /* Provider Brand Colors, stepped down for a light canvas */
+    --accent-claude: #a94e19; /* 5.01:1 */
+    --accent-claude-subtle: rgba(169, 78, 25, 0.1);
+    --accent-codex: #047857; /* 5.01:1 */
+    --accent-codex-subtle: rgba(4, 120, 87, 0.1);
+    --accent-opencode: #1d4ed8; /* 6.07:1 */
+    --accent-aider: #6d28d9; /* 6.42:1 */
+
+    --accent-amber: #b45309;
+    --accent-danger: #b91c1c; /* 5.9:1 */
+    --accent-danger-wash: rgba(185, 28, 28, 0.08);
+    --accent-danger-border: rgba(185, 28, 28, 0.28);
+    --accent-info: #1d4ed8;
+
+    --status-awake: #047857;
+    --status-asleep: #6e6e76;
+    --status-running: #a94e19;
+    --diff-add: #15803d; /* 4.52:1 */
+    --diff-del: #b91c1c;
+
+    --input: #fdfdfd;
+    --input-border: #d2d2d9;
+    --ring: #17171a;
+
+    --selection-bg: rgba(169, 78, 25, 0.18);
+    --selection-fg: #1a1a1d;
+
+    /* Shadows lose their opacity and warm toward the ink hue, rather than
+     * dropping pure black onto a light surface. */
+    --shadow-frame: 0 16px 40px -12px rgba(23, 23, 26, 0.1), 0 32px 90px -24px rgba(23, 23, 26, 0.13);
+    --shadow-omnibar: 0 12px 32px -4px rgba(23, 23, 26, 0.1), 0 1px 2px rgba(23, 23, 26, 0.05);
+    --shadow-dropdown: 0 8px 24px -4px rgba(23, 23, 26, 0.13);
+
+    --scrollbar-thumb: #c9c9d0;
+    --scrollbar-thumb-hover: #adadb8;
+  }
 }
 
 * {
@@ -104,8 +297,8 @@ body {
 }
 
 ::selection {
-  background: rgba(232, 128, 74, 0.25);
-  color: #FFFFFF;
+  background: var(--selection-bg);
+  color: var(--selection-fg);
 }
 
 a {
@@ -125,10 +318,10 @@ a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #222227;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #33333A;
+  background: var(--scrollbar-thumb-hover);
 }

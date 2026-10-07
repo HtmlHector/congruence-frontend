@@ -62,7 +62,7 @@ export function ProductInfoModal() {
           </div>
 
           <div className="flex items-start gap-3 rounded border border-[var(--border)] bg-[var(--surface-secondary)]/40 p-3">
-            <ShieldCheck className="size-4 text-blue-400 shrink-0 mt-0.5" />
+            <ShieldCheck className="size-4 text-[var(--accent-info)] shrink-0 mt-0.5" />
             <div>
               <div className="font-medium text-[11px] text-[var(--foreground)]">
                 Watch First. Grant When Needed.
@@ -74,7 +74,7 @@ export function ProductInfoModal() {
           </div>
 
           <div className="flex items-start gap-3 rounded border border-[var(--border)] bg-[var(--surface-secondary)]/40 p-3">
-            <DollarSign className="size-4 text-amber-400 shrink-0 mt-0.5" />
+            <DollarSign className="size-4 text-[var(--accent-amber)] shrink-0 mt-0.5" />
             <div>
               <div className="font-medium text-[11px] text-[var(--foreground)]">
                 Transparent Pricing
@@ -91,7 +91,7 @@ export function ProductInfoModal() {
           <button
             type="button"
             onClick={() => setIsProductModalOpen(false)}
-            className="rounded-[var(--radius-sm)] bg-[var(--foreground)] px-4 py-1.5 font-sans text-xs font-medium text-[var(--background)] hover:bg-white transition-colors"
+            className="rounded-[var(--radius-sm)] bg-[var(--foreground)] px-4 py-1.5 font-sans text-xs font-medium text-[var(--background)] hover:bg-[var(--primary-hover)] transition-colors"
           >
             Got it
           </button>

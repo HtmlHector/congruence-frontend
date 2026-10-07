@@ -64,18 +64,18 @@ export function TerminalPane() {
   const allLogs = [...activeLane.terminalLogs, ...extraLogs];
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-[var(--radius-sm)] border border-[var(--border)] bg-[#08080A] font-mono text-xs text-[var(--foreground)]">
+    <div className="flex h-full flex-col overflow-hidden rounded-[var(--radius-sm)] border border-[var(--terminal-border)] bg-[var(--surface-terminal)] font-mono text-xs text-[var(--terminal-foreground)]">
       {/* Terminal Title Bar */}
-      <div className="flex h-8 items-center justify-between border-b border-[var(--border)] bg-[var(--surface-secondary)]/40 px-3 text-[11px] text-[var(--muted-foreground)]">
+      <div className="flex h-8 items-center justify-between border-b border-[var(--terminal-border)] bg-[var(--surface-terminal-header)] px-3 text-[11px] text-[var(--terminal-muted)]">
         <div className="flex items-center gap-2">
-          <TerminalIcon className="size-3 text-[var(--accent-claude)]" />
+          <TerminalIcon className="size-3 text-[var(--terminal-accent)]" />
           <span>PTY 1 · {activeLane.branch}</span>
         </div>
         <button
           type="button"
           onClick={() => setExtraLogs([])}
           title="Clear screen"
-          className="hover:text-[var(--foreground)] transition-colors p-1"
+          className="hover:text-[var(--terminal-foreground)] transition-colors p-1"
         >
           <Trash2 className="size-3" />
         </button>
@@ -83,7 +83,7 @@ export function TerminalPane() {
 
       {/* Terminal Output Area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-1 scrollbar-thin select-text">
-        <div className="text-[11px] text-[var(--subtle-foreground)] mb-2">
+        <div className="text-[11px] text-[var(--terminal-subtle)] mb-2">
           Fly Sprite microVM session attached · persistent NVMe mounted at /repo
         </div>
         {allLogs.map((log, i) => {
@@ -95,10 +95,10 @@ export function TerminalPane() {
               key={i}
               className={`leading-relaxed ${
                 isPrompt
-                  ? "text-[var(--foreground)] font-medium pt-1"
+                  ? "text-[var(--terminal-foreground)] font-medium pt-1"
                   : isUrl
-                  ? "text-[var(--status-awake)] font-medium"
-                  : "text-[var(--muted-foreground)]"
+                  ? "text-[var(--terminal-link)] font-medium"
+                  : "text-[var(--terminal-muted)]"
               }`}
             >
               {log}
@@ -110,9 +110,9 @@ export function TerminalPane() {
       {/* Interactive Command Input */}
       <form
         onSubmit={handleCommand}
-        className="flex items-center gap-2 border-t border-[var(--border)] bg-[var(--surface-inset)] px-3 py-2"
+        className="flex items-center gap-2 border-t border-[var(--terminal-border)] bg-[var(--surface-terminal-inset)] px-3 py-2"
       >
-        <span className="text-[var(--accent-claude)] font-bold">›</span>
+        <span className="text-[var(--terminal-accent)] font-bold">›</span>
         <input
           type="text"
           value={cmdInput}
@@ -123,12 +123,12 @@ export function TerminalPane() {
               : `Observation mode · ${activeLane.currentWriter} holds write lease`
           }
           disabled={activeLane.currentWriter !== "You" || hostState === "asleep"}
-          className="flex-1 bg-transparent font-mono text-xs text-[var(--foreground)] placeholder:text-[var(--subtle-foreground)] focus:outline-none disabled:opacity-50"
+          className="flex-1 bg-transparent font-mono text-xs text-[var(--terminal-foreground)] placeholder:text-[var(--terminal-subtle)] focus:outline-none disabled:opacity-50"
         />
         <button
           type="submit"
           disabled={!cmdInput.trim() || activeLane.currentWriter !== "You"}
-          className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-20 transition-colors"
+          className="text-[var(--terminal-muted)] hover:text-[var(--terminal-foreground)] disabled:opacity-20 transition-colors"
         >
           <CornerDownLeft className="size-3.5" />
         </button>

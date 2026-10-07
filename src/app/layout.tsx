@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
-import { dark } from "@clerk/themes";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import "@/styles/globals.css";
 
 const inter = Inter({
@@ -37,26 +36,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html
-        lang="en"
-        className={`dark ${inter.variable} ${jetbrainsMono.variable}`}
-        style={{ colorScheme: "dark" }}
-      >
-        <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)] font-sans antialiased selection:bg-[var(--accent-claude-subtle)] selection:text-white">
+    /*
+     * Theme is driven by `prefers-color-scheme` in globals.css, so `<html>`
+     * must not carry a hard-coded `dark` class or `color-scheme: dark`.
+     * Both were here and both pinned every surface to the obsidian palette.
+     *
+     * Clerk is wired to the app tokens rather than a fixed `@clerk/themes`
+     * import, so Clerk chrome follows the same OS preference. No Clerk
+     * component is rendered today, but this keeps that from becoming a
+     * second dark-only island later.
+     */
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: "var(--primary)",
+          colorBackground: "var(--surface-card)",
+          colorNeutral: "var(--muted-foreground)",
+        },
+      }}
+    >
+      <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+        <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)] font-sans antialiased selection:bg-[var(--accent-claude-subtle)] selection:text-[var(--selection-fg)]">
           {children}
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              style: {
-                background: "var(--surface-primary)",
-                color: "var(--foreground)",
-                border: "1px solid var(--border)",
-                fontFamily: "var(--font-sans)",
-                borderRadius: "var(--radius-md)",
-              },
-            }}
-          />
+          <Toaster position="bottom-right" />
         </body>
       </html>
     </ClerkProvider>

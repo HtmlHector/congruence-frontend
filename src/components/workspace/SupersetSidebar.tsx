@@ -71,7 +71,7 @@ export function SupersetSidebar() {
         <button
           type="button"
           onClick={() => setMode("hub")}
-          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-white/[0.04] hover:text-[var(--foreground)] transition-colors"
+          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)] transition-colors"
         >
           <Search className="size-3.5" />
           <span>Search</span>
@@ -81,7 +81,7 @@ export function SupersetSidebar() {
         <button
           type="button"
           onClick={() => setMode("deck")}
-          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--foreground)] bg-white/[0.05] transition-colors"
+          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--foreground)] bg-[var(--wash)] transition-colors"
         >
           <Layers className="size-3.5 text-[var(--accent-claude)]" />
           <span>Workspaces</span>
@@ -89,7 +89,7 @@ export function SupersetSidebar() {
 
         <button
           type="button"
-          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-white/[0.04] hover:text-[var(--foreground)] transition-colors"
+          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)] transition-colors"
         >
           <Zap className="size-3.5" />
           <span>Automations</span>
@@ -97,7 +97,7 @@ export function SupersetSidebar() {
 
         <button
           type="button"
-          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-white/[0.04] hover:text-[var(--foreground)] transition-colors"
+          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)] transition-colors"
         >
           <CheckSquare className="size-3.5" />
           <span>Tasks</span>
@@ -105,7 +105,7 @@ export function SupersetSidebar() {
 
         <button
           type="button"
-          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-white/[0.04] hover:text-[var(--foreground)] transition-colors"
+          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)] transition-colors"
         >
           <GitPullRequest className="size-3.5" />
           <span>Pull requests</span>
@@ -113,7 +113,7 @@ export function SupersetSidebar() {
 
         <button
           type="button"
-          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-white/[0.04] hover:text-[var(--foreground)] transition-colors"
+          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)] transition-colors"
         >
           <FileText className="size-3.5" />
           <span>Pages</span>
@@ -147,8 +147,8 @@ export function SupersetSidebar() {
                   }}
                   className={`group relative flex h-7 cursor-pointer items-center gap-2 rounded px-2 text-[11px] transition-all ${
                     isActive
-                      ? "bg-white/[0.06] text-[var(--foreground)] font-medium"
-                      : "text-[var(--muted-foreground)] hover:bg-white/[0.025] hover:text-[var(--foreground)]"
+                      ? "bg-[var(--wash-strong)] text-[var(--foreground)] font-medium"
+                      : "text-[var(--muted-foreground)] hover:bg-[var(--wash-subtle)] hover:text-[var(--foreground)]"
                   }`}
                 >
                   <span
@@ -172,7 +172,7 @@ export function SupersetSidebar() {
               {staticSessions.map((s) => (
                 <div
                   key={s.id}
-                  className="flex h-6.5 cursor-pointer items-center gap-2 rounded px-2 text-[11px] text-[var(--muted-foreground)] hover:bg-white/[0.02] hover:text-[var(--foreground)] transition-colors"
+                  className="flex h-6.5 cursor-pointer items-center gap-2 rounded px-2 text-[11px] text-[var(--muted-foreground)] hover:bg-[var(--wash-subtle)] hover:text-[var(--foreground)] transition-colors"
                 >
                   {s.state === "loading" && (
                     <Loader2 className="size-2.5 animate-spin text-[var(--accent-claude)] shrink-0" />
@@ -185,8 +185,8 @@ export function SupersetSidebar() {
                   )}
                   {s.state === "ping" && (
                     <span className="relative flex size-1.5 shrink-0">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-                      <span className="relative inline-flex size-1.5 rounded-full bg-amber-400" />
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--accent-amber)] opacity-75" />
+                      <span className="relative inline-flex size-1.5 rounded-full bg-[var(--accent-amber)]" />
                     </span>
                   )}
                   <span className="truncate min-w-0 flex-1">{s.title}</span>

@@ -99,7 +99,7 @@ export function ActorSidebar() {
           <button
             type="button"
             onClick={handleGrant}
-            className="flex h-7 w-full items-center justify-center rounded-[var(--radius-sm)] bg-[var(--foreground)] text-[var(--background)] font-medium text-[11px] hover:bg-white transition-all shadow-xs"
+            className="flex h-7 w-full items-center justify-center rounded-[var(--radius-sm)] bg-[var(--foreground)] text-[var(--background)] font-medium text-[11px] hover:bg-[var(--primary-hover)] transition-all shadow-xs"
           >
             Grant control
           </button>
@@ -107,7 +107,7 @@ export function ActorSidebar() {
           <button
             type="button"
             onClick={handleRevoke}
-            className="flex h-7 w-full items-center justify-center rounded-[var(--radius-sm)] border border-red-500/30 bg-red-500/10 text-red-400 font-medium text-[11px] hover:bg-red-500/20 transition-all"
+            className="flex h-7 w-full items-center justify-center rounded-[var(--radius-sm)] border border-[var(--accent-danger-border)] bg-[var(--accent-danger-wash)] text-[var(--accent-danger)] font-medium text-[11px] hover:bg-[var(--accent-danger-border)] transition-all"
           >
             Revoke control
           </button>

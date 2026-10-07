@@ -39,7 +39,7 @@ export function InteractiveWorkspace() {
       </div>
 
       {/* Main Outer Browser Window Frame */}
-      <div className="relative flex h-[680px] w-full overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--background)] shadow-[var(--shadow-frame)] ring-1 ring-white/[0.04]">
+      <div className="relative flex h-[680px] w-full overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--background)] shadow-[var(--shadow-frame)] ring-1 ring-[var(--edge-hairline)]">
         {/* Left Superset Sidebar */}
         <div className="hidden sm:flex">
           <SupersetSidebar />

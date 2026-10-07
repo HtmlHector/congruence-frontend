@@ -15,7 +15,7 @@ export function CtaBanner() {
         <div className="pt-4 flex items-center justify-center gap-4">
           <Link
             href="/workspace"
-            className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--foreground)] px-8 text-sm font-medium text-[var(--background)] hover:bg-white hover:shadow-lg transition-all"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--foreground)] px-8 text-sm font-medium text-[var(--background)] hover:bg-[var(--primary-hover)] hover:shadow-lg transition-all"
           >
             Explore the demo
           </Link>

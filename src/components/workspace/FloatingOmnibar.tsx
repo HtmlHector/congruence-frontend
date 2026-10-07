@@ -55,7 +55,7 @@ export function FloatingOmnibar() {
             {/* Attach context button */}
             <button
               type="button"
-              className="flex size-6 items-center justify-center rounded-[var(--radius-sm)] text-[var(--muted-foreground)] hover:bg-white/[0.06] hover:text-[var(--foreground)] transition-colors"
+              className="flex size-6 items-center justify-center rounded-[var(--radius-sm)] text-[var(--muted-foreground)] hover:bg-[var(--wash-strong)] hover:text-[var(--foreground)] transition-colors"
               title="Attach context or files"
             >
               <Plus className="size-3.5" />
@@ -92,7 +92,7 @@ export function FloatingOmnibar() {
                         setHarness(item);
                         setIsHarnessOpen(false);
                       }}
-                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-[var(--foreground)] hover:bg-white/[0.05]"
+                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-[var(--foreground)] hover:bg-[var(--wash)]"
                     >
                       <span className="text-[11px]">{item}</span>
                     </button>
@@ -137,7 +137,7 @@ export function FloatingOmnibar() {
               type="button"
               onClick={() => handleSubmit()}
               disabled={!promptText.trim()}
-              className="flex size-6 items-center justify-center rounded-full bg-[var(--foreground)] text-[var(--background)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white transition-all shadow-sm"
+              className="flex size-6 items-center justify-center rounded-full bg-[var(--foreground)] text-[var(--background)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--primary-hover)] transition-all shadow-sm"
               title="Dispatch task"
             >
               <ArrowUp className="size-3.5 stroke-[2.5]" />

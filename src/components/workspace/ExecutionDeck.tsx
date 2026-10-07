@@ -53,7 +53,7 @@ export function ExecutionDeck() {
                   ? "bg-[var(--status-awake)] shadow-[0_0_8px_rgba(16,185,129,0.5)]"
                   : hostState === "asleep"
                   ? "bg-[var(--status-asleep)]"
-                  : "bg-amber-400 animate-ping"
+                  : "bg-[var(--accent-amber)] animate-ping"
               }`}
             />
             <span className="text-[var(--muted-foreground)]">
@@ -78,7 +78,7 @@ export function ExecutionDeck() {
               </>
             ) : (
               <>
-                <Sun className="size-3 text-amber-400" />
+                <Sun className="size-3 text-[var(--accent-amber)]" />
                 <span>Wake workspace</span>
               </>
             )}
