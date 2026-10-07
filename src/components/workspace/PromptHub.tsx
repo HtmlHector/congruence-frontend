@@ -7,7 +7,7 @@ import { FloatingOmnibar } from "./FloatingOmnibar";
 import { StatusBar } from "./StatusBar";
 
 export function PromptHub() {
-  const { setMode, submitPrompt } = useWorkspace();
+  const { setMode, submitPrompt, project } = useWorkspace();
 
   const starterChips = [
     { text: "Set up this project for Congruence", harness: "Claude" },
@@ -21,7 +21,7 @@ export function PromptHub() {
       <div className="flex h-11 items-center justify-between px-6 border-b border-[var(--border)]/40 bg-[var(--surface-sidebar)]/50">
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs text-[var(--muted-foreground)]">
-            parabox / <strong className="text-[var(--foreground)] font-medium">sample-app</strong>
+            <strong className="text-[var(--foreground)] font-medium">{project?.repo_full_name || "parabox / sample-app"}</strong>
           </span>
         </div>
 

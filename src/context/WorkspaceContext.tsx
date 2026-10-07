@@ -44,8 +44,18 @@ export interface ActivityEvent {
 
 export type WorkspaceViewMode = "hub" | "deck" | "automations" | "tasks" | "pull-requests" | "pages";
 
+export interface ProjectData {
+  id: string;
+  name: string;
+  slug: string;
+  repo_full_name: string;
+}
+
 interface WorkspaceContextType {
   projectId: string | null;
+  project: ProjectData | null;
+  projects: ProjectData[];
+  switchProject: (projectId: string) => void;
   mode: WorkspaceViewMode;
   setMode: (mode: WorkspaceViewMode) => void;
   hostState: "awake" | "asleep" | "waking" | "sleeping";
@@ -203,35 +213,27 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   ]);
 
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [project, setProject] = useState<ProjectData | null>({
+    id: "proj_default",
+    name: "Sample App",
+    slug: "sample-app",
+    repo_full_name: "parabox/sample-app",
+  });
+  const [projects, setProjects] = useState<ProjectData[]>([
+    {
+      id: "proj_default",
+      name: "Sample App",
+      slug: "sample-app",
+      repo_full_name: "parabox/sample-app",
+    },
+  ]);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        let res = await fetch("http://localhost:8000/api/v1/projects");
-        let projs = await res.json();
-        let projId = null;
-        if (projs && projs.length > 0) {
-          projId = projs[0].id;
-        } else {
-          res = await fetch("http://localhost:8000/api/v1/projects", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: "Sample App",
-              slug: "sample-app",
-              repo_full_name: "parabox/sample-app",
-              default_branch: "main",
-              visibility: "private"
-            })
-          });
-          const newProj = await res.json();
-          projId = newProj.id;
-        }
-        setProjectId(projId);
-
-        const lanesRes = await fetch(`http://localhost:8000/api/v1/projects/${projId}/lanes`);
+  const loadProjectDetails = async (projId: string) => {
+    try {
+      setProjectId(projId);
+      const lanesRes = await fetch(`http://localhost:8000/api/v1/projects/${projId}/lanes`);
+      if (lanesRes.ok) {
         const lanesData = await lanesRes.json();
-        
         if (lanesData && lanesData.length > 0) {
           const mappedLanes: WorkLaneData[] = lanesData.map((l: any) => {
             const matchingInit = initialLanes.find((init) => init.name === l.name);
@@ -258,8 +260,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             return found ? found.id : mappedLanes[0].id;
           });
         }
+      }
 
-        const actorsRes = await fetch(`http://localhost:8000/api/v1/projects/${projId}/actors`);
+      const actorsRes = await fetch(`http://localhost:8000/api/v1/projects/${projId}/actors`);
+      if (actorsRes.ok) {
         const actorsData = await actorsRes.json();
         if (actorsData && actorsData.length > 0) {
           setActors(actorsData.map((a: any) => ({
@@ -271,6 +275,33 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             badgeBg: "bg-[var(--surface-tertiary)]",
             badgeFg: "text-[var(--foreground)]"
           })));
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const switchProject = (targetProjId: string) => {
+    const target = projects.find((p) => p.id === targetProjId);
+    if (target) {
+      setProject(target);
+      loadProjectDetails(target.id);
+      logActivity(`Switched to project ${target.name} (${target.repo_full_name})`);
+    }
+  };
+
+  useEffect(() => {
+    async function load() {
+      try {
+        let res = await fetch("http://localhost:8000/api/v1/projects");
+        if (res.ok) {
+          let projs = await res.json();
+          if (projs && projs.length > 0) {
+            setProjects(projs);
+            setProject(projs[0]);
+            loadProjectDetails(projs[0].id);
+          }
         }
       } catch (err) {
         console.error(err);
@@ -489,6 +520,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     <WorkspaceContext.Provider
       value={{
         projectId,
+        project,
+        projects,
+        switchProject,
         mode,
         setMode,
         hostState,

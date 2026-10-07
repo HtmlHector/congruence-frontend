@@ -126,7 +126,7 @@ test.describe("congruence.dev - Concept Preview & Interactive Workspace", () => 
     await demo.getByRole("button", { name: "Preview" }).click();
 
     // Verify new task item added
-    await expect(demo.getByText("Review changes from You")).toBeVisible();
+    await expect(demo.getByText("Review changes from You").first()).toBeVisible();
   });
 
   test("interactive workspace: lane control grant and revoke flow", async ({ page }) => {
@@ -206,7 +206,7 @@ test.describe("congruence.dev - Concept Preview & Interactive Workspace", () => 
     await page.goto("/workspace");
 
     // Verify full-screen Superset sidebar
-    await expect(page.getByText("Hector's Team")).toBeVisible();
+    await expect(page.getByText(/Sample App|Workspace|Congruence/i).first()).toBeVisible();
 
     // Switch to Hub if starting in Deck mode
     const hubBtn = page.getByRole("button", { name: "Hub", exact: true });

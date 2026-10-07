@@ -27,12 +27,15 @@ export function SupersetSidebar() {
   const {
     lanes,
     activeLaneId,
+    activeLane,
     switchLane,
     mode,
     setMode,
     setIsIntegrationsOpen,
     setIsSearchOpen,
     setIsCloneOpen,
+    project,
+    toggleTaskCompletion,
   } = useWorkspace();
   const [sessionsOpen, setSessionsOpen] = useState(true);
   const [projectsOpen, setProjectsOpen] = useState(true);
@@ -229,38 +232,30 @@ export function SupersetSidebar() {
               );
             })}
 
-            {/* Static Simulated Worktree Tasks */}
-            <div className="pt-2 border-t border-[var(--border)]/40 mt-2">
-              <span className="px-2 font-mono text-[9px] uppercase tracking-wider text-[var(--subtle-foreground)] block mb-1">
-                Recent Tasks
-              </span>
-              {dynamicSessions.map((s) => (
-                <div
-                  key={s.id}
-                  className="flex h-6.5 cursor-pointer items-center gap-2 rounded px-2 text-[11px] text-[var(--muted-foreground)] hover:bg-[var(--wash-subtle)] hover:text-[var(--foreground)] transition-colors"
-                >
-                  {s.state === "loading" && (
-                    <Loader2 className="size-2.5 animate-spin text-[var(--accent-claude)] shrink-0" />
-                  )}
-                  {s.state === "live" && (
-                    <span className="size-1.5 rounded-full bg-[var(--status-awake)] shrink-0" />
-                  )}
-                  {s.state === "idle" && (
-                    <span className="size-1.5 rounded-full bg-[var(--subtle-foreground)] shrink-0" />
-                  )}
-                  {s.state === "ping" && (
-                    <span className="relative flex size-1.5 shrink-0">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--accent-amber)] opacity-75" />
-                      <span className="relative inline-flex size-1.5 rounded-full bg-[var(--accent-amber)]" />
+            {/* Real Active Lane Tasks */}
+            {activeLane?.tasks && activeLane.tasks.length > 0 && (
+              <div className="pt-2 border-t border-[var(--border)]/40 mt-2">
+                <span className="px-2 font-mono text-[9px] uppercase tracking-wider text-[var(--subtle-foreground)] block mb-1">
+                  Active Tasks ({activeLane.tasks.length})
+                </span>
+                {activeLane.tasks.map((t) => (
+                  <div
+                    key={t.id}
+                    onClick={() => toggleTaskCompletion(t.id)}
+                    className="flex h-6.5 cursor-pointer items-center gap-2 rounded px-2 text-[11px] text-[var(--muted-foreground)] hover:bg-[var(--wash-subtle)] hover:text-[var(--foreground)] transition-colors"
+                  >
+                    <span
+                      className={`size-1.5 rounded-full shrink-0 ${
+                        t.completed ? "bg-emerald-400" : "bg-[var(--accent-claude)]"
+                      }`}
+                    />
+                    <span className={`truncate min-w-0 flex-1 ${t.completed ? "line-through opacity-60" : ""}`}>
+                      {t.text}
                     </span>
-                  )}
-                  <span className="truncate min-w-0 flex-1">{s.title}</span>
-                  <span className="font-mono text-[9px] tabular-nums text-[var(--subtle-foreground)] shrink-0">
-                    {s.diff}
-                  </span>
-                </div>
-              ))}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -269,10 +264,10 @@ export function SupersetSidebar() {
       <div className="flex h-12 items-center justify-between border-t border-[var(--border)] px-3 bg-[var(--surface-sidebar)]">
         <div className="flex items-center gap-2 min-w-0">
           <div className="flex size-5 shrink-0 items-center justify-center rounded bg-[var(--surface-tertiary)] border border-[var(--border)] font-mono text-[9px] font-bold text-[var(--foreground)]">
-            HT
+            {(project?.name || "Workspace").slice(0, 2).toUpperCase()}
           </div>
           <span className="truncate text-[11px] font-medium text-[var(--foreground)]">
-            Hector's Team
+            {project?.name || "Workspace"}
           </span>
         </div>
         <button

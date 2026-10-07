@@ -5,7 +5,7 @@ import { FolderGit2, Plus, GitBranch, ShieldCheck } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 
 export function LanesSidebar() {
-  const { lanes, activeLaneId, switchLane, submitPrompt } = useWorkspace();
+  const { lanes, activeLaneId, switchLane, submitPrompt, project } = useWorkspace();
 
   const handleAddLane = () => {
     const laneName = prompt("Enter new lane name or agent task:", "Refactor auth");
@@ -24,10 +24,11 @@ export function LanesSidebar() {
         <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-primary)] p-2">
           <div className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--foreground)] truncate">
             <FolderGit2 className="size-3.5 text-[var(--accent-claude)] shrink-0" />
-            <span className="truncate">parabox / sample-app</span>
+            <span className="truncate">{project?.repo_full_name || "parabox / sample-app"}</span>
           </div>
-          <span className="mt-1 inline-block font-mono text-[9px] text-[var(--subtle-foreground)]">
-            Fictional repository
+          <span className="mt-1 inline-flex items-center gap-1 font-mono text-[9px] text-emerald-400">
+            <span className="size-1 rounded-full bg-emerald-400" />
+            Git Worktrees Active
           </span>
         </div>
       </div>
