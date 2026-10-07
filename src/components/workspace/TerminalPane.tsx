@@ -11,6 +11,7 @@ export function TerminalPane() {
   const xtermInstance = useRef<any>(null);
   const fitAddonInstance = useRef<any>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const ptyIdRef = useRef<string | null>(null);
 
   const [connected, setConnected] = useState(false);
   const [ptyId, setPtyId] = useState<string | null>(null);
@@ -21,6 +22,7 @@ export function TerminalPane() {
     let term: any = null;
     let fitAddon: any = null;
     let ws: WebSocket | null = null;
+    let isDisposed = false;
 
     async function initTerminal() {
       if (!terminalRef.current) return;
@@ -30,33 +32,38 @@ export function TerminalPane() {
       const { FitAddon } = await import("@xterm/addon-fit");
       const { WebLinksAddon } = await import("@xterm/addon-web-links");
 
+      if (isDisposed || !terminalRef.current) return;
+
+      // Clear any previous container content
+      terminalRef.current.innerHTML = "";
+
       term = new Terminal({
         cursorBlink: true,
         cursorStyle: "bar",
         fontSize: 12,
         fontFamily: "var(--font-mono), 'JetBrains Mono', monospace",
         theme: {
-          background: "#0A0A0C",
-          foreground: "#F0F0F3",
-          cursor: "#E8804A",
-          cursorAccent: "#0A0A0C",
-          selectionBackground: "rgba(232, 128, 74, 0.3)",
-          black: "#121216",
-          red: "#EF4444",
-          green: "#10B981",
-          yellow: "#F59E0B",
-          blue: "#3B82F6",
-          magenta: "#EC4899",
-          cyan: "#06B6D4",
-          white: "#F0F0F3",
-          brightBlack: "#52525B",
-          brightRed: "#F87171",
-          brightGreen: "#34D399",
-          brightYellow: "#FBBF24",
-          brightBlue: "#60A5FA",
-          brightMagenta: "#F472B6",
-          brightCyan: "#22D3EE",
-          brightWhite: "#FFFFFF",
+          background: "#FFFFFF",
+          foreground: "#18181B",
+          cursor: "#18181B",
+          cursorAccent: "#FFFFFF",
+          selectionBackground: "rgba(232, 128, 74, 0.25)",
+          black: "#18181B",
+          red: "#DC2626",
+          green: "#16A34A",
+          yellow: "#D97706",
+          blue: "#2563EB",
+          magenta: "#9333EA",
+          cyan: "#0891B2",
+          white: "#71717A",
+          brightBlack: "#71717A",
+          brightRed: "#EF4444",
+          brightGreen: "#22C55E",
+          brightYellow: "#F59E0B",
+          brightBlue: "#3B82F6",
+          brightMagenta: "#A855F7",
+          brightCyan: "#06B6D4",
+          brightWhite: "#09090B",
         },
       });
 
@@ -65,7 +72,20 @@ export function TerminalPane() {
       term.loadAddon(new WebLinksAddon());
 
       term.open(terminalRef.current);
-      fitAddon.fit();
+
+      const safeFit = () => {
+        try {
+          if (fitAddon && terminalRef.current && terminalRef.current.clientWidth > 0 && terminalRef.current.clientHeight > 0) {
+            fitAddon.fit();
+          }
+        } catch {
+          // ignore layout transition fits
+        }
+      };
+
+      requestAnimationFrame(() => {
+        safeFit();
+      });
 
       xtermInstance.current = term;
       fitAddonInstance.current = fitAddon;
@@ -73,36 +93,43 @@ export function TerminalPane() {
       // Header
       term.writeln("\x1b[38;2;232;128;74m◆ Congruence Session Gateway\x1b[0m");
       term.writeln(
-        `\x1b[90mLane: \x1b[37m${activeLane?.name || "main"}\x1b[90m | Branch: \x1b[37m${activeLane?.branch || "main"}\x1b[0m\r\n`
+        `\x1b[90mLane: \x1b[38;2;24;24;27m${activeLane?.name || "main"}\x1b[90m | Branch: \x1b[38;2;24;24;27m${activeLane?.branch || "main"}\x1b[0m\r\n`
       );
 
       // Connect to real backend WebSocket
       try {
-        const wsUrl = `${WS_BASE_URL}/ws/session/sess_${activeLane?.id || "main"}`;
+        const wsProtocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "wss:" : "ws:";
+        const rawWs = process.env.NEXT_PUBLIC_WS_URL || `${wsProtocol}//${typeof window !== "undefined" ? window.location.hostname : "localhost"}:8000/api/v1`;
+        const cleanBase = rawWs.replace(/\/+$/, "").replace(/\/ws.*$/, "");
+        const wsUrl = `${cleanBase}/ws/session/sess_${activeLane?.id || "main"}`;
+        
         ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
         ws.onopen = () => {
+          if (isDisposed) return;
           setConnected(true);
-          // Spawn PTY on backend
+          // Spawn interactive PTY on host
           ws?.send(
             JSON.stringify({
               type: "spawn_pty",
-              lane_id: activeLane?.id,
+              lane_id: activeLane?.id || "main",
               command: "/bin/sh",
-              cols: term.cols,
-              rows: term.rows,
+              cols: term.cols || 80,
+              rows: term.rows || 24,
             })
           );
         };
 
         ws.onmessage = (event) => {
+          if (isDisposed) return;
           try {
             const msg = JSON.parse(event.data);
             if (msg.type === "pty_output" && msg.data) {
               term.write(msg.data);
             } else if (msg.type === "pty_spawned") {
               setPtyId(msg.pty_id);
+              ptyIdRef.current = msg.pty_id;
             } else if (msg.type === "pty_input_denied") {
               term.writeln(`\r\n\x1b[31m[Denied] ${msg.reason}\x1b[0m\r\n`);
             }
@@ -111,75 +138,100 @@ export function TerminalPane() {
           }
         };
 
+        ws.onerror = (err) => {
+          console.warn("PTY WebSocket encounter:", err);
+        };
+
         ws.onclose = () => {
+          if (isDisposed) return;
           setConnected(false);
-          term.writeln("\r\n\x1b[90m[Disconnected from session gateway · Reconnecting...]\x1b[0m\r\n");
+          term.writeln("\r\n\x1b[90m[Session gateway closed]\x1b[0m\r\n");
         };
 
         term.onData((data: string) => {
-          if (ws && ws.readyState === WebSocket.OPEN && ptyId) {
+          const currentPty = ptyIdRef.current;
+          if (ws && ws.readyState === WebSocket.OPEN && currentPty) {
             ws.send(
               JSON.stringify({
                 type: "pty_input",
-                pty_id: ptyId,
+                pty_id: currentPty,
                 lane_id: activeLane?.id,
                 data,
               })
             );
           }
         });
-      } catch {
+      } catch (err) {
+        console.error("Failed to connect PTY websocket:", err);
         setConnected(false);
       }
     }
 
     initTerminal();
 
-    const handleResize = () => {
-      if (fitAddonInstance.current) {
-        fitAddonInstance.current.fit();
-        if (
-          wsRef.current &&
-          wsRef.current.readyState === WebSocket.OPEN &&
-          ptyId &&
-          xtermInstance.current
-        ) {
-          wsRef.current.send(
-            JSON.stringify({
-              type: "pty_resize",
-              pty_id: ptyId,
-              cols: xtermInstance.current.cols,
-              rows: xtermInstance.current.rows,
-            })
-          );
+    let resizeObserver: ResizeObserver | null = null;
+    if (terminalRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        if (fitAddonInstance.current && terminalRef.current && terminalRef.current.clientWidth > 0) {
+          try {
+            fitAddonInstance.current.fit();
+            if (
+              wsRef.current &&
+              wsRef.current.readyState === WebSocket.OPEN &&
+              ptyIdRef.current &&
+              xtermInstance.current
+            ) {
+              wsRef.current.send(
+                JSON.stringify({
+                  type: "pty_resize",
+                  pty_id: ptyIdRef.current,
+                  cols: xtermInstance.current.cols,
+                  rows: xtermInstance.current.rows,
+                })
+              );
+            }
+          } catch {
+            // ignore
+          }
         }
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
+      });
+      resizeObserver.observe(terminalRef.current);
+    }
 
     return () => {
-      window.removeEventListener("resize", handleResize);
-      if (ws) ws.close();
-      if (term) term.dispose();
+      isDisposed = true;
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      if (ws) {
+        ws.close();
+      }
+      if (term) {
+        term.dispose();
+      }
+      wsRef.current = null;
+      xtermInstance.current = null;
+      fitAddonInstance.current = null;
+      ptyIdRef.current = null;
     };
   }, [activeLane?.id]);
 
   // Execute external commands directly in real PTY
   useEffect(() => {
-    if (!pendingCommand || !xtermInstance.current) return;
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && ptyId) {
+    if (!pendingCommand) return;
+    const currentPty = ptyIdRef.current;
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && currentPty) {
       wsRef.current.send(
         JSON.stringify({
           type: "pty_input",
-          pty_id: ptyId,
+          pty_id: currentPty,
           lane_id: activeLane?.id,
           data: `${pendingCommand}\n`,
         })
       );
     }
     clearPendingCommand();
-  }, [pendingCommand, activeLane?.id, clearPendingCommand, ptyId]);
+  }, [pendingCommand, activeLane?.id, clearPendingCommand]);
 
   const handleClear = () => {
     if (xtermInstance.current) {
@@ -196,8 +248,8 @@ export function TerminalPane() {
             type: "spawn_pty",
             lane_id: activeLane.id,
             command: "/bin/sh",
-            cols: xtermInstance.current.cols,
-            rows: xtermInstance.current.rows,
+            cols: xtermInstance.current.cols || 80,
+            rows: xtermInstance.current.rows || 24,
           })
         );
       }
@@ -205,64 +257,52 @@ export function TerminalPane() {
   };
 
   return (
-    <div className="flex h-full flex-col bg-[var(--terminal-bg)] text-xs font-mono select-text">
-      {/* Terminal Top Bar */}
-      <div className="flex h-8 shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--surface-primary)] px-3 text-[11px] text-[var(--muted-foreground)]">
-        <div className="flex items-center gap-2">
-          <span className="flex size-2 rounded-full bg-[var(--accent-claude)]" />
-          <span className="font-medium text-[var(--foreground)]">
-            PTY · {activeLane?.name || "main"}
+    <div className="flex h-full w-full flex-1 flex-col bg-white text-zinc-900 overflow-hidden">
+      {/* Top Terminal Action Bar */}
+      <div className="flex h-9 shrink-0 items-center justify-between border-b border-[var(--border)] px-4 bg-[var(--surface-primary)]">
+        <div className="flex items-center gap-2 text-xs font-mono">
+          <span
+            className={`size-2 rounded-full ${
+              connected ? "bg-emerald-500" : "bg-rose-500 animate-pulse"
+            }`}
+          />
+          <span className="text-[var(--foreground)] font-medium">
+            PTY · {activeLane?.name || "Pair lane"}
           </span>
-          <span className="text-[10px] text-[var(--subtle-foreground)] border-l border-[var(--border)] pl-2">
+          <span className="text-[var(--muted-foreground)] text-[10px]">
             worktree: {activeLane?.branch || "main"}
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5 text-[10px] text-[var(--muted-foreground)]">
-            <span
-              className={`size-1.5 rounded-full ${
-                connected ? "bg-[var(--status-awake)]" : "bg-rose-500"
-              }`}
-            />
-            {connected ? "Gateway Live" : "Connecting..."}
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-[10px] font-mono ${
+              connected ? "text-emerald-600 font-medium" : "text-amber-600"
+            }`}
+          >
+            {connected ? "Connected" : "Connecting..."}
           </span>
-
           <button
             type="button"
             onClick={handleClear}
-            className="hover:text-[var(--foreground)] transition-colors p-1"
             title="Clear terminal"
+            className="p-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors rounded hover:bg-[var(--surface-secondary)]"
           >
-            <Trash2 className="size-3" />
+            <Trash2 className="size-3.5" />
           </button>
-
           <button
             type="button"
             onClick={handleRestart}
-            className="hover:text-[var(--foreground)] transition-colors p-1"
-            title="Restart terminal"
+            title="Restart session PTY"
+            className="p-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors rounded hover:bg-[var(--surface-secondary)]"
           >
-            <RotateCcw className="size-3" />
+            <RotateCcw className="size-3.5" />
           </button>
         </div>
       </div>
 
-      {/* Terminal Content Box */}
-      <div className="relative flex-1 p-3 overflow-hidden">
-        {hostState === "asleep" && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[var(--background)]/90 backdrop-blur-xs text-center p-4">
-            <span className="font-mono text-xs text-[var(--muted-foreground)] mb-1">
-              HOST SUSPENDED
-            </span>
-            <p className="text-xs text-[var(--subtle-foreground)] max-w-sm">
-              Terminal state and files preserved on persistent disk. Wake host to resume interactive CLI session.
-            </p>
-          </div>
-        )}
-
-        <div ref={terminalRef} className="h-full w-full" />
-      </div>
+      {/* Terminal Viewport */}
+      <div className="flex-1 w-full h-full p-3 overflow-hidden bg-white" ref={terminalRef} />
     </div>
   );
 }

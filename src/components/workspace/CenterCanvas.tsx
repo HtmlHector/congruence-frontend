@@ -132,7 +132,7 @@ export function CenterCanvas() {
       </div>
 
       {/* Main Tab View Canvas */}
-      <div className="flex-1 overflow-hidden p-3 bg-[var(--background)]">
+      <div className="flex-1 overflow-hidden bg-[var(--background)] flex flex-col h-full w-full">
         {activeTab === "preview" && <PreviewPane />}
         {activeTab === "terminal" && <TerminalPane />}
         {activeTab === "changes" && <ChangesPane />}
