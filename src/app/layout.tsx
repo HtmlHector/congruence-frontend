@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 import { Toaster } from "sonner";
 import "@/styles/globals.css";
 
@@ -35,26 +37,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`dark ${inter.variable} ${jetbrainsMono.variable}`}
-      style={{ colorScheme: "dark" }}
-    >
-      <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)] font-sans antialiased selection:bg-[var(--accent-claude-subtle)] selection:text-white">
-        {children}
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            style: {
-              background: "var(--surface-primary)",
-              color: "var(--foreground)",
-              border: "1px solid var(--border)",
-              fontFamily: "var(--font-sans)",
-              borderRadius: "var(--radius-md)",
-            },
-          }}
-        />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html
+        lang="en"
+        className={`dark ${inter.variable} ${jetbrainsMono.variable}`}
+        style={{ colorScheme: "dark" }}
+      >
+        <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)] font-sans antialiased selection:bg-[var(--accent-claude-subtle)] selection:text-white">
+          {children}
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              style: {
+                background: "var(--surface-primary)",
+                color: "var(--foreground)",
+                border: "1px solid var(--border)",
+                fontFamily: "var(--font-sans)",
+                borderRadius: "var(--radius-md)",
+              },
+            }}
+          />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
