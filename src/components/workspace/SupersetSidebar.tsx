@@ -156,13 +156,13 @@ export function SupersetSidebar() {
         <button
           type="button"
           onClick={() => {
-            setActiveItem("new-session");
+            setActiveItem("new-worktree");
             handleAddLane();
           }}
           className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-[var(--foreground)] hover:bg-[var(--wash)] transition-colors cursor-pointer"
         >
           <Plus className="size-4 text-[var(--muted-foreground)] shrink-0" />
-          <span>New Session</span>
+          <span>New Worktree</span>
         </button>
 
         <button

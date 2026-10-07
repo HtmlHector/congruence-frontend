@@ -1,17 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
-import { Play, Square, Terminal, Eye, FileCode, Sparkles } from "lucide-react";
+import { Play, Square, Terminal, Eye, FileCode, Sparkles, PanelRight } from "lucide-react";
 import { AnthropicIcon, OpenAIIcon } from "@/components/ui/brand-icons";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { PreviewPane } from "./PreviewPane";
 import { TerminalPane } from "./TerminalPane";
 import { AgentChatPane } from "./AgentChatPane";
 import { ChangesPane } from "./ChangesPane";
+import { AgentTabBar } from "./AgentTabBar";
 
 export function CenterCanvas() {
   const {
-    project,
     activeLane,
     activeTab,
     setActiveTab,
@@ -19,6 +19,8 @@ export function CenterCanvas() {
     services,
     diff,
     hostState,
+    actorSidebarCollapsed,
+    toggleActorSidebar,
   } = useWorkspace();
 
   const [agentView, setAgentView] = useState<"chat" | "pty">("chat");
@@ -32,41 +34,10 @@ export function CenterCanvas() {
 
   return (
     <div className="flex h-full flex-1 flex-col overflow-hidden bg-[var(--background)]">
-      {/* Single Consolidated Sleek Header Bar (38px height) */}
-      <header className="flex h-9.5 shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--surface-primary)] px-3.5 select-none">
-        {/* Left: Active Lane, Branch, and Repository */}
-        <div className="flex items-center gap-2 min-w-0">
-          {activeLane && (
-            <>
-              <span
-                className={`flex size-5 shrink-0 items-center justify-center rounded-[4px] font-mono text-[9px] font-bold ${
-                  activeLane.is_pair_lane
-                    ? "bg-[var(--wash)] text-[var(--foreground)]"
-                    : activeLane.name.toLowerCase().includes("claude")
-                    ? "bg-[var(--accent-claude-subtle)] text-[var(--accent-claude)] border border-[rgba(232,128,74,0.25)]"
-                    : "bg-[var(--accent-codex-subtle)] text-[var(--accent-codex)] border border-[rgba(16,185,129,0.25)]"
-                }`}
-              >
-                {activeLane.is_pair_lane ? (
-                  "P"
-                ) : activeLane.name.toLowerCase().includes("claude") ? (
-                  <AnthropicIcon className="size-3 text-[var(--accent-claude)]" />
-                ) : (
-                  <OpenAIIcon className="size-3 text-[var(--accent-codex)]" />
-                )}
-              </span>
-              <span className="font-semibold text-xs text-zinc-900 truncate">
-                {activeLane.name}
-              </span>
-              <span className="rounded bg-zinc-100 border border-zinc-200/80 px-1.5 py-0.5 font-mono text-[10px] text-zinc-600 shrink-0">
-                {activeLane.branch}
-              </span>
-              <span className="hidden md:inline text-[11px] font-mono text-zinc-400 truncate">
-                {project?.repo_full_name || project?.name}
-              </span>
-            </>
-          )}
-        </div>
+      {/* Sleek IDE Header Bar with Flush Agent Tab Bar (36px height) */}
+      <header className="flex h-9 shrink-0 items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-[#FAFAFA] dark:bg-[#0E0E12] pl-0 pr-2.5 sm:pr-3 select-none gap-3">
+        {/* Left: Agent & Worktree Tab Bar */}
+        <AgentTabBar />
 
         {/* Right: Tab Switcher & Run Dev Action */}
         <div className="flex items-center gap-2 shrink-0">
@@ -179,6 +150,20 @@ export function CenterCanvas() {
                 <span>Run dev</span>
               </>
             )}
+          </button>
+
+          {/* Toggle Right Inspector / Actor Sidebar */}
+          <button
+            type="button"
+            onClick={toggleActorSidebar}
+            title={actorSidebarCollapsed ? "Expand Inspector (⌘J)" : "Collapse Inspector (⌘J)"}
+            className={`p-1.5 rounded-md border transition-colors cursor-pointer ${
+              !actorSidebarCollapsed
+                ? "border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                : "border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            }`}
+          >
+            <PanelRight className="size-3.5" />
           </button>
         </div>
       </header>

@@ -19,6 +19,15 @@ export interface ActivityEvent {
 
 export type WorkspaceViewMode = "hub" | "deck" | "pull-requests";
 
+export interface WorktreeChat {
+  id: string;
+  laneId: string;
+  title: string;
+  harness: "Claude" | "Codex" | "Antigravity" | "Shell";
+  model?: string;
+  createdAt: string;
+}
+
 interface WorkspaceContextType {
   projectId: string | null;
   project: ProjectData | null;
@@ -30,6 +39,8 @@ interface WorkspaceContextType {
   activeLaneId: string | null;
   activeLane: WorkLaneData | null;
   lanes: WorkLaneData[];
+  chats: WorktreeChat[];
+  activeChatId: string | null;
   actors: WorkspaceActor[];
   services: ServiceData[];
   diff: GitDiffData | null;
@@ -45,12 +56,19 @@ interface WorkspaceContextType {
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
   toggleSidebar: () => void;
+  actorSidebarCollapsed: boolean;
+  setActorSidebarCollapsed: (collapsed: boolean) => void;
+  toggleActorSidebar: () => void;
   isLoading: boolean;
 
   // Actions
   refreshProjectData: () => Promise<void>;
   toggleSleepWake: () => Promise<void>;
   switchLane: (laneId: string) => void;
+  closeLane: (laneId: string, e?: React.MouseEvent) => void;
+  createChat: (laneId: string, harness: "Claude" | "Codex" | "Antigravity" | "Shell", title?: string) => string;
+  switchChat: (chatId: string) => void;
+  closeChat: (chatId: string, e?: React.MouseEvent) => void;
   toggleDevServer: () => void;
   grantControl: (actorId: string) => Promise<void>;
   revokeControl: () => Promise<void>;
@@ -63,20 +81,90 @@ interface WorkspaceContextType {
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
 
+const DEMO_PROJECTS: ProjectData[] = [
+  {
+    id: "proj-ecommerce",
+    name: "ecommerce-test-app",
+    slug: "ecommerce-test-app",
+    repo_full_name: "HtmlHector/ecommerce-test-app",
+    default_branch: "main",
+    host: {
+      id: "host-1",
+      state: "awake",
+      backend_type: "docker",
+    },
+  },
+  {
+    id: "proj-spec-docs",
+    name: "spec-docs",
+    slug: "spec-docs",
+    repo_full_name: "HtmlHector/spec-docs",
+    default_branch: "main",
+    host: {
+      id: "host-2",
+      state: "awake",
+      backend_type: "docker",
+    },
+  },
+];
+
+const DEMO_LANES: WorkLaneData[] = [
+  {
+    id: "lane-pair",
+    name: "Pair lane",
+    slug: "pair-main",
+    branch: "main",
+    branch_name: "main",
+    is_pair_lane: true,
+    status: "ready",
+  },
+  {
+    id: "lane-claude",
+    name: "Claude Code",
+    slug: "claude-progress",
+    branch: "claude/progress",
+    branch_name: "claude/progress",
+    is_pair_lane: false,
+    status: "ready",
+    harness: "claude",
+  },
+];
+
+const INITIAL_CHATS: WorktreeChat[] = [
+  {
+    id: "chat-pair-1",
+    laneId: "lane-pair",
+    title: "Terminal 1",
+    harness: "Shell",
+    createdAt: "13m ago",
+  },
+  {
+    id: "chat-claude-1",
+    laneId: "lane-claude",
+    title: "Claude Code",
+    harness: "Claude",
+    model: "Claude 3.7 Sonnet (Thinking)",
+    createdAt: "42m ago",
+  },
+];
+
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [mode, setMode] = useState<WorkspaceViewMode>("deck");
   const [hostState, setHostState] = useState<"awake" | "asleep" | "waking" | "sleeping">("awake");
-  const [lanes, setLanes] = useState<WorkLaneData[]>([]);
+  const [lanes, setLanes] = useState<WorkLaneData[]>(DEMO_LANES);
+  const [chats, setChats] = useState<WorktreeChat[]>(INITIAL_CHATS);
+  const [activeChatId, setActiveChatId] = useState<string | null>("chat-pair-1");
   const [actors, setActors] = useState<WorkspaceActor[]>([]);
   const [services, setServices] = useState<ServiceData[]>([]);
   const [diff, setDiff] = useState<GitDiffData | null>(null);
-  const [activeLaneId, setActiveLaneId] = useState<string | null>(null);
+  const [activeLaneId, setActiveLaneId] = useState<string | null>(DEMO_LANES[0].id);
   const [activeTab, setActiveTab] = useState<"preview" | "terminal" | "changes">("preview");
   const [isIntegrationsOpen, setIsIntegrationsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCloneOpen, setIsCloneOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [actorSidebarCollapsed, setActorSidebarCollapsed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [pendingCommand, setPendingCommand] = useState<string | null>(null);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
 
@@ -84,22 +172,29 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     setSidebarCollapsed((prev) => !prev);
   }, []);
 
-  // Keyboard shortcut ⌘B / Ctrl+B to toggle sidebar
+  const toggleActorSidebar = useCallback(() => {
+    setActorSidebarCollapsed((prev) => !prev);
+  }, []);
+
+  // Keyboard shortcut ⌘B / Ctrl+B to toggle left sidebar, ⌘J to toggle actor sidebar
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
         e.preventDefault();
         toggleSidebar();
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
+        e.preventDefault();
+        toggleActorSidebar();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleSidebar]);
+  }, [toggleSidebar, toggleActorSidebar]);
 
 
-  const [projectId, setProjectId] = useState<string | null>(null);
-  const [project, setProject] = useState<ProjectData | null>(null);
-  const [projects, setProjects] = useState<ProjectData[]>([]);
+  const [projectId, setProjectId] = useState<string | null>(DEMO_PROJECTS[0].id);
+  const [project, setProject] = useState<ProjectData | null>(DEMO_PROJECTS[0]);
+  const [projects, setProjects] = useState<ProjectData[]>(DEMO_PROJECTS);
 
   const logActivity = (text: string) => {
     setActivityEvents((prev) => [
@@ -141,8 +236,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           return exists ? exists.id : mappedLanes[0].id;
         });
       } else {
-        setLanes([]);
-        setActiveLaneId(null);
+        setLanes(DEMO_LANES);
+        setActiveLaneId(DEMO_LANES[0].id);
       }
 
       if (actorsData.status === "fulfilled") {
@@ -172,6 +267,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (err) {
       console.error("Failed to load project details:", err);
+      setLanes(DEMO_LANES);
+      setActiveLaneId(DEMO_LANES[0].id);
     }
   }, []);
 
@@ -192,14 +289,15 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           setProject(projs[0]);
           await loadProjectDetails(projs[0].id);
         } else {
-          setProjects([]);
-          setProject(null);
-          setLanes([]);
-          setActors([]);
-          setServices([]);
+          setProjects(DEMO_PROJECTS);
+          setProject(DEMO_PROJECTS[0]);
+          await loadProjectDetails(DEMO_PROJECTS[0].id);
         }
       } catch (err) {
-        console.error("Failed to fetch projects list:", err);
+        console.warn("Backend API not connected, running with demo projects:", err);
+        setProjects(DEMO_PROJECTS);
+        setProject(DEMO_PROJECTS[0]);
+        await loadProjectDetails(DEMO_PROJECTS[0].id);
       } finally {
         setIsLoading(false);
       }
@@ -256,11 +354,74 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const createChat = useCallback(
+    (laneId: string, harness: "Claude" | "Codex" | "Antigravity" | "Shell", title?: string) => {
+      const newChatId = `chat-${Date.now().toString().slice(-6)}`;
+      const newChat: WorktreeChat = {
+        id: newChatId,
+        laneId,
+        title: title || `${harness} Chat`,
+        harness,
+        model: harness === "Claude" ? "Claude 3.7 Sonnet" : harness === "Codex" ? "o3-mini" : "Gemini 2.0 Flash",
+        createdAt: "just now",
+      };
+      setChats((prev) => [...prev, newChat]);
+      setActiveChatId(newChatId);
+      setActiveTab("terminal");
+      logActivity(`Created new ${harness} chat in worktree`);
+      return newChatId;
+    },
+    []
+  );
+
+  const switchChat = useCallback((chatId: string) => {
+    setActiveChatId(chatId);
+  }, []);
+
+  const closeChat = useCallback((chatId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setChats((prev) => {
+      const remaining = prev.filter((c) => c.id !== chatId);
+      if (activeChatId === chatId && remaining.length > 0) {
+        setActiveChatId(remaining[0].id);
+      }
+      return remaining;
+    });
+  }, [activeChatId]);
+
   const switchLane = (laneId: string) => {
     const lane = lanes.find((l) => l.id === laneId);
     if (!lane) return;
     setActiveLaneId(laneId);
+    // Find or create active chat for this lane
+    setChats((prev) => {
+      const laneChats = prev.filter((c) => c.laneId === laneId);
+      if (laneChats.length > 0) {
+        setActiveChatId(laneChats[0].id);
+        return prev;
+      }
+      const defaultChat: WorktreeChat = {
+        id: `chat-${laneId}-${Date.now().toString().slice(-4)}`,
+        laneId,
+        title: lane.name.startsWith("Claude") ? "Claude Code" : lane.name.startsWith("Pair") ? "Terminal 1" : "Agent Chat",
+        harness: lane.name.startsWith("Claude") ? "Claude" : lane.name.startsWith("Codex") ? "Codex" : "Shell",
+        createdAt: "just now",
+      };
+      setActiveChatId(defaultChat.id);
+      return [...prev, defaultChat];
+    });
     logActivity(`Switched to worktree lane ${lane.name} (${lane.branch})`);
+  };
+
+  const closeLane = (laneId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (lanes.length <= 1) return;
+    const remaining = lanes.filter((l) => l.id !== laneId);
+    setLanes(remaining);
+    if (activeLaneId === laneId) {
+      setActiveLaneId(remaining[0].id);
+    }
+    logActivity(`Closed worktree lane`);
   };
 
   const toggleDevServer = () => {
@@ -320,6 +481,18 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
       await refreshProjectData();
       setActiveLaneId(createdLane.id);
+      
+      // Create initial chat inside this new worktree
+      const newChat: WorktreeChat = {
+        id: `chat-${createdLane.id}-${Date.now().toString().slice(-4)}`,
+        laneId: createdLane.id,
+        title: `${harness} Task`,
+        harness: harness as any,
+        createdAt: "just now",
+      };
+      setChats((prev) => [...prev, newChat]);
+      setActiveChatId(newChat.id);
+
       setMode("deck");
       setActiveTab("terminal");
       logActivity(`Spawned isolated worktree on branch ${branchName} for ${harness}`);
@@ -330,7 +503,43 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         : `codex exec "${promptText.replace(/"/g, '\\"')}"`;
       setPendingCommand(harnessCmd);
     } catch (err) {
-      console.error("Failed to create agent lane:", err);
+      console.warn("Failed to create agent lane on backend, adding locally:", err);
+      const newLaneId = `lane-${slug}-${Date.now().toString().slice(-4)}`;
+      const newLane: WorkLaneData = {
+        id: newLaneId,
+        name: `${harness} · ${slug}`,
+        slug: `lane-${slug}`,
+        branch: branchName,
+        branch_name: branchName,
+        is_pair_lane: harness === "Pair",
+        status: "ready",
+        harness: harness.toLowerCase().includes("claude")
+          ? "claude"
+          : harness.toLowerCase().includes("codex")
+          ? "codex"
+          : undefined,
+      };
+      setLanes((prev) => [...prev, newLane]);
+      setActiveLaneId(newLaneId);
+
+      const newChat: WorktreeChat = {
+        id: `chat-${newLaneId}-${Date.now().toString().slice(-4)}`,
+        laneId: newLaneId,
+        title: `${harness} Task`,
+        harness: harness as any,
+        createdAt: "just now",
+      };
+      setChats((prev) => [...prev, newChat]);
+      setActiveChatId(newChat.id);
+
+      setMode("deck");
+      setActiveTab("terminal");
+      logActivity(`Spawned isolated worktree on branch ${branchName} for ${harness}`);
+
+      const harnessCmd = harness.toLowerCase().includes("claude")
+        ? `claude "${promptText.replace(/"/g, '\\"')}"`
+        : `codex exec "${promptText.replace(/"/g, '\\"')}"`;
+      setPendingCommand(harnessCmd);
     }
   };
 
@@ -356,6 +565,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         activeLaneId,
         activeLane,
         lanes,
+        chats,
+        activeChatId,
         actors,
         services,
         diff,
@@ -371,11 +582,18 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         sidebarCollapsed,
         setSidebarCollapsed,
         toggleSidebar,
+        actorSidebarCollapsed,
+        setActorSidebarCollapsed,
+        toggleActorSidebar,
         isLoading,
 
         refreshProjectData,
         toggleSleepWake,
         switchLane,
+        closeLane,
+        createChat,
+        switchChat,
+        closeChat,
         toggleDevServer,
         grantControl,
         revokeControl,
