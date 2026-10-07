@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export function LandingHero() {
   return (
@@ -24,7 +24,7 @@ export function LandingHero() {
         {/* Subtag Pill */}
         <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-primary)] px-3 py-1 text-[11px] font-mono uppercase tracking-wider text-[var(--muted-foreground)] mb-8">
           <span className="size-1.5 rounded-full bg-[var(--accent-claude)]" />
-          <span>A Parabox Product · Concept Preview</span>
+          <span>Shared Execution Context · congruence.dev</span>
         </div>
 
         {/* Headline */}
@@ -37,8 +37,7 @@ export function LandingHero() {
 
         {/* Lead Copy */}
         <p className="mx-auto max-w-2xl text-base sm:text-lg text-[var(--muted-foreground)] leading-relaxed mb-10 font-normal">
-          A shared browser workspace for the coding agents you already use. Keep the files,
-          terminal, and live preview together, then pick up from another device.
+          Claude Code already runs in the cloud. What it cannot do is show you the application it just started. Congruence is the environment where the agent you already pay for, the repository, and the live preview stay together.
         </p>
 
         {/* Action CTAs */}
@@ -47,7 +46,7 @@ export function LandingHero() {
             href="/workspace"
             className="group flex h-11 items-center gap-2 rounded-full bg-[var(--foreground)] px-6 text-sm font-medium text-[var(--background)] hover:bg-[var(--primary-hover)] hover:shadow-md transition-all w-full sm:w-auto justify-center"
           >
-            <span>Explore the demo</span>
+            <span>Open a repository</span>
             <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>

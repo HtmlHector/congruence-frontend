@@ -2,10 +2,11 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { Terminal as TerminalIcon, RotateCcw, Trash2, ShieldCheck, Sparkles, ExternalLink } from "lucide-react";
+import { RotateCcw, Trash2 } from "lucide-react";
+import { WS_BASE_URL } from "@/lib/api";
 
 export function TerminalPane() {
-  const { activeLane, executeTerminalCommand, hostState, pendingCommand, clearPendingCommand } = useWorkspace();
+  const { activeLane, hostState, pendingCommand, clearPendingCommand } = useWorkspace();
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermInstance = useRef<any>(null);
   const fitAddonInstance = useRef<any>(null);
@@ -15,6 +16,8 @@ export function TerminalPane() {
   const [ptyId, setPtyId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!activeLane) return;
+
     let term: any = null;
     let fitAddon: any = null;
     let ws: WebSocket | null = null;
@@ -67,18 +70,16 @@ export function TerminalPane() {
       xtermInstance.current = term;
       fitAddonInstance.current = fitAddon;
 
-      // Welcome header
-      term.writeln("\x1b[38;2;232;128;74m◆ Congruence Interactive Session Gateway\x1b[0m");
-      term.writeln(`\x1b[90mLane: \x1b[37m${activeLane.name}\x1b[90m | Branch: \x1b[37m${activeLane.branch}\x1b[90m | Single-writer lease: \x1b[32mActive\x1b[0m\r\n`);
+      // Header
+      term.writeln("\x1b[38;2;232;128;74m◆ Congruence Session Gateway\x1b[0m");
+      term.writeln(
+        `\x1b[90mLane: \x1b[37m${activeLane?.name || "main"}\x1b[90m | Branch: \x1b[37m${activeLane?.branch || "main"}\x1b[0m\r\n`
+      );
 
-      if (activeLane.terminalLogs && activeLane.terminalLogs.length > 0) {
-        activeLane.terminalLogs.forEach((log) => term.writeln(log));
-      }
-
-      // Connect to live backend WebSocket
+      // Connect to real backend WebSocket
       try {
-        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
-        ws = new WebSocket(`${wsUrl}/ws/session/sess_${activeLane.id}`);
+        const wsUrl = `${WS_BASE_URL}/ws/session/sess_${activeLane?.id || "main"}`;
+        ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
         ws.onopen = () => {
@@ -87,7 +88,7 @@ export function TerminalPane() {
           ws?.send(
             JSON.stringify({
               type: "spawn_pty",
-              lane_id: activeLane.id,
+              lane_id: activeLane?.id,
               command: "/bin/sh",
               cols: term.cols,
               rows: term.rows,
@@ -102,6 +103,8 @@ export function TerminalPane() {
               term.write(msg.data);
             } else if (msg.type === "pty_spawned") {
               setPtyId(msg.pty_id);
+            } else if (msg.type === "pty_input_denied") {
+              term.writeln(`\r\n\x1b[31m[Denied] ${msg.reason}\x1b[0m\r\n`);
             }
           } catch {
             term.write(event.data);
@@ -110,26 +113,21 @@ export function TerminalPane() {
 
         ws.onclose = () => {
           setConnected(false);
-          // If offline/local dev without backend, print simulated interactive prompt
-          term.writeln("\r\n\x1b[90m[Local Interactive Mode: Type 'claude', 'codex', or 'run dev']\x1b[0m\r\n$ ");
+          term.writeln("\r\n\x1b[90m[Disconnected from session gateway · Reconnecting...]\x1b[0m\r\n");
         };
 
         term.onData((data: string) => {
           if (ws && ws.readyState === WebSocket.OPEN && ptyId) {
-            ws.send(JSON.stringify({ type: "pty_input", pty_id: ptyId, data }));
-          } else {
-            // Local echo simulation when WS offline
-            if (data === "\r") {
-              term.writeln("\r\n\x1b[38;2;232;128;74m[congruence]\x1b[0m Command executed in isolated worktree.");
-              term.write("$ ");
-            } else if (data === "\u007F") {
-              term.write("\b \b");
-            } else {
-              term.write(data);
-            }
+            ws.send(
+              JSON.stringify({
+                type: "pty_input",
+                pty_id: ptyId,
+                lane_id: activeLane?.id,
+                data,
+              })
+            );
           }
         });
-
       } catch {
         setConnected(false);
       }
@@ -140,7 +138,12 @@ export function TerminalPane() {
     const handleResize = () => {
       if (fitAddonInstance.current) {
         fitAddonInstance.current.fit();
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && ptyId && xtermInstance.current) {
+        if (
+          wsRef.current &&
+          wsRef.current.readyState === WebSocket.OPEN &&
+          ptyId &&
+          xtermInstance.current
+        ) {
           wsRef.current.send(
             JSON.stringify({
               type: "pty_resize",
@@ -160,36 +163,23 @@ export function TerminalPane() {
       if (ws) ws.close();
       if (term) term.dispose();
     };
-  }, [activeLane.id]);
+  }, [activeLane?.id]);
 
-  // Execute external commands (e.g. Claude OAuth initiation from modal)
+  // Execute external commands directly in real PTY
   useEffect(() => {
     if (!pendingCommand || !xtermInstance.current) return;
-    const term = xtermInstance.current;
-
-    if (pendingCommand.includes("claude")) {
-      term.writeln(`\r\n\x1b[38;2;232;128;74m$ claude login\x1b[0m`);
-      term.writeln(`\x1b[90m[Claude Code CLI 1.0.12]\x1b[0m Starting Anthropic browser OAuth authentication...`);
-      term.writeln(`\x1b[1mPlease visit: \x1b[4m\x1b[38;2;96;165;250mhttps://console.anthropic.com/device\x1b[0m`);
-      term.writeln(`\x1b[90mYour Device Verification Code: \x1b[1m\x1b[38;2;232;128;74mCONG-7489\x1b[0m`);
-      term.writeln(`\x1b[33mWaiting for browser approval...\x1b[0m`);
-
-      const timer = setTimeout(() => {
-        term.writeln(`\x1b[32m✓ Anthropic Account Authorized (anthropic_user@example.com)\x1b[0m`);
-        term.writeln(`\x1b[90mSession token persisted to runner NVMe storage (~/.claude.json)\x1b[0m`);
-        term.write(`\r\nadmin@congruence:~/sample-app (${activeLane.branch})$ `);
-      }, 2000);
-
-      clearPendingCommand();
-      return () => clearTimeout(timer);
-    } else {
-      term.writeln(`\r\n$ ${pendingCommand}`);
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && ptyId) {
-        wsRef.current.send(JSON.stringify({ type: "pty_input", pty_id: ptyId, data: `${pendingCommand}\n` }));
-      }
-      clearPendingCommand();
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && ptyId) {
+      wsRef.current.send(
+        JSON.stringify({
+          type: "pty_input",
+          pty_id: ptyId,
+          lane_id: activeLane?.id,
+          data: `${pendingCommand}\n`,
+        })
+      );
     }
-  }, [pendingCommand, activeLane.branch, clearPendingCommand, ptyId]);
+    clearPendingCommand();
+  }, [pendingCommand, activeLane?.id, clearPendingCommand, ptyId]);
 
   const handleClear = () => {
     if (xtermInstance.current) {
@@ -200,7 +190,17 @@ export function TerminalPane() {
   const handleRestart = () => {
     if (xtermInstance.current) {
       xtermInstance.current.reset();
-      xtermInstance.current.writeln("\x1b[38;2;232;128;74m◆ Terminal reset. Reconnecting PTY...\x1b[0m\r\n$ ");
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && activeLane) {
+        wsRef.current.send(
+          JSON.stringify({
+            type: "spawn_pty",
+            lane_id: activeLane.id,
+            command: "/bin/sh",
+            cols: xtermInstance.current.cols,
+            rows: xtermInstance.current.rows,
+          })
+        );
+      }
     }
   };
 
@@ -211,10 +211,10 @@ export function TerminalPane() {
         <div className="flex items-center gap-2">
           <span className="flex size-2 rounded-full bg-[var(--accent-claude)]" />
           <span className="font-medium text-[var(--foreground)]">
-            PTY · {activeLane.name}
+            PTY · {activeLane?.name || "main"}
           </span>
           <span className="text-[10px] text-[var(--subtle-foreground)] border-l border-[var(--border)] pl-2">
-            worktree: {activeLane.branch}
+            worktree: {activeLane?.branch || "main"}
           </span>
         </div>
 
@@ -222,10 +222,10 @@ export function TerminalPane() {
           <span className="flex items-center gap-1.5 text-[10px] text-[var(--muted-foreground)]">
             <span
               className={`size-1.5 rounded-full ${
-                connected ? "bg-[var(--status-awake)]" : "bg-[var(--accent-claude)]"
+                connected ? "bg-[var(--status-awake)]" : "bg-rose-500"
               }`}
             />
-            {connected ? "Gateway Live" : "Interactive Shell"}
+            {connected ? "Gateway Live" : "Connecting..."}
           </span>
 
           <button
@@ -256,7 +256,7 @@ export function TerminalPane() {
               HOST SUSPENDED
             </span>
             <p className="text-xs text-[var(--subtle-foreground)] max-w-sm">
-              Terminal state and files preserved on persistent disk. Wake workspace to resume interactive CLI session.
+              Terminal state and files preserved on persistent disk. Wake host to resume interactive CLI session.
             </p>
           </div>
         )}

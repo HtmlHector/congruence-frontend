@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { SupersetSidebar } from "./SupersetSidebar";
 import { PromptHub } from "./PromptHub";
@@ -12,14 +13,14 @@ export function InteractiveWorkspace() {
 
   return (
     <div
-      id="demo"
+      id="workspace-preview"
       className="w-full max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-12 select-none"
     >
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-4 px-2 gap-2">
         <div>
           <span className="font-mono text-xs text-[var(--muted-foreground)] uppercase tracking-wider block mb-1">
-            A look inside
+            Workspace Interface
           </span>
           <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-[var(--foreground)]">
             The work stays together.
@@ -28,14 +29,14 @@ export function InteractiveWorkspace() {
         <div className="flex items-center gap-4 text-xs font-mono text-[var(--muted-foreground)]">
           <span className="flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-[var(--status-awake)] animate-pulse" />
-            Interactive · simulated workspace
+            Live Execution Workspace
           </span>
-          <a
+          <Link
             href="/workspace"
             className="hover:text-[var(--foreground)] underline underline-offset-4 hidden sm:inline"
           >
-            Open full preview ↗
-          </a>
+            Open full workspace ↗
+          </Link>
         </div>
       </div>
 
@@ -54,12 +55,6 @@ export function InteractiveWorkspace() {
 
       {/* Integrations & Vault Modal */}
       <IntegrationsModal open={isIntegrationsOpen} onOpenChange={setIsIntegrationsOpen} />
-
-      {/* Workspace Caption Note matching the mockup */}
-      <p className="mt-3 text-center text-xs text-[var(--subtle-foreground)] font-mono">
-        Try Run dev, give an agent its own lane, or put the workspace to sleep. This demo runs
-        entirely in your browser; it does not start real compute or connect accounts.
-      </p>
     </div>
   );
 }

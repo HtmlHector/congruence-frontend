@@ -11,27 +11,33 @@ export function FaqAccordion() {
   const faqs = [
     {
       id: "item-1",
-      question: "Is this available to use today?",
+      question: "Do you run the agent?",
       answer:
-        "This is an interactive product concept. The preview simulates the workflow; it does not provide real hosting, account connections, agent sessions, or GitHub pull requests.",
+        "No. We run the workspace. You bring Claude, Codex, or another CLI and the account behind it. Inference stays on the subscription you already have; we do not resell tokens.",
     },
     {
       id: "item-2",
-      question: "Are you building another coding agent?",
+      question: "Can I use this from a phone?",
       answer:
-        "No. The planned product uses existing CLI harnesses and the accounts people already have. It focuses on a shared execution context, rather than a new agent, editor, or hypervisor.",
+        "The preview and the terminal are built to work in any modern browser, including on a phone. That is part of the point of moving the execution context off your local laptop.",
     },
     {
       id: "item-3",
-      question: "What does the first version run on?",
+      question: "What happens when I close the tab?",
       answer:
-        "The proposed control plane uses Vercel, Postgres, a credential vault, and a GitHub App, with a separate WebSocket gateway for live sessions. Fly Sprites is the first planned execution host, with a HostBackend interface that could support Railway and sandbox forks later.",
+        "Files and agent logins stay on persistent disk. Compute may sleep. Opening the workspace again restores your session and, after wake, the live preview.",
     },
     {
       id: "item-4",
-      question: "What is shared, and what stays private?",
+      question: "What if two agents edit the same files?",
       answer:
-        "Service previews are planned to use private-by-default HTTPS access. Each writer gets a worktree, and watching or controlling a lane is a separate permission. The demo's grants and service addresses are simulated.",
+        "Every agent is started on its own isolated git worktree lane unless you explicitly place them together on the pair lane. Merging stays a standard git pull request, not a silent overwrite.",
+    },
+    {
+      id: "item-5",
+      question: "Is there something to install?",
+      answer:
+        "No. A browser is enough. No companion app or desktop client required.",
     },
   ];
 
@@ -42,14 +48,13 @@ export function FaqAccordion() {
           {/* Left Column Description */}
           <div className="lg:col-span-4 space-y-4">
             <span className="font-mono text-xs text-[var(--muted-foreground)] uppercase tracking-wider block">
-              04 / The Details
+              04 / Questions
             </span>
             <h3 className="text-2xl sm:text-3xl font-medium tracking-tight text-[var(--foreground)]">
-              A small product with a clear boundary.
+              Frequently asked questions.
             </h3>
             <p className="text-xs sm:text-sm text-[var(--muted-foreground)] leading-relaxed font-normal">
-              The first Parabox product connects the pieces of a working environment instead
-              of replacing the tools inside it.
+              Architecture, custody, and concurrency details for engineering teams.
             </p>
           </div>
 

@@ -61,41 +61,11 @@ export function CommandPaletteModal({ open, onOpenChange }: CommandPaletteProps)
     },
     {
       category: "Navigation",
-      id: "nav-automations",
-      label: "Automations & Scheduled Agent Jobs",
-      icon: Zap,
-      action: () => {
-        setMode("automations");
-        onOpenChange(false);
-      },
-    },
-    {
-      category: "Navigation",
-      id: "nav-tasks",
-      label: "Task Backlog & Agent Kanban Board",
-      icon: CheckSquare,
-      action: () => {
-        setMode("tasks");
-        onOpenChange(false);
-      },
-    },
-    {
-      category: "Navigation",
       id: "nav-prs",
-      label: "Pull Requests & Diffs",
+      label: "Pull Requests & GitHub Publications",
       icon: GitPullRequest,
       action: () => {
         setMode("pull-requests");
-        onOpenChange(false);
-      },
-    },
-    {
-      category: "Navigation",
-      id: "nav-pages",
-      label: "Project Docs & Engineering Pages",
-      icon: FileText,
-      action: () => {
-        setMode("pages");
         onOpenChange(false);
       },
     },

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Star, Sparkles, Lightbulb, ArrowRight, Layers } from "lucide-react";
+import { Star, Lightbulb, ArrowRight, Layers } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { FloatingOmnibar } from "./FloatingOmnibar";
 import { StatusBar } from "./StatusBar";
@@ -21,7 +21,9 @@ export function PromptHub() {
       <div className="flex h-11 items-center justify-between px-6 border-b border-[var(--border)]/40 bg-[var(--surface-sidebar)]/50">
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs text-[var(--muted-foreground)]">
-            <strong className="text-[var(--foreground)] font-medium">{project?.repo_full_name || "parabox / sample-app"}</strong>
+            <strong className="text-[var(--foreground)] font-medium">
+              {project?.repo_full_name || "New Workspace"}
+            </strong>
           </span>
         </div>
 
@@ -48,13 +50,18 @@ export function PromptHub() {
           What should we build next?
         </h2>
 
-        {/* Star on GitHub Badge with Crosshairs */}
-        <div className="mb-10 inline-flex items-center gap-2 font-mono text-[11px] tracking-wider uppercase text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors border border-[var(--border)] px-4 py-1.5 rounded bg-[var(--surface-primary)]">
+        {/* Star on GitHub Badge */}
+        <a
+          href="https://github.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-10 inline-flex items-center gap-2 font-mono text-[11px] tracking-wider uppercase text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors border border-[var(--border)] px-4 py-1.5 rounded bg-[var(--surface-primary)]"
+        >
           <span className="text-[var(--subtle-foreground)]">+</span>
           <Star className="size-3 text-[var(--accent-amber)] fill-[var(--accent-amber)]" />
-          <span>Star on GitHub</span>
+          <span>congruence.dev</span>
           <span className="text-[var(--subtle-foreground)]">+</span>
-        </div>
+        </a>
 
         {/* Starter Prompt Suggestion Chips */}
         <div className="w-full max-w-md space-y-2 mb-8 text-left">

@@ -4,21 +4,13 @@ import React, { useState } from "react";
 import {
   Search,
   Layers,
-  Zap,
-  CheckSquare,
   GitPullRequest,
-  FileText,
   Plus,
   ChevronDown,
   ChevronRight,
   Settings,
-  GitBranch,
-  Circle,
-  Loader2,
-  Folder,
   SlidersHorizontal,
   Key,
-  Lock,
   Github,
 } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
@@ -27,7 +19,6 @@ export function SupersetSidebar() {
   const {
     lanes,
     activeLaneId,
-    activeLane,
     switchLane,
     mode,
     setMode,
@@ -35,17 +26,8 @@ export function SupersetSidebar() {
     setIsSearchOpen,
     setIsCloneOpen,
     project,
-    toggleTaskCompletion,
   } = useWorkspace();
   const [sessionsOpen, setSessionsOpen] = useState(true);
-  const [projectsOpen, setProjectsOpen] = useState(true);
-
-  const dynamicSessions = lanes.map((l) => ({
-    id: l.id,
-    title: l.name,
-    diff: l.branch,
-    state: l.status === "Ready" ? "live" : "loading"
-  }));
 
   return (
     <aside className="flex h-full w-[232px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface-sidebar)] text-[11px] select-none">
@@ -132,33 +114,7 @@ export function SupersetSidebar() {
           className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--accent-claude)] hover:bg-[var(--wash)] transition-colors font-medium"
         >
           <Key className="size-3.5 text-[var(--accent-claude)]" />
-          <span>Integrations & Vault</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setMode("automations")}
-          className={`flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 transition-colors ${
-            mode === "automations"
-              ? "text-[var(--foreground)] bg-[var(--wash)] font-medium"
-              : "text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)]"
-          }`}
-        >
-          <Zap className={`size-3.5 ${mode === "automations" ? "text-[var(--accent-claude)]" : ""}`} />
-          <span>Automations</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setMode("tasks")}
-          className={`flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 transition-colors ${
-            mode === "tasks"
-              ? "text-[var(--foreground)] bg-[var(--wash)] font-medium"
-              : "text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)]"
-          }`}
-        >
-          <CheckSquare className={`size-3.5 ${mode === "tasks" ? "text-[var(--accent-claude)]" : ""}`} />
-          <span>Tasks</span>
+          <span>Integrations & Keys</span>
         </button>
 
         <button
@@ -172,19 +128,6 @@ export function SupersetSidebar() {
         >
           <GitPullRequest className={`size-3.5 ${mode === "pull-requests" ? "text-[var(--accent-claude)]" : ""}`} />
           <span>Pull requests</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setMode("pages")}
-          className={`flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 transition-colors ${
-            mode === "pages"
-              ? "text-[var(--foreground)] bg-[var(--wash)] font-medium"
-              : "text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)]"
-          }`}
-        >
-          <FileText className={`size-3.5 ${mode === "pages" ? "text-[var(--accent-claude)]" : ""}`} />
-          <span>Pages</span>
         </button>
       </div>
 
@@ -203,58 +146,34 @@ export function SupersetSidebar() {
 
         {sessionsOpen && (
           <div className="mt-1 space-y-0.5">
-            {/* Live Context Worktree Lanes */}
-            {lanes.map((lane) => {
-              const isActive = lane.id === activeLaneId;
-              return (
-                <div
-                  key={lane.id}
-                  onClick={() => {
-                    switchLane(lane.id);
-                    setMode("deck");
-                  }}
-                  className={`group relative flex h-7 cursor-pointer items-center gap-2 rounded px-2 text-[11px] transition-all ${
-                    isActive
-                      ? "bg-[var(--wash-strong)] text-[var(--foreground)] font-medium"
-                      : "text-[var(--muted-foreground)] hover:bg-[var(--wash-subtle)] hover:text-[var(--foreground)]"
-                  }`}
-                >
-                  <span
-                    className={`size-1.5 rounded-full shrink-0 ${
-                      lane.isDevRunning ? "bg-[var(--status-awake)]" : "bg-[var(--muted-foreground)]/40"
-                    }`}
-                  />
-                  <span className="truncate">{lane.name}</span>
-                  <span className="ml-auto font-mono text-[9px] text-[var(--subtle-foreground)] tabular-nums">
-                    {lane.branch}
-                  </span>
-                </div>
-              );
-            })}
-
-            {/* Real Active Lane Tasks */}
-            {activeLane?.tasks && activeLane.tasks.length > 0 && (
-              <div className="pt-2 border-t border-[var(--border)]/40 mt-2">
-                <span className="px-2 font-mono text-[9px] uppercase tracking-wider text-[var(--subtle-foreground)] block mb-1">
-                  Active Tasks ({activeLane.tasks.length})
-                </span>
-                {activeLane.tasks.map((t) => (
+            {lanes.length === 0 ? (
+              <div className="px-2 py-3 text-[10px] text-[var(--muted-foreground)] text-center">
+                No active worktrees
+              </div>
+            ) : (
+              lanes.map((lane) => {
+                const isActive = lane.id === activeLaneId;
+                return (
                   <div
-                    key={t.id}
-                    onClick={() => toggleTaskCompletion(t.id)}
-                    className="flex h-6.5 cursor-pointer items-center gap-2 rounded px-2 text-[11px] text-[var(--muted-foreground)] hover:bg-[var(--wash-subtle)] hover:text-[var(--foreground)] transition-colors"
+                    key={lane.id}
+                    onClick={() => {
+                      switchLane(lane.id);
+                      setMode("deck");
+                    }}
+                    className={`group relative flex h-7 cursor-pointer items-center gap-2 rounded px-2 text-[11px] transition-all ${
+                      isActive
+                        ? "bg-[var(--wash-strong)] text-[var(--foreground)] font-medium"
+                        : "text-[var(--muted-foreground)] hover:bg-[var(--wash-subtle)] hover:text-[var(--foreground)]"
+                    }`}
                   >
-                    <span
-                      className={`size-1.5 rounded-full shrink-0 ${
-                        t.completed ? "bg-emerald-400" : "bg-[var(--accent-claude)]"
-                      }`}
-                    />
-                    <span className={`truncate min-w-0 flex-1 ${t.completed ? "line-through opacity-60" : ""}`}>
-                      {t.text}
+                    <span className="size-1.5 rounded-full shrink-0 bg-[var(--status-awake)]" />
+                    <span className="truncate">{lane.name}</span>
+                    <span className="ml-auto font-mono text-[9px] text-[var(--subtle-foreground)] tabular-nums">
+                      {lane.branch}
                     </span>
                   </div>
-                ))}
-              </div>
+                );
+              })
             )}
           </div>
         )}

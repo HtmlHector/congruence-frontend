@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Github, ExternalLink } from "lucide-react";
+import { Github } from "lucide-react";
 
 export function Header() {
   return (
@@ -25,7 +25,7 @@ export function Header() {
           </Link>
 
           <span className="hidden text-[11px] font-mono uppercase tracking-widest text-[var(--muted-foreground)] sm:inline-block border-l border-[var(--border)] pl-3">
-            Concept Preview
+            Shared Execution Context
           </span>
         </div>
 
@@ -44,7 +44,7 @@ export function Header() {
             The details
           </a>
           <a
-            href="https://github.com/parabox-so/parabox"
+            href="https://github.com"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 hover:text-[var(--foreground)] transition-colors font-mono text-[11px]"
@@ -68,7 +68,7 @@ export function Header() {
             href="/workspace"
             className="hidden md:inline-flex rounded-full border border-[var(--border)] px-3 py-1 font-mono text-[11px] text-[var(--foreground)] hover:bg-[var(--surface-secondary)] transition-all"
           >
-            Live Demo
+            Open Workspace
           </Link>
         </nav>
       </div>

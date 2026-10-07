@@ -1,241 +1,217 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("congruence.dev - Concept Preview & Interactive Workspace", () => {
+test.describe("Congruence Platform End-to-End Suite", () => {
   test.beforeEach(async ({ page }) => {
+    // Intercept API routes with standard mock backend data for deterministic browser tests
+    await page.route("**/api/v1/projects", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: "proj_test123",
+            name: "Parabox Core",
+            slug: "parabox-core",
+            repo_full_name: "parabox-so/parabox-core",
+            default_branch: "main",
+          },
+        ]),
+      });
+    });
+
+    await page.route("**/api/v1/projects/proj_test123/lanes", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: "lane_pair",
+            name: "Pair lane",
+            slug: "pair-lane",
+            branch_name: "main",
+            is_pair_lane: true,
+            status: "ready",
+          },
+          {
+            id: "lane_claude",
+            name: "Claude Code",
+            slug: "claude-progress",
+            branch_name: "claude/progress",
+            is_pair_lane: false,
+            status: "ready",
+          },
+        ]),
+      });
+    });
+
+    await page.route("**/api/v1/projects/proj_test123/actors", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: "act_human",
+            display_name: "You",
+            role: "owner",
+            actor_type: "human",
+            presence: "online",
+          },
+          {
+            id: "act_claude",
+            display_name: "Claude Code",
+            role: "watcher",
+            actor_type: "harness_claude",
+            presence: "online",
+          },
+        ]),
+      });
+    });
+
+    await page.route("**/api/v1/projects/proj_test123/host", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "host_test",
+          project_id: "proj_test123",
+          state: "awake",
+          backend_type: "process_local",
+        }),
+      });
+    });
+
+    await page.route("**/api/v1/projects/proj_test123/services", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: "srv_3000",
+            lane_id: "lane_pair",
+            port: 3000,
+            protocol: "http",
+            address_subdomain: "preview-lane-pair",
+            access_mode: "private",
+            is_active: true,
+            url: "/preview/lane_pair/3000/",
+          },
+        ]),
+      });
+    });
+
+    await page.route("**/api/v1/projects/proj_test123/git/diff*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          lane_id: "lane_pair",
+          branch_name: "main",
+          files_changed: 1,
+          insertions: 5,
+          deletions: 1,
+          diff_text: "diff --git a/README.md b/README.md\n+Added congruence integration",
+        }),
+      });
+    });
+
+    await page.route("**/api/v1/projects/proj_test123/github/pull-requests", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route("**/api/v1/projects/proj_test123/activity*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: "evt_1",
+            action_type: "project_created",
+            summary: "Project initialized with pair lane",
+            timestamp: new Date().toISOString(),
+          },
+        ]),
+      });
+    });
+
+    await page.route("**/api/v1/integrations/status/proj_test123", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          project_id: "proj_test123",
+          github: {
+            connected: true,
+            app_id: "4010628",
+            install_url: "https://github.com/apps/congruence/installations/new",
+            repo: "parabox-so/parabox-core",
+          },
+          harnesses: {
+            claude: { label: "Claude Code", state: "connected", credential_path: "~/.claude.json", supports_login: true },
+            codex: { label: "OpenAI Codex", state: "connected", credential_path: "~/.codex", supports_login: true },
+          },
+        }),
+      });
+    });
+  });
+
+  test("landing page renders authentic copy and FAQ accordion", async ({ page }) => {
     await page.goto("/");
-  });
 
-  test("renders editorial landing page, hero narrative, and pillars", async ({ page }) => {
-    // 1. Header Wordmark
-    await expect(page.locator("header a", { hasText: "congruence.dev" })).toBeVisible();
-
-    // 2. Hero Headline & Subhead
+    // Verify main headline and subtag
     await expect(page.locator("h1")).toContainText("Your repository, your agents");
-    await expect(page.locator("h1")).toContainText("In one place.");
-    await expect(
-      page.getByText("A shared browser workspace for the coding agents you already use.")
-    ).toBeVisible();
+    await expect(page.getByText("Shared Execution Context").first()).toBeVisible();
 
-    // 3. Section 01 / The Idea
-    await expect(page.getByText("01 / The Idea")).toBeVisible();
-    await expect(
-      page.getByText("Changing devices shouldn't mean rebuilding your context.")
-    ).toBeVisible();
+    // Verify FAQ questions
+    await expect(page.getByText("Do you run the agent?")).toBeVisible();
+    await page.getByText("Do you run the agent?").click();
+    await expect(page.getByText(/We run the workspace/i)).toBeVisible();
 
-    // 4. Section 02 / The Workflow
-    await expect(page.getByText("02 / The Workflow")).toBeVisible();
-    await expect(page.getByText("From a repository to a running app.")).toBeVisible();
-    await expect(page.getByText("Bring your repository")).toBeVisible();
-    await expect(page.getByText("Use your own agents")).toBeVisible();
-
-    // 5. Section 03 / Built Around Shared Work
-    await expect(page.getByText("03 / Built around shared work")).toBeVisible();
-    await expect(page.getByText("One context. Room for more than one writer.")).toBeVisible();
-    await expect(page.getByText("Keep the important parts.")).toBeVisible();
-    await expect(page.getByText("Give each writer a lane.")).toBeVisible();
-    await expect(page.getByText("Watch first. Grant when needed.")).toBeVisible();
-
-    // 6. Section 04 / The Details (FAQ Accordion)
-    await expect(page.getByText("04 / The Details")).toBeVisible();
-    await expect(page.getByText("A small product with a clear boundary.")).toBeVisible();
-    
-    // Toggle accordion item 2
-    const faqItem2 = page.getByRole("button", { name: "Are you building another coding agent?" });
-    await expect(faqItem2).toBeVisible();
-    await faqItem2.scrollIntoViewIfNeeded();
-    await faqItem2.click();
-    await expect(page.getByText(/No\. The planned product uses existing CLI harnesses/)).toBeVisible();
-
-    // 7. Footer
-    await expect(page.locator("footer")).toContainText("congruence.dev");
-    await expect(page.locator("footer")).toContainText("A Parabox product");
+    // Verify CTA link
+    const cta = page.locator("a[href='/workspace']").first();
+    await expect(cta).toBeVisible();
   });
 
-  test("interactive workspace: sleep and wake transitions", async ({ page }) => {
-    const demo = page.locator("#demo");
-    await expect(demo).toBeVisible();
-
-    // Initial state: Awake
-    await expect(demo.getByText("Workspace awake", { exact: true })).toBeVisible();
-
-    // Click Sleep workspace
-    const sleepBtn = demo.getByRole("button", { name: "Sleep workspace" });
-    await sleepBtn.click();
-
-    // Transition to Asleep
-    await expect(demo.getByText("Workspace asleep", { exact: true })).toBeVisible();
-    await expect(demo.getByText("Host Asleep")).toBeVisible();
-
-    // Click Wake workspace
-    const wakeBtn = demo.getByRole("button", { name: "Wake workspace" });
-    await wakeBtn.click();
-
-    // Transition back to Awake
-    await expect(demo.getByText("Workspace awake", { exact: true })).toBeVisible();
-    await expect(demo.getByText("Good ideas start here.")).toBeVisible();
-  });
-
-  test("interactive workspace: multi-lane worktrees and tabs", async ({ page }) => {
-    const demo = page.locator("#demo");
-
-    // 1. Initial Lane is Pair lane (main)
-    await expect(demo.getByText("Pair lane").first()).toBeVisible();
-
-    // 2. Switch to Claude Code lane
-    const claudeLane = demo.getByText("Claude Code").first();
-    await claudeLane.click();
-
-    // Verify context switch
-    await expect(demo.getByText("claude/progress").first()).toBeVisible();
-
-    // 3. Switch to Terminal tab
-    const terminalTab = demo.getByRole("button", { name: "Terminal 1" });
-    await terminalTab.click();
-    await expect(demo.getByText(/PTY ·/)).toBeVisible();
-    await expect(demo.locator(".xterm").first()).toBeVisible();
-
-    // 4. Switch to Changes tab
-    const changesTab = demo.getByRole("button", { name: /Changes/ });
-    await changesTab.click();
-    await expect(demo.getByText("src/components/FieldnotesApp.tsx")).toBeVisible();
-
-    // 5. Switch back to Preview tab
-    const previewTab = demo.getByRole("button", { name: "Preview" });
-    await previewTab.click();
-    await expect(demo.getByText("Good ideas start here.")).toBeVisible();
-  });
-
-  test("interactive workspace: run dev server and simulate edit", async ({ page }) => {
-    const demo = page.locator("#demo");
-
-    // 1. Run Dev Server
-    const runDevBtn = demo.getByRole("button", { name: "Run dev" });
-    await runDevBtn.click();
-
-    // Button changes to Stop dev and preview badge changes to Live service
-    await expect(demo.getByRole("button", { name: "Stop dev" })).toBeVisible();
-    await expect(demo.getByText("Live service", { exact: true })).toBeVisible();
-
-    // Check terminal for active session
-    await demo.getByRole("button", { name: "Terminal 1" }).click();
-    await expect(demo.getByText(/PTY ·/)).toBeVisible();
-    await expect(demo.locator(".xterm").first()).toBeVisible();
-
-    // 2. Simulate an Edit
-    await demo.getByRole("button", { name: "Simulate an edit" }).click();
-    await demo.getByRole("button", { name: "Preview" }).click();
-
-    // Verify new task item added
-    await expect(demo.getByText("Review changes from You").first()).toBeVisible();
-  });
-
-  test("interactive workspace: lane control grant and revoke flow", async ({ page }) => {
-    const demo = page.locator("#demo");
-
-    // Default state: You has write control
-    await expect(
-      demo.getByText("You can write in pair lane. Agents can watch until you grant control.")
-    ).toBeVisible();
-
-    // Select Claude Code from dropdown
-    const select = demo.locator("select");
-    await select.selectOption("Claude Code");
-
-    // Click Grant control
-    await demo.getByRole("button", { name: "Grant control" }).click();
-
-    // Status updates
-    await expect(
-      demo.getByText("Claude Code has active write lease. Owner can revoke.")
-    ).toBeVisible();
-    await expect(demo.getByRole("button", { name: "Revoke control" })).toBeVisible();
-
-    // Click Revoke control
-    await demo.getByRole("button", { name: "Revoke control" }).click();
-
-    // Returns to You
-    await expect(
-      demo.getByText("You can write in pair lane. Agents can watch until you grant control.")
-    ).toBeVisible();
-  });
-
-  test("interactive workspace: Superset prompt hub and omnibar task dispatch", async ({ page }) => {
-    const demo = page.locator("#demo");
-
-    // 1. Switch to Prompt Hub using the header button
-    const hubBtn = demo.getByRole("button", { name: "Hub", exact: true });
-    if (await hubBtn.isVisible()) {
-      await hubBtn.click();
-    } else {
-      await demo.getByRole("button", { name: "Prompt Hub" }).click();
-    }
-
-    // Verify Hub Elements
-    await expect(demo.getByText("What should we build next?")).toBeVisible();
-    await expect(demo.getByText("Star on GitHub")).toBeVisible();
-    await expect(demo.getByText("Set up this project for Congruence")).toBeVisible();
-
-    // 2. Dispatch task via prompt suggestion chip
-    await demo.getByText("Find and fix a small bug").click();
-
-    // Transitions to Execution Deck
-    await expect(demo.getByText("Codex Task").first()).toBeVisible();
-    await expect(demo.getByText("agent/find-and-fix-a-small-bug").first()).toBeVisible();
-  });
-
-  test("interactive workspace: product details modal", async ({ page }) => {
-    const demo = page.locator("#demo");
-
-    // Click The product info button
-    const infoBtn = demo.getByRole("button", { name: /The product/i });
-    await infoBtn.click();
-
-    // Modal opens
-    const modal = page.locator("[role='dialog']");
-    await expect(modal).toBeVisible();
-    await expect(modal.getByText("congruence.dev System Brief")).toBeVisible();
-    await expect(modal.getByText("Three-Plane Architecture")).toBeVisible();
-    await expect(modal.getByText("Account Custody (Zero Token Resale)")).toBeVisible();
-
-    // Dismiss modal
-    await modal.getByRole("button", { name: "Got it" }).click();
-    await expect(modal).not.toBeVisible();
-  });
-
-  test("standalone full-screen workspace page at /workspace", async ({ page }) => {
+  test("workspace page renders execution deck, lanes, and services", async ({ page }) => {
     await page.goto("/workspace");
 
-    // Verify full-screen Superset sidebar
-    await expect(page.getByText(/Sample App|Workspace|Congruence/i).first()).toBeVisible();
-
-    // Switch to Hub if starting in Deck mode
-    const hubBtn = page.getByRole("button", { name: "Hub", exact: true });
-    if (await hubBtn.isVisible()) {
-      await hubBtn.click();
-    }
-
-    // Verify Prompt Hub elements
-    await expect(page.getByText("What should we build next?")).toBeVisible();
-    await expect(page.getByPlaceholder("Upgrade a dependency and fix what breaks...")).toBeVisible();
-
-    // Switch to Execution Deck
-    await page.getByRole("button", { name: "Open Execution Deck" }).click();
+    // Verify project name from API
+    await expect(page.getByText("Parabox Core").first()).toBeVisible();
     await expect(page.getByText("Pair lane").first()).toBeVisible();
-    await expect(page.getByText("Workspace awake", { exact: true })).toBeVisible();
 
-    // Click Connect Anthropic / Agents button in top toolbar
-    await page.getByRole("button", { name: "Connect Anthropic / Agents" }).click();
+    // Verify Tab switching
+    await page.getByRole("button", { name: "Terminal" }).click();
+    await expect(page.getByText("PTY · Pair lane")).toBeVisible();
 
-    // Verify modal opens
-    const modal = page.locator("[role='dialog']");
-    await expect(modal).toBeVisible();
-    await expect(modal.getByText("Claude Code CLI")).toBeVisible();
-    await expect(modal.getByText("Option A: Launch Claude Browser OAuth in Terminal")).toBeVisible();
-    await expect(modal.getByText("Option B: BYO Anthropic API Key")).toBeVisible();
-    await expect(modal.getByPlaceholder("sk-ant-api03-...")).toBeVisible();
+    await page.getByRole("button", { name: "Changes" }).click();
+    await expect(page.getByText("Worktree Diff")).toBeVisible();
 
-    // Close modal
-    await page.keyboard.press("Escape");
-    await expect(modal).not.toBeVisible();
+    await page.getByRole("button", { name: "Preview" }).click();
+    await expect(page.getByText("Live HTTPS Service")).toBeVisible();
+  });
+
+  test("pull requests view loads and opens publication modal", async ({ page }) => {
+    await page.goto("/workspace");
+
+    // Click Pull requests in sidebar
+    await page.getByRole("button", { name: "Pull requests" }).click();
+    await expect(page.getByRole("heading", { name: "Pull Requests" })).toBeVisible();
+
+    // Click New Pull Request button
+    await page.getByRole("button", { name: "New Pull Request" }).click();
+    await expect(page.getByText("Publish Pull Request to GitHub")).toBeVisible();
+  });
+
+  test("integrations modal opens and displays repository status", async ({ page }) => {
+    await page.goto("/workspace");
+
+    // Open integrations modal
+    await page.getByRole("button", { name: "Connect Agents / Keys" }).click();
+    await expect(page.getByText("Repositories & Harness Logins")).toBeVisible();
+    await expect(page.getByText("parabox-so/parabox-core")).toBeVisible();
+    await expect(page.getByText("Claude Code CLI")).toBeVisible();
   });
 });

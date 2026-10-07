@@ -1,19 +1,18 @@
 "use client";
 
 import React from "react";
-import { Lock, Info, Moon, Sun, ArrowLeft, SlidersHorizontal, Key } from "lucide-react";
+import { Lock, Moon, Sun, ArrowLeft, Key } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { LanesSidebar } from "./LanesSidebar";
 import { CenterCanvas } from "./CenterCanvas";
 import { ActorSidebar } from "./ActorSidebar";
 import { StatusBar } from "./StatusBar";
-import { ProductInfoModal } from "./ProductInfoModal";
 
 export function ExecutionDeck() {
   const {
+    project,
     hostState,
     toggleSleepWake,
-    setIsProductModalOpen,
     setIsIntegrationsOpen,
     setMode,
   } = useWorkspace();
@@ -35,9 +34,11 @@ export function ExecutionDeck() {
           </button>
 
           <span className="font-mono text-[10px] text-[var(--muted-foreground)] hidden sm:inline">
-            PARABOX / WORKSPACES /
+            CONGRUENCE /
           </span>
-          <span className="font-medium text-[var(--foreground)]">Sample app</span>
+          <span className="font-medium text-[var(--foreground)]">
+            {project?.name || "Workspace"}
+          </span>
           <span className="inline-flex items-center gap-1 rounded bg-[var(--surface-secondary)] border border-[var(--border)] px-1.5 py-0.5 font-mono text-[9px] text-[var(--muted-foreground)]">
             <Lock className="size-2 text-[var(--subtle-foreground)]" />
             Private
@@ -58,14 +59,14 @@ export function ExecutionDeck() {
               }`}
             />
             <span className="text-[var(--muted-foreground)]">
-              {hostState === "awake" && "Workspace awake"}
+              {hostState === "awake" && "Host awake"}
               {hostState === "asleep" && (
                 <>
-                  <span>Workspace asleep</span>
-                  <span className="ml-1 text-[var(--accent-amber)]">(Host Asleep)</span>
+                  <span>Host asleep</span>
+                  <span className="ml-1 text-[var(--accent-amber)]">(Compute paused)</span>
                 </>
               )}
-              {hostState === "sleeping" && "Putting to sleep..."}
+              {hostState === "sleeping" && "Suspending compute..."}
               {hostState === "waking" && "Waking host..."}
             </span>
           </div>
@@ -78,7 +79,7 @@ export function ExecutionDeck() {
             title="Connect Anthropic (Claude Code), OpenAI, and GitHub"
           >
             <Key className="size-3" />
-            <span className="font-medium">Connect Anthropic / Agents</span>
+            <span className="font-medium">Connect Agents / Keys</span>
           </button>
 
           {/* Sleep / Wake Power Button */}
@@ -91,25 +92,14 @@ export function ExecutionDeck() {
             {hostState === "awake" ? (
               <>
                 <Moon className="size-3 text-[var(--muted-foreground)]" />
-                <span>Sleep workspace</span>
+                <span>Sleep host</span>
               </>
             ) : (
               <>
                 <Sun className="size-3 text-[var(--accent-amber)]" />
-                <span>Wake workspace</span>
+                <span>Wake host</span>
               </>
             )}
-          </button>
-
-          {/* The Product Info Modal Trigger */}
-          <button
-            type="button"
-            onClick={() => setIsProductModalOpen(true)}
-            className="flex items-center gap-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors p-1"
-            title="View technical brief"
-          >
-            <span className="text-[11px] hidden md:inline">The product</span>
-            <Info className="size-3.5 text-[var(--accent-claude)]" />
           </button>
         </div>
       </div>
@@ -132,9 +122,6 @@ export function ExecutionDeck() {
 
       {/* Bottom Status Bar */}
       <StatusBar />
-
-      {/* Architecture Brief Modal */}
-      <ProductInfoModal />
     </div>
   );
 }

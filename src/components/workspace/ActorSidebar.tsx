@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Users, Shield, Clock, Check, ChevronDown } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Shield, Clock, ChevronDown } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 
 export function ActorSidebar() {
@@ -15,19 +15,22 @@ export function ActorSidebar() {
     setIsIntegrationsOpen,
   } = useWorkspace();
 
-  const [selectedWriter, setSelectedWriter] = useState(activeLane.currentWriter);
+  const [selectedActorId, setSelectedActorId] = useState<string>("");
 
-  React.useEffect(() => {
-    setSelectedWriter(activeLane.currentWriter);
-  }, [activeLane.currentWriter]);
+  useEffect(() => {
+    if (actors.length > 0 && !selectedActorId) {
+      setSelectedActorId(actors[0].id);
+    }
+  }, [actors, selectedActorId]);
 
   const handleGrant = () => {
-    grantControl(selectedWriter);
+    if (selectedActorId) {
+      grantControl(selectedActorId);
+    }
   };
 
   const handleRevoke = () => {
     revokeControl();
-    setSelectedWriter("You");
   };
 
   return (
@@ -41,63 +44,73 @@ export function ActorSidebar() {
             onClick={() => setIsIntegrationsOpen(true)}
             className="text-[9px] text-[var(--accent-claude)] hover:underline cursor-pointer"
           >
-            Connect / Vault ↗
+            Connect / Keys ↗
           </button>
         </div>
 
         <div className="space-y-2">
-          {actors.map((actor) => (
-            <div
-              key={actor.id}
-              onClick={() => actor.id !== "act_you" && setIsIntegrationsOpen(true)}
-              className={`flex items-center justify-between p-1 rounded transition-colors ${
-                actor.id !== "act_you" ? "hover:bg-[var(--wash)] cursor-pointer" : ""
-              }`}
-              title={actor.id !== "act_you" ? "Click to configure API credentials & OAuth" : undefined}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <span
-                  className={`flex size-5 shrink-0 items-center justify-center rounded-[var(--radius-xs)] font-mono text-[10px] font-bold ${actor.badgeBg} ${actor.badgeFg}`}
-                >
-                  {actor.badge}
-                </span>
-                <div className="min-w-0">
-                  <div className="truncate text-[11px] font-medium text-[var(--foreground)]">
-                    {actor.name}
-                  </div>
-                  <div className="truncate text-[9px] text-[var(--muted-foreground)]">
-                    {actor.role}
+          {actors.length === 0 ? (
+            <div className="text-[10px] text-[var(--muted-foreground)] py-2">
+              No actors active
+            </div>
+          ) : (
+            actors.map((actor) => (
+              <div
+                key={actor.id}
+                onClick={() => actor.actor_type !== "human" && setIsIntegrationsOpen(true)}
+                className={`flex items-center justify-between p-1 rounded transition-colors ${
+                  actor.actor_type !== "human" ? "hover:bg-[var(--wash)] cursor-pointer" : ""
+                }`}
+                title={actor.actor_type !== "human" ? "Click to configure API credentials" : undefined}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className={`flex size-5 shrink-0 items-center justify-center rounded-[var(--radius-xs)] font-mono text-[10px] font-bold ${
+                      actor.actor_type === "human"
+                        ? "bg-[var(--surface-tertiary)] text-[var(--foreground)]"
+                        : "bg-[rgba(232,128,74,0.15)] text-[var(--accent-claude)]"
+                    }`}
+                  >
+                    {actor.display_name.slice(0, 1).toUpperCase()}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="truncate text-[11px] font-medium text-[var(--foreground)]">
+                      {actor.display_name}
+                    </div>
+                    <div className="truncate text-[9px] text-[var(--muted-foreground)]">
+                      {actor.role}
+                    </div>
                   </div>
                 </div>
+                <span className="text-[10px] font-mono text-[var(--status-awake)] shrink-0">
+                  {actor.presence}
+                </span>
               </div>
-              <span className="text-[10px] font-mono text-[var(--status-awake)] shrink-0">
-                {actor.statusText}
-              </span>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
       {/* LANE CONTROL Section */}
       <div className="border-b border-[var(--border)] p-3 space-y-3">
         <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
-          <span>Lane control</span>
+          <span>Lane write lease</span>
           <Shield className="size-3 text-[var(--accent-claude)]" />
         </div>
 
         <div className="space-y-1.5">
           <label className="text-[10px] text-[var(--subtle-foreground)] block">
-            Current writer
+            Target actor
           </label>
           <div className="relative">
             <select
-              value={selectedWriter}
-              onChange={(e) => setSelectedWriter(e.target.value)}
+              value={selectedActorId}
+              onChange={(e) => setSelectedActorId(e.target.value)}
               className="w-full appearance-none rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-primary)] px-2.5 py-1.5 text-xs text-[var(--foreground)] focus:border-[var(--border-strong)] focus:outline-none cursor-pointer"
             >
               {actors.map((a) => (
-                <option key={a.id} value={a.name}>
-                  {a.name}
+                <option key={a.id} value={a.id}>
+                  {a.display_name} ({a.role})
                 </option>
               ))}
             </select>
@@ -107,40 +120,37 @@ export function ActorSidebar() {
 
         {/* Dynamic Status Helper Text */}
         <p className="text-[10px] text-[var(--muted-foreground)] leading-relaxed">
-          {activeLane.currentWriter === "You"
-            ? "You can write in pair lane. Agents can watch until you grant control."
-            : `${activeLane.currentWriter} has active write lease. Owner can revoke.`}
+          Watching is the default. Write is an explicit, revocable grant on this worktree.
         </p>
 
-        {/* Grant or Revoke Action Button */}
-        {activeLane.currentWriter === "You" ? (
+        {/* Grant or Revoke Action Buttons */}
+        <div className="flex gap-2">
           <button
             type="button"
             onClick={handleGrant}
-            className="flex h-7 w-full items-center justify-center rounded-[var(--radius-sm)] bg-[var(--foreground)] text-[var(--background)] font-medium text-[11px] hover:bg-[var(--primary-hover)] transition-all shadow-xs"
+            className="flex-1 flex h-7 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--foreground)] text-[var(--background)] font-medium text-[11px] hover:bg-[var(--primary-hover)] transition-all shadow-xs"
           >
             Grant control
           </button>
-        ) : (
           <button
             type="button"
             onClick={handleRevoke}
-            className="flex h-7 w-full items-center justify-center rounded-[var(--radius-sm)] border border-[var(--accent-danger-border)] bg-[var(--accent-danger-wash)] text-[var(--accent-danger)] font-medium text-[11px] hover:bg-[var(--accent-danger-border)] transition-all"
+            className="flex h-7 px-3 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-secondary)] text-[var(--foreground)] font-medium text-[11px] hover:bg-[var(--surface-tertiary)] transition-all"
           >
-            Revoke control
+            Revoke
           </button>
-        )}
+        </div>
 
-        {/* Watcher Checkbox */}
+        {/* Watcher Note */}
         <label className="flex items-start gap-2 pt-1 cursor-pointer">
           <input
             type="checkbox"
-            checked={activeLane.allowWatchers}
-            onChange={(e) => toggleAllowWatchers(e.target.checked)}
+            checked={true}
+            readOnly
             className="mt-0.5 size-3 rounded border-[var(--border)] bg-[var(--surface-primary)] accent-[var(--foreground)]"
           />
           <span className="text-[9px] text-[var(--muted-foreground)] leading-snug">
-            Allow other actors to watch. Watching is read-only. Control is explicit, scoped to this lane, and revocable.
+            Allow other actors to watch. Watching is read-only.
           </span>
         </label>
       </div>
@@ -153,14 +163,20 @@ export function ActorSidebar() {
         </div>
 
         <div className="space-y-2">
-          {activityEvents.map((event) => (
-            <div key={event.id} className="text-[10px] space-y-0.5">
-              <div className="text-[var(--foreground)] font-normal">{event.text}</div>
-              <div className="font-mono text-[9px] text-[var(--subtle-foreground)]">
-                {event.timestamp}
-              </div>
+          {activityEvents.length === 0 ? (
+            <div className="text-[10px] text-[var(--muted-foreground)] py-2">
+              No recent activity recorded
             </div>
-          ))}
+          ) : (
+            activityEvents.map((event) => (
+              <div key={event.id} className="text-[10px] space-y-0.5">
+                <div className="text-[var(--foreground)] font-normal">{event.text}</div>
+                <div className="font-mono text-[9px] text-[var(--subtle-foreground)]">
+                  {event.timestamp}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </aside>

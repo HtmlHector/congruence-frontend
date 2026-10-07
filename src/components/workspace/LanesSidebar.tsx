@@ -1,16 +1,16 @@
 "use client";
 
 import React from "react";
-import { FolderGit2, Plus, GitBranch, ShieldCheck } from "lucide-react";
+import { FolderGit2, Plus } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 
 export function LanesSidebar() {
   const { lanes, activeLaneId, switchLane, submitPrompt, project } = useWorkspace();
 
   const handleAddLane = () => {
-    const laneName = prompt("Enter new lane name or agent task:", "Refactor auth");
+    const laneName = prompt("Enter new lane task or branch name:", "refactor-feature");
     if (laneName && laneName.trim()) {
-      submitPrompt(laneName.trim(), "Claude", "claude-3-7-sonnet", "Default effort");
+      submitPrompt(laneName.trim(), "Claude", "default", "default");
     }
   };
 
@@ -24,7 +24,7 @@ export function LanesSidebar() {
         <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-primary)] p-2">
           <div className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--foreground)] truncate">
             <FolderGit2 className="size-3.5 text-[var(--accent-claude)] shrink-0" />
-            <span className="truncate">{project?.repo_full_name || "parabox / sample-app"}</span>
+            <span className="truncate">{project?.repo_full_name || "No active repo"}</span>
           </div>
           <span className="mt-1 inline-flex items-center gap-1 font-mono text-[9px] text-emerald-400">
             <span className="size-1 rounded-full bg-emerald-400" />
@@ -61,10 +61,8 @@ export function LanesSidebar() {
                 }`}
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <span
-                    className={`flex size-4 shrink-0 items-center justify-center rounded-[2px] font-mono text-[9px] font-bold ${lane.badgeBg} ${lane.badgeFg}`}
-                  >
-                    {lane.badge}
+                  <span className="flex size-4 shrink-0 items-center justify-center rounded-[2px] font-mono text-[9px] font-bold bg-[var(--surface-tertiary)] text-[var(--foreground)]">
+                    {lane.is_pair_lane ? "P" : lane.name.startsWith("Claude") ? "C" : "O"}
                   </span>
                   <div className="min-w-0">
                     <div
@@ -79,39 +77,15 @@ export function LanesSidebar() {
                     </div>
                   </div>
                 </div>
-
-                {lane.isDevRunning && (
-                  <span className="size-1.5 rounded-full bg-[var(--status-awake)] shrink-0" />
-                )}
               </div>
             );
           })}
         </div>
-
-        <p className="pt-2 text-[10px] text-[var(--subtle-foreground)] leading-relaxed font-normal">
-          One worktree per writer. One shared place to work.
-        </p>
       </div>
 
-      {/* WORKSPACE CONTEXT Section */}
-      <div className="border-t border-[var(--border)]/60 pt-3 space-y-2">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted-foreground)] block">
-          Workspace context
-        </span>
-        <div className="space-y-1.5 text-[10px] font-mono">
-          <div className="flex items-center justify-between">
-            <span className="text-[var(--muted-foreground)]">Files & Git</span>
-            <span className="text-[var(--foreground)] font-medium">Persistent</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-[var(--muted-foreground)]">Tool identities</span>
-            <span className="text-[var(--foreground)] font-medium">Retained</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-[var(--muted-foreground)]">Running processes</span>
-            <span className="text-[var(--accent-claude)] font-medium">Ephemeral</span>
-          </div>
-        </div>
+      {/* FOOTER NOTE */}
+      <div className="border-t border-[var(--border)]/60 pt-3 text-[10px] text-[var(--muted-foreground)] leading-tight">
+        One worktree per writer. One shared place to work.
       </div>
     </div>
   );
