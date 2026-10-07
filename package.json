@@ -15,6 +15,7 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
+    "@assistant-ui/react": "^0.15.25",
     "@clerk/nextjs": "^7.9.11",
     "@clerk/themes": "^2.4.57",
     "@radix-ui/react-accordion": "^1.2.21",

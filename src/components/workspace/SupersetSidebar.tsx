@@ -1,21 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Search,
-  Layers,
-  GitPullRequest,
-  Plus,
-  ChevronDown,
+  PanelLeft,
+  ChevronLeft,
   ChevronRight,
-  Settings,
+  Plus,
+  Flag,
+  Sparkles,
+  Search,
   SlidersHorizontal,
-  Key,
-  Github,
-  PanelLeftClose,
-  PanelLeftOpen,
+  FolderPlus,
+  ChevronDown,
+  MoreHorizontal,
+  Settings,
 } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
+import { createClient } from "@/lib/supabase/client";
 
 export function SupersetSidebar() {
   const {
@@ -23,6 +24,9 @@ export function SupersetSidebar() {
     project,
     projectId,
     switchProject,
+    lanes,
+    activeLaneId,
+    switchLane,
     mode,
     setMode,
     setIsIntegrationsOpen,
@@ -31,280 +35,319 @@ export function SupersetSidebar() {
     sidebarCollapsed,
     toggleSidebar,
   } = useWorkspace();
-  const [workspacesOpen, setWorkspacesOpen] = useState(true);
 
+  const [projectsExpanded, setProjectsExpanded] = useState(true);
+  const [userEmail, setUserEmail] = useState<string>("trashdev098@gmail.com");
+
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user?.email) {
+          setUserEmail(user.email);
+        }
+      } catch {
+        // Fallback email in place
+      }
+    }
+    loadUser();
+  }, []);
+
+  const userInitial = (userEmail ? userEmail[0] : "H").toUpperCase();
+
+  // Collapsed Sidebar View (⌘B)
   if (sidebarCollapsed) {
     return (
-      <aside className="flex h-full w-[48px] shrink-0 flex-col items-center border-r border-[var(--border)] bg-[var(--surface-sidebar)] py-3 text-[11px] select-none transition-all duration-200">
+      <aside className="flex h-full w-[48px] shrink-0 flex-col items-center border-r border-[var(--border)] bg-[var(--surface-sidebar)] py-2 text-[12px] select-none transition-all duration-200">
         {/* Top Expand Button */}
         <button
           type="button"
           onClick={toggleSidebar}
           title="Expand sidebar (⌘B)"
-          className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)] transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)] transition-colors"
         >
-          <PanelLeftOpen className="size-4" />
+          <PanelLeft className="size-4" />
         </button>
 
         <div className="my-2 h-[1px] w-6 bg-[var(--border)]/60" />
 
-        {/* Quick Actions */}
+        {/* Quick Nav Actions */}
         <div className="flex flex-col items-center gap-1">
           <button
             type="button"
             onClick={() => setMode("hub")}
-            title="New Workspace"
-            className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--surface-secondary)] border border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--surface-tertiary)] transition-colors"
-          >
-            <Plus className="size-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsCloneOpen(true)}
-            title="Clone from GitHub"
+            title="New Session"
             className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)] transition-colors"
           >
-            <Github className="size-3.5" />
-          </button>
-        </div>
-
-        <div className="my-2 h-[1px] w-6 bg-[var(--border)]/60" />
-
-        {/* Navigation Icons */}
-        <div className="flex flex-col items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setIsSearchOpen(true)}
-            title="Search (⌘K)"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)] transition-colors"
-          >
-            <Search className="size-4" />
+            <Plus className="size-4" />
           </button>
           <button
             type="button"
             onClick={() => setMode("deck")}
-            title="Workspaces"
+            title="Mission Control"
             className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
               mode === "deck"
-                ? "bg-[var(--wash)] text-[var(--foreground)]"
-                : "text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)]"
+                ? "bg-[var(--surface-tertiary)] text-[var(--foreground)]"
+                : "text-[var(--muted-foreground)] hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]"
             }`}
           >
-            <Layers className={`size-4 ${mode === "deck" ? "text-[var(--accent-claude)]" : ""}`} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsIntegrationsOpen(true)}
-            title="Integrations & Keys"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--accent-claude)] hover:bg-[var(--wash)] transition-colors"
-          >
-            <Key className="size-4" />
+            <Flag className="size-4" />
           </button>
           <button
             type="button"
             onClick={() => setMode("pull-requests")}
-            title="Pull Requests"
+            title="Automations"
             className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
               mode === "pull-requests"
-                ? "bg-[var(--wash)] text-[var(--foreground)]"
-                : "text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)]"
+                ? "bg-[var(--surface-tertiary)] text-[var(--foreground)]"
+                : "text-[var(--muted-foreground)] hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]"
             }`}
           >
-            <GitPullRequest className={`size-4 ${mode === "pull-requests" ? "text-[var(--accent-claude)]" : ""}`} />
+            <Sparkles className="size-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsSearchOpen(true)}
+            title="Search (⌘K)"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)] transition-colors"
+          >
+            <Search className="size-4" />
           </button>
         </div>
 
         {/* Bottom Profile / Settings */}
-        <div className="mt-auto flex flex-col items-center gap-2 pt-2 border-t border-[var(--border)]/60">
+        <div className="mt-auto flex flex-col items-center gap-2 pt-2 border-t border-[var(--border)]/60 w-full">
           <div
-            title={project?.name || "Workspace"}
-            className="flex size-6 items-center justify-center rounded bg-[var(--surface-tertiary)] border border-[var(--border)] font-mono text-[9px] font-bold text-[var(--foreground)]"
+            title={userEmail}
+            className="flex size-7 items-center justify-center rounded-full bg-[#5b9e2d] font-sans text-xs font-semibold text-white shadow-sm"
           >
-            {(project?.name || "WS").slice(0, 2).toUpperCase()}
+            {userInitial}
           </div>
           <button
             type="button"
             onClick={() => setIsIntegrationsOpen(true)}
-            title="Settings"
+            title="Settings & Integrations"
             className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors p-1"
           >
-            <Settings className="size-3.5" />
+            <Settings className="size-4" />
           </button>
         </div>
       </aside>
     );
   }
 
+  const projectName = project?.name || "congruence";
+
   return (
-    <aside className="flex h-full w-[232px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface-sidebar)] text-[11px] select-none transition-all duration-200">
-      {/* Top Sidebar Header & Navigation Controls */}
-      <div className="flex h-11 items-center justify-between px-3 border-b border-[var(--border)]/40">
-        <div className="flex items-center gap-2">
-          <div className="flex h-4 w-4 flex-col justify-center gap-[2px] rounded-[2px] bg-[var(--surface-tertiary)] p-0.5 border border-[var(--border)]">
-            <span className="h-[1.5px] w-full rounded-full bg-[var(--foreground)]" />
-            <span className="h-[1.5px] w-3/4 rounded-full bg-[var(--muted-foreground)]" />
-            <span className="h-[1.5px] w-full rounded-full bg-[var(--foreground)]" />
-          </div>
-          <span className="font-mono text-[11px] font-medium tracking-tight text-[var(--foreground)]">
-            congruence
-          </span>
-        </div>
-        <div className="flex items-center gap-1 text-[var(--muted-foreground)]">
+    <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface-sidebar)] text-[13px] select-none transition-all duration-200">
+      {/* 1. Top Header Bar: Sidebar toggle icon on left, History chevrons on right */}
+      <div className="flex h-11 items-center justify-between px-3 pt-1">
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          title="Collapse sidebar (⌘B)"
+          className="flex h-7 w-7 items-center justify-center rounded text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--surface-secondary)] transition-colors"
+        >
+          <PanelLeft className="size-4 stroke-[1.75]" />
+        </button>
+
+        <div className="flex items-center gap-1 text-[var(--muted-foreground)]/80">
           <button
             type="button"
-            onClick={() => setIsIntegrationsOpen(true)}
-            title="Connected Integrations & Vault"
-            className="p-1 hover:text-[var(--foreground)] transition-colors rounded"
+            title="Back"
+            className="flex h-7 w-7 items-center justify-center rounded hover:text-[var(--foreground)] hover:bg-[var(--surface-secondary)] transition-colors"
           >
-            <Key className="size-3" />
+            <ChevronLeft className="size-4 stroke-[1.75]" />
           </button>
           <button
             type="button"
-            onClick={toggleSidebar}
-            title="Collapse sidebar (⌘B)"
-            className="p-1 hover:text-[var(--foreground)] transition-colors rounded"
+            title="Forward"
+            className="flex h-7 w-7 items-center justify-center rounded hover:text-[var(--foreground)] hover:bg-[var(--surface-secondary)] transition-colors"
           >
-            <PanelLeftClose className="size-3.5" />
+            <ChevronRight className="size-4 stroke-[1.75]" />
           </button>
         </div>
       </div>
 
-      {/* New Workspace & Clone Repo Action Buttons */}
-      <div className="px-2 pt-2 pb-1 space-y-1">
+      {/* 2. Primary Navigation Actions */}
+      <div className="px-2 pt-2 pb-3 space-y-0.5">
         <button
           type="button"
           onClick={() => setMode("hub")}
-          className="flex h-7 w-full items-center justify-center gap-1.5 rounded-[var(--radius-sm)] bg-[var(--surface-secondary)] border border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--surface-tertiary)] hover:border-[var(--border-strong)] transition-all font-medium text-[11px]"
+          className="flex h-8 w-full items-center gap-3 rounded-md px-2.5 text-[13px] font-normal text-[var(--foreground)] hover:bg-[var(--surface-secondary)] transition-colors"
         >
-          <Plus className="size-3 text-[var(--muted-foreground)]" />
-          <span>New Workspace</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setIsCloneOpen(true)}
-          className="flex h-6.5 w-full items-center justify-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border)]/60 text-[var(--muted-foreground)] hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)] transition-all text-[10px]"
-        >
-          <Github className="size-3" />
-          <span>Clone from GitHub</span>
-        </button>
-      </div>
-
-      {/* Core Navigation Items */}
-      <div className="space-y-0.5 px-1.5 py-1">
-        <button
-          type="button"
-          onClick={() => setIsSearchOpen(true)}
-          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)] transition-colors"
-        >
-          <Search className="size-3.5" />
-          <span>Search</span>
-          <kbd className="ml-auto font-mono text-[9px] text-[var(--subtle-foreground)]">⌘K</kbd>
+          <Plus className="size-4 text-[var(--foreground)] stroke-[1.75]" />
+          <span>New Session</span>
         </button>
 
         <button
           type="button"
           onClick={() => setMode("deck")}
-          className={`flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 transition-colors ${
+          className={`flex h-8 w-full items-center gap-3 rounded-md px-2.5 text-[13px] font-normal transition-colors ${
             mode === "deck"
-              ? "text-[var(--foreground)] bg-[var(--wash)] font-medium"
-              : "text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)]"
+              ? "text-[var(--foreground)] font-medium"
+              : "text-[var(--foreground)] hover:bg-[var(--surface-secondary)]"
           }`}
         >
-          <Layers className={`size-3.5 ${mode === "deck" ? "text-[var(--accent-claude)]" : ""}`} />
-          <span>Workspaces</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setIsIntegrationsOpen(true)}
-          className="flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 text-[var(--accent-claude)] hover:bg-[var(--wash)] transition-colors font-medium"
-        >
-          <Key className="size-3.5 text-[var(--accent-claude)]" />
-          <span>Integrations & Keys</span>
+          <Flag className="size-4 text-[var(--foreground)] stroke-[1.75]" />
+          <span>Mission Control</span>
         </button>
 
         <button
           type="button"
           onClick={() => setMode("pull-requests")}
-          className={`flex h-6.5 w-full cursor-pointer items-center gap-2 rounded px-2 transition-colors ${
+          className={`flex h-8 w-full items-center gap-3 rounded-md px-2.5 text-[13px] font-normal transition-colors ${
             mode === "pull-requests"
-              ? "text-[var(--foreground)] bg-[var(--wash)] font-medium"
-              : "text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)]"
+              ? "text-[var(--foreground)] font-medium"
+              : "text-[var(--foreground)] hover:bg-[var(--surface-secondary)]"
           }`}
         >
-          <GitPullRequest className={`size-3.5 ${mode === "pull-requests" ? "text-[var(--accent-claude)]" : ""}`} />
-          <span>Pull requests</span>
+          <Sparkles className="size-4 text-[var(--foreground)] stroke-[1.75]" />
+          <span>Automations</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsSearchOpen(true)}
+          className="flex h-8 w-full items-center gap-3 rounded-md px-2.5 text-[13px] font-normal text-[var(--foreground)] hover:bg-[var(--surface-secondary)] transition-colors"
+        >
+          <Search className="size-4 text-[var(--foreground)] stroke-[1.75]" />
+          <span>Search</span>
         </button>
       </div>
 
-      {/* WORKSPACES / Projects Section */}
-      <div className="mt-3 flex-1 overflow-y-auto px-1.5 scrollbar-thin">
-        <div
-          onClick={() => setWorkspacesOpen(!workspacesOpen)}
-          className="flex h-6 cursor-pointer items-center gap-1.5 px-2 text-[10px] font-mono uppercase tracking-[0.08em] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
-        >
-          {workspacesOpen ? <ChevronDown className="size-2.5" /> : <ChevronRight className="size-2.5" />}
-          <span>Workspaces</span>
-          <span className="ml-auto font-mono text-[9px] text-[var(--subtle-foreground)]">
-            {projects.length}
-          </span>
+      {/* 3. Projects Section */}
+      <div className="flex-1 overflow-y-auto px-2 pt-1 scrollbar-none">
+        {/* Section Header */}
+        <div className="flex h-7 items-center justify-between px-2.5 mb-1 text-[var(--muted-foreground)]">
+          <span className="text-[13px] font-normal">Projects</span>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              title="Filter / Sort"
+              className="p-1 hover:text-[var(--foreground)] transition-colors rounded"
+            >
+              <SlidersHorizontal className="size-3.5 stroke-[1.5]" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsCloneOpen(true)}
+              title="Add Project / Clone Repository"
+              className="p-1 hover:text-[var(--foreground)] transition-colors rounded"
+            >
+              <FolderPlus className="size-3.5 stroke-[1.5]" />
+            </button>
+          </div>
         </div>
 
-        {workspacesOpen && (
-          <div className="mt-1 space-y-0.5">
-            {projects.length === 0 ? (
-              <div className="px-2 py-3 text-[10px] text-[var(--muted-foreground)] text-center">
-                No active workspaces
-              </div>
-            ) : (
-              projects.map((p) => {
-                const isActive = p.id === projectId;
-                return (
-                  <div
-                    key={p.id}
-                    onClick={() => {
-                      switchProject(p.id);
-                      setMode("deck");
-                    }}
-                    className={`group relative flex h-7 cursor-pointer items-center gap-2 rounded px-2 text-[11px] transition-all ${
-                      isActive
-                        ? "bg-[var(--wash-strong)] text-[var(--foreground)] font-medium"
-                        : "text-[var(--muted-foreground)] hover:bg-[var(--wash-subtle)] hover:text-[var(--foreground)]"
-                    }`}
-                  >
-                    <span
-                      className={`size-1.5 rounded-full shrink-0 ${
-                        isActive ? "bg-emerald-400" : "bg-[var(--muted-foreground)]"
-                      }`}
-                    />
-                    <span className="truncate" title={p.repo_full_name || p.name}>
-                      {p.name || p.repo_full_name}
-                    </span>
-                  </div>
-                );
-              })
-            )}
+        {/* Project Accordion Item */}
+        <div className="space-y-0.5">
+          <div
+            onClick={() => setProjectsExpanded(!projectsExpanded)}
+            className="group flex h-8 w-full cursor-pointer items-center justify-between rounded-md bg-[var(--surface-secondary)] px-2.5 text-[13px] font-medium text-[var(--foreground)] transition-colors"
+          >
+            <div className="flex items-center gap-2 truncate min-w-0">
+              <ChevronDown
+                className={`size-3.5 text-[var(--muted-foreground)] transition-transform duration-150 ${
+                  projectsExpanded ? "" : "-rotate-90"
+                }`}
+              />
+              <span className="truncate">{projectName}</span>
+            </div>
+            <div className="flex items-center gap-1 text-[var(--muted-foreground)]">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsIntegrationsOpen(true);
+                }}
+                title="Project Options"
+                className="p-0.5 hover:text-[var(--foreground)] rounded"
+              >
+                <MoreHorizontal className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMode("hub");
+                }}
+                title="New Session in Project"
+                className="p-0.5 hover:text-[var(--foreground)] rounded"
+              >
+                <Plus className="size-3.5" />
+              </button>
+            </div>
           </div>
-        )}
+
+          {/* Nested Project Children (Sessions / Lanes) */}
+          {projectsExpanded && (
+            <div className="pt-0.5 space-y-0.5">
+              {lanes.length > 0 ? (
+                lanes.map((lane) => {
+                  const isActive = lane.id === activeLaneId;
+                  return (
+                    <div
+                      key={lane.id}
+                      onClick={() => {
+                        switchLane(lane.id);
+                        setMode("deck");
+                      }}
+                      className={`flex h-7 cursor-pointer items-center justify-between rounded-md pl-7 pr-2.5 text-[13px] transition-colors ${
+                        isActive
+                          ? "text-[var(--foreground)] font-medium"
+                          : "text-[var(--foreground)]/80 hover:bg-[var(--surface-secondary)] hover:text-[var(--foreground)]"
+                      }`}
+                    >
+                      <span className="truncate">{lane.name || "Untitled"}</span>
+                      <span className="text-[12px] text-[var(--muted-foreground)] font-normal ml-2 shrink-0">
+                        2m
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div
+                  onClick={() => setMode("deck")}
+                  className="flex h-7 cursor-pointer items-center justify-between rounded-md pl-7 pr-2.5 text-[13px] text-[var(--foreground)] hover:bg-[var(--surface-secondary)] transition-colors"
+                >
+                  <span className="truncate">Untitled</span>
+                  <span className="text-[12px] text-[var(--muted-foreground)] font-normal ml-2 shrink-0">
+                    2m
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Bottom Profile Footer */}
-      <div className="flex h-12 items-center justify-between border-t border-[var(--border)] px-3 bg-[var(--surface-sidebar)]">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="flex size-5 shrink-0 items-center justify-center rounded bg-[var(--surface-tertiary)] border border-[var(--border)] font-mono text-[9px] font-bold text-[var(--foreground)]">
-            {(project?.name || "Workspace").slice(0, 2).toUpperCase()}
+      {/* 4. Bottom Profile Footer */}
+      <div className="flex h-14 items-center justify-between px-3 border-t border-[var(--border)]/60 bg-[var(--surface-sidebar)]">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
+          <div
+            title={userEmail}
+            className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#5b9e2d] font-sans text-xs font-semibold text-white shadow-sm"
+          >
+            {userInitial}
           </div>
-          <span className="truncate text-[11px] font-medium text-[var(--foreground)]">
-            {project?.name || "Workspace"}
+          <span
+            className="truncate text-[13px] font-normal text-[var(--foreground)]"
+            title={userEmail}
+          >
+            {userEmail}
           </span>
         </div>
         <button
           type="button"
           onClick={() => setIsIntegrationsOpen(true)}
-          className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors p-1"
-          title="Connected Integrations & Vault"
+          className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors p-1 rounded hover:bg-[var(--surface-secondary)]"
+          title="Settings & Integrations"
         >
-          <Settings className="size-3.5" />
+          <Settings className="size-4 stroke-[1.75]" />
         </button>
       </div>
     </aside>

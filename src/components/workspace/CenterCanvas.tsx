@@ -5,6 +5,7 @@ import { Play, Square, Terminal, Eye, FileCode } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { PreviewPane } from "./PreviewPane";
 import { TerminalPane } from "./TerminalPane";
+import { AgentChatPane } from "./AgentChatPane";
 import { ChangesPane } from "./ChangesPane";
 
 export function CenterCanvas() {
@@ -23,6 +24,7 @@ export function CenterCanvas() {
   );
 
   const filesChanged = diff?.files_changed ?? 0;
+  const isAgentLane = Boolean(activeLane && !activeLane.is_pair_lane);
 
   return (
     <div className="flex h-full flex-1 flex-col overflow-hidden bg-[var(--background)]">
@@ -70,7 +72,7 @@ export function CenterCanvas() {
             }`}
           >
             <Terminal className="size-3" />
-            <span>Terminal</span>
+            <span>{isAgentLane ? "Agent Chat" : "Terminal"}</span>
             <span className="font-mono text-[9px] text-[var(--subtle-foreground)]">1</span>
           </button>
 
@@ -134,7 +136,7 @@ export function CenterCanvas() {
       {/* Main Tab View Canvas */}
       <div className="flex-1 overflow-hidden bg-[var(--background)] flex flex-col h-full w-full">
         {activeTab === "preview" && <PreviewPane />}
-        {activeTab === "terminal" && <TerminalPane />}
+        {activeTab === "terminal" && (isAgentLane ? <AgentChatPane /> : <TerminalPane />)}
         {activeTab === "changes" && <ChangesPane />}
       </div>
     </div>
