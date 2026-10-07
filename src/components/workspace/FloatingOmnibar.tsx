@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Cpu,
 } from "lucide-react";
+import { AnthropicIcon, OpenAIIcon } from "@/components/ui/brand-icons";
 import { useWorkspace } from "@/context/WorkspaceContext";
 
 export function FloatingOmnibar() {
@@ -66,14 +67,13 @@ export function FloatingOmnibar() {
               <button
                 type="button"
                 onClick={() => setIsHarnessOpen(!isHarnessOpen)}
-                className="flex h-6 items-center gap-1.5 rounded-[var(--radius-sm)] bg-[var(--surface-primary)] border border-[var(--border)] px-2 text-[11px] text-[var(--foreground)] hover:bg-[var(--surface-secondary)] transition-colors"
+                className="flex h-6 items-center gap-1.5 rounded-[var(--radius-sm)] bg-[var(--surface-primary)] border border-[var(--border)] px-2 text-[11px] text-[var(--foreground)] hover:bg-[var(--surface-secondary)] transition-colors cursor-pointer"
               >
-                {/* Claude orange starburst glyph */}
                 {harness === "Claude" && (
-                  <span className="size-2 rounded-full bg-[var(--accent-claude)]" />
+                  <AnthropicIcon className="size-3 text-[var(--accent-claude)]" />
                 )}
                 {harness === "Codex" && (
-                  <span className="size-2 rounded-full bg-[var(--accent-codex)]" />
+                  <OpenAIIcon className="size-3 text-[var(--accent-codex)]" />
                 )}
                 {harness === "OpenCode" && (
                   <span className="size-2 rounded-full bg-[var(--accent-opencode)]" />
@@ -92,8 +92,11 @@ export function FloatingOmnibar() {
                         setHarness(item);
                         setIsHarnessOpen(false);
                       }}
-                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-[var(--foreground)] hover:bg-[var(--wash)]"
+                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-[var(--foreground)] hover:bg-[var(--wash)] cursor-pointer"
                     >
+                      {item === "Claude" && <AnthropicIcon className="size-3 text-[var(--accent-claude)]" />}
+                      {item === "Codex" && <OpenAIIcon className="size-3 text-[var(--accent-codex)]" />}
+                      {item !== "Claude" && item !== "Codex" && <span className="size-1.5 rounded-full bg-zinc-400" />}
                       <span className="text-[11px]">{item}</span>
                     </button>
                   ))}

@@ -1,5 +1,5 @@
 {
-  "name": "parabox-starter",
+  "name": "congruence-frontend",
   "version": "1.0.0",
   "private": true,
   "description": "Production Next.js frontend starter with Supabase Auth, Stripe Billing, and Parabox Design System primitives.",

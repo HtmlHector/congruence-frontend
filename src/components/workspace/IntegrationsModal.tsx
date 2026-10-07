@@ -14,6 +14,7 @@ import {
   Lock,
   ExternalLink,
 } from "lucide-react";
+import { AnthropicIcon, OpenAIIcon } from "@/components/ui/brand-icons";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { api, IntegrationsStatusData } from "@/lib/api";
 import { toast } from "sonner";
@@ -124,8 +125,8 @@ export function IntegrationsModal({ open, onOpenChange }: IntegrationsModalProps
           <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-card)] p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="flex size-8 items-center justify-center rounded-md bg-[rgba(232,128,74,0.12)] border border-[rgba(232,128,74,0.25)] text-[var(--accent-claude)] font-bold text-sm">
-                  C
+                <div className="flex size-8 items-center justify-center rounded-md bg-[rgba(232,128,74,0.12)] border border-[rgba(232,128,74,0.25)] text-[var(--accent-claude)]">
+                  <AnthropicIcon className="size-4.5" />
                 </div>
                 <div>
                   <h4 className="text-xs font-medium text-[var(--foreground)]">Claude Code CLI</h4>
@@ -137,7 +138,7 @@ export function IntegrationsModal({ open, onOpenChange }: IntegrationsModalProps
               <button
                 type="button"
                 onClick={() => handleLaunchHarnessLogin("claude")}
-                className="px-3 py-1 bg-[var(--surface-secondary)] hover:bg-[var(--surface-tertiary)] border border-[var(--border)] text-xs text-[var(--foreground)] rounded-md transition-colors"
+                className="px-3 py-1 bg-[var(--surface-secondary)] hover:bg-[var(--surface-tertiary)] border border-[var(--border)] text-xs text-[var(--foreground)] rounded-md transition-colors cursor-pointer"
               >
                 Authenticate via Terminal
               </button>
@@ -151,8 +152,8 @@ export function IntegrationsModal({ open, onOpenChange }: IntegrationsModalProps
           <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-card)] p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="flex size-8 items-center justify-center rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-sm">
-                  O
+                <div className="flex size-8 items-center justify-center rounded-md bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.25)] text-[var(--accent-codex)]">
+                  <OpenAIIcon className="size-4.5" />
                 </div>
                 <div>
                   <h4 className="text-xs font-medium text-[var(--foreground)]">OpenAI Codex CLI</h4>
@@ -164,7 +165,7 @@ export function IntegrationsModal({ open, onOpenChange }: IntegrationsModalProps
               <button
                 type="button"
                 onClick={() => handleLaunchHarnessLogin("codex")}
-                className="px-3 py-1 bg-[var(--surface-secondary)] hover:bg-[var(--surface-tertiary)] border border-[var(--border)] text-xs text-[var(--foreground)] rounded-md transition-colors"
+                className="px-3 py-1 bg-[var(--surface-secondary)] hover:bg-[var(--surface-tertiary)] border border-[var(--border)] text-xs text-[var(--foreground)] rounded-md transition-colors cursor-pointer"
               >
                 Authenticate via Terminal
               </button>
