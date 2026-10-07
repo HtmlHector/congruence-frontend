@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 
 export function LandingHero() {
@@ -42,13 +43,13 @@ export function LandingHero() {
 
         {/* Action CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a
-            href="#demo"
+          <Link
+            href="/workspace"
             className="group flex h-11 items-center gap-2 rounded-full bg-[var(--foreground)] px-6 text-sm font-medium text-[var(--background)] hover:bg-white hover:shadow-md transition-all w-full sm:w-auto justify-center"
           >
             <span>Explore the demo</span>
             <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-          </a>
+          </Link>
         </div>
 
         {/* Micro-copy */}

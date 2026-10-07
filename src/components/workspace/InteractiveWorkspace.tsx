@@ -24,11 +24,17 @@ export function InteractiveWorkspace() {
             The work stays together.
           </h2>
         </div>
-        <div className="flex items-center gap-3 text-xs font-mono text-[var(--muted-foreground)]">
+        <div className="flex items-center gap-4 text-xs font-mono text-[var(--muted-foreground)]">
           <span className="flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-[var(--status-awake)] animate-pulse" />
             Interactive · simulated workspace
           </span>
+          <a
+            href="/workspace"
+            className="hover:text-[var(--foreground)] underline underline-offset-4 hidden sm:inline"
+          >
+            Open full preview ↗
+          </a>
         </div>
       </div>
 

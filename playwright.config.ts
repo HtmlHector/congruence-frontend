@@ -20,10 +20,10 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  webServer: {
+  webServer: process.env.PLAYWRIGHT_TEST_BASE_URL ? undefined : {
     command: `npm run dev -- -p ${PORT}`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: false,
+    reuseExistingServer: true,
     timeout: 60 * 1000,
   },
 });

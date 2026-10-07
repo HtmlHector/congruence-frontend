@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function CtaBanner() {
   return (
     <section className="w-full border-t border-[var(--border)] py-24 text-center bg-[var(--surface-inset)]">
@@ -10,13 +12,13 @@ export function CtaBanner() {
           <br />
           A place to pick up where you left off.
         </h2>
-        <div className="pt-4">
-          <a
-            href="#demo"
+        <div className="pt-4 flex items-center justify-center gap-4">
+          <Link
+            href="/workspace"
             className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--foreground)] px-8 text-sm font-medium text-[var(--background)] hover:bg-white hover:shadow-lg transition-all"
           >
             Explore the demo
-          </a>
+          </Link>
         </div>
       </div>
     </section>

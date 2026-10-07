@@ -52,12 +52,12 @@ export function Header() {
             <Github className="size-3.5" />
             <span className="hidden md:inline">GitHub</span>
           </a>
-          <a
-            href="#demo"
+          <Link
+            href="/workspace"
             className="rounded-full bg-[var(--foreground)] px-3.5 py-1.5 font-sans text-xs font-medium text-[var(--background)] hover:bg-white hover:shadow-sm transition-all"
           >
             Explore the demo
-          </a>
+          </Link>
         </nav>
       </div>
     </header>

@@ -55,7 +55,7 @@ test.describe("congruence.dev - Concept Preview & Interactive Workspace", () => 
     await expect(demo).toBeVisible();
 
     // Initial state: Awake
-    await expect(demo.getByText("Workspace awake")).toBeVisible();
+    await expect(demo.getByText("Workspace awake", { exact: true })).toBeVisible();
 
     // Click Sleep workspace
     const sleepBtn = demo.getByRole("button", { name: "Sleep workspace" });
@@ -161,9 +161,13 @@ test.describe("congruence.dev - Concept Preview & Interactive Workspace", () => 
   test("interactive workspace: Superset prompt hub and omnibar task dispatch", async ({ page }) => {
     const demo = page.locator("#demo");
 
-    // 1. Switch to Prompt Hub using the sidebar button
-    const hubBtn = demo.getByRole("button", { name: "Prompt Hub" });
-    await hubBtn.click();
+    // 1. Switch to Prompt Hub using the header button
+    const hubBtn = demo.getByRole("button", { name: "Hub", exact: true });
+    if (await hubBtn.isVisible()) {
+      await hubBtn.click();
+    } else {
+      await demo.getByRole("button", { name: "Prompt Hub" }).click();
+    }
 
     // Verify Hub Elements
     await expect(demo.getByText("What should we build next?")).toBeVisible();
@@ -195,5 +199,27 @@ test.describe("congruence.dev - Concept Preview & Interactive Workspace", () => 
     // Dismiss modal
     await modal.getByRole("button", { name: "Got it" }).click();
     await expect(modal).not.toBeVisible();
+  });
+
+  test("standalone full-screen workspace page at /workspace", async ({ page }) => {
+    await page.goto("/workspace");
+
+    // Verify full-screen Superset sidebar
+    await expect(page.getByText("Hector's Team")).toBeVisible();
+
+    // Switch to Hub if starting in Deck mode
+    const hubBtn = page.getByRole("button", { name: "Hub", exact: true });
+    if (await hubBtn.isVisible()) {
+      await hubBtn.click();
+    }
+
+    // Verify Prompt Hub elements
+    await expect(page.getByText("What should we build next?")).toBeVisible();
+    await expect(page.getByPlaceholder("Upgrade a dependency and fix what breaks...")).toBeVisible();
+
+    // Switch to Execution Deck
+    await page.getByRole("button", { name: "Open Execution Deck" }).click();
+    await expect(page.getByText("Pair lane").first()).toBeVisible();
+    await expect(page.getByText("Workspace awake", { exact: true })).toBeVisible();
   });
 });
