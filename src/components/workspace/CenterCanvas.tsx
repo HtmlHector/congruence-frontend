@@ -18,6 +18,8 @@ export function CenterCanvas() {
     toggleDevServer,
     services,
     diff,
+    chats,
+    activeChatId,
     hostState,
     actorSidebarCollapsed,
     toggleActorSidebar,
@@ -30,23 +32,24 @@ export function CenterCanvas() {
   );
 
   const filesChanged = diff?.files_changed ?? 0;
-  const isAgentLane = Boolean(activeLane && !activeLane.is_pair_lane);
+  const activeChat = chats.find((c) => c.id === activeChatId);
+  const isAgentChatSession = Boolean(activeChat && activeChat.harness !== "Shell");
 
   return (
     <div className="flex h-full flex-1 flex-col overflow-hidden bg-[var(--background)]">
       {/* Sleek IDE Header Bar with Flush Agent Tab Bar (36px height) */}
       <header className="flex h-9 shrink-0 items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-[#FAFAFA] dark:bg-[#0E0E12] pl-0 pr-2.5 sm:pr-3 select-none gap-3">
-        {/* Left: Agent & Worktree Tab Bar */}
+        {/* Left: Worktree Tabs (Chats & Terminals within active worktree) */}
         <AgentTabBar />
 
         {/* Right: Tab Switcher & Run Dev Action */}
         <div className="flex items-center gap-2 shrink-0">
           {/* Main Workspace Tabs */}
-          <div className="flex items-center rounded-md bg-zinc-100 p-0.5 border border-zinc-200 text-[11px]">
+          <div className="flex items-center rounded-none bg-zinc-100 p-0.5 border border-zinc-200 text-[11px]">
             <button
               type="button"
               onClick={() => setActiveTab("preview")}
-              className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 rounded-none px-2.5 py-1 text-xs transition-colors cursor-pointer ${
                 activeTab === "preview"
                   ? "bg-white text-zinc-900 font-medium shadow-xs"
                   : "text-zinc-500 hover:text-zinc-900"
@@ -56,7 +59,7 @@ export function CenterCanvas() {
               <span>Preview</span>
             </button>
 
-            {isAgentLane ? (
+            {isAgentChatSession ? (
               <>
                 <button
                   type="button"
@@ -64,7 +67,7 @@ export function CenterCanvas() {
                     setActiveTab("terminal");
                     setAgentView("chat");
                   }}
-                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs transition-colors cursor-pointer ${
+                  className={`flex items-center gap-1.5 rounded-none px-2.5 py-1 text-xs transition-colors cursor-pointer ${
                     activeTab === "terminal" && agentView === "chat"
                       ? "bg-white text-zinc-900 font-medium shadow-xs"
                       : "text-zinc-500 hover:text-zinc-900"
@@ -80,7 +83,7 @@ export function CenterCanvas() {
                     setActiveTab("terminal");
                     setAgentView("pty");
                   }}
-                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs transition-colors cursor-pointer ${
+                  className={`flex items-center gap-1.5 rounded-none px-2.5 py-1 text-xs transition-colors cursor-pointer ${
                     activeTab === "terminal" && agentView === "pty"
                       ? "bg-white text-zinc-900 font-medium shadow-xs"
                       : "text-zinc-500 hover:text-zinc-900"
@@ -94,7 +97,7 @@ export function CenterCanvas() {
               <button
                 type="button"
                 onClick={() => setActiveTab("terminal")}
-                className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs transition-colors cursor-pointer ${
+                className={`flex items-center gap-1.5 rounded-none px-2.5 py-1 text-xs transition-colors cursor-pointer ${
                   activeTab === "terminal"
                     ? "bg-white text-zinc-900 font-medium shadow-xs"
                     : "text-zinc-500 hover:text-zinc-900"
@@ -108,7 +111,7 @@ export function CenterCanvas() {
             <button
               type="button"
               onClick={() => setActiveTab("changes")}
-              className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 rounded-none px-2.5 py-1 text-xs transition-colors cursor-pointer ${
                 activeTab === "changes"
                   ? "bg-white text-zinc-900 font-medium shadow-xs"
                   : "text-zinc-500 hover:text-zinc-900"
@@ -117,7 +120,7 @@ export function CenterCanvas() {
               <FileCode className="size-3" />
               <span>Changes</span>
               <span
-                className={`font-mono text-[9px] px-1 rounded ${
+                className={`font-mono text-[9px] px-1 rounded-none ${
                   filesChanged > 0
                     ? "bg-emerald-100 text-emerald-800 font-bold"
                     : "text-zinc-400"
@@ -133,7 +136,7 @@ export function CenterCanvas() {
             type="button"
             onClick={toggleDevServer}
             disabled={hostState === "asleep"}
-            className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 font-sans text-xs font-medium transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 rounded-none border px-2.5 py-1 font-sans text-xs font-medium transition-all cursor-pointer ${
               isDevRunning
                 ? "bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100"
                 : "bg-zinc-900 border-zinc-900 text-white hover:bg-zinc-800"
@@ -157,7 +160,7 @@ export function CenterCanvas() {
             type="button"
             onClick={toggleActorSidebar}
             title={actorSidebarCollapsed ? "Expand Inspector (⌘J)" : "Collapse Inspector (⌘J)"}
-            className={`p-1.5 rounded-md border transition-colors cursor-pointer ${
+            className={`p-1.5 rounded-none border transition-colors cursor-pointer ${
               !actorSidebarCollapsed
                 ? "border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
                 : "border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
@@ -172,7 +175,7 @@ export function CenterCanvas() {
       <main className="flex-1 overflow-hidden bg-white flex flex-col h-full w-full">
         {activeTab === "preview" && <PreviewPane />}
         {activeTab === "terminal" &&
-          (isAgentLane ? (
+          (isAgentChatSession ? (
             agentView === "chat" ? <AgentChatPane /> : <TerminalPane />
           ) : (
             <TerminalPane />

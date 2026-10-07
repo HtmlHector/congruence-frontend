@@ -9,7 +9,7 @@ import {
   Bot,
   Sparkles,
 } from "lucide-react";
-import { AnthropicIcon, OpenAIIcon } from "@/components/ui/brand-icons";
+import { ClaudeIcon, AnthropicIcon, OpenAIIcon } from "@/components/ui/brand-icons";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -106,7 +106,7 @@ export function AgentTabBar() {
                       </span>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center size-3.5 rounded-[2px] bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-mono text-[9px] font-bold">
+                    <div className="flex items-center justify-center size-3.5 rounded-none bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-mono text-[9px] font-bold">
                       <span className="text-[10px] leading-none">›_</span>
                     </div>
                   )}
@@ -122,7 +122,7 @@ export function AgentTabBar() {
                   <button
                     type="button"
                     onClick={(e) => closeChat(chat.id, e)}
-                    className={`ml-auto rounded p-0.5 transition-opacity cursor-pointer ${
+                    className={`ml-auto rounded-none p-0.5 transition-opacity cursor-pointer ${
                       isActive
                         ? "opacity-60 hover:opacity-100 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                         : "opacity-0 group-hover:opacity-60 hover:!opacity-100 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
@@ -151,94 +151,94 @@ export function AgentTabBar() {
           <DropdownMenuContent
             align="start"
             side="bottom"
-            className="w-64 bg-white dark:bg-[#16161b] border border-zinc-200 dark:border-zinc-800 shadow-xl p-1 text-xs select-none rounded-lg"
+            className="w-64 bg-white dark:bg-[#16161b] border border-zinc-200 dark:border-zinc-800 shadow-xl p-1 text-xs select-none rounded-none"
           >
             <DropdownMenuLabel className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-zinc-400 px-2 py-1">
-              <span>New Chat in Worktree</span>
-              <span className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400">{activeLane?.branch || "main"}</span>
+              <span>Spin Up Agent Session</span>
+              <span className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400">Isolated Worktree</span>
             </DropdownMenuLabel>
 
             {/* Claude Code Chat */}
             <DropdownMenuItem
               onClick={() => handleCreateChatInLane("Claude")}
-              className="flex items-center justify-between px-2.5 py-1.5 rounded-md cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 group"
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-none cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 group"
             >
               <div className="flex items-center gap-2">
-                <span className="flex size-5 items-center justify-center rounded bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/40">
-                  <AnthropicIcon className="size-3 text-[var(--accent-claude)]" />
+                <span className="flex size-5 items-center justify-center rounded-none bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/40">
+                  <ClaudeIcon className="size-3.5 text-[var(--accent-claude)]" />
                 </span>
                 <div className="flex flex-col">
-                  <span className="font-medium text-xs">Claude Code Chat</span>
+                  <span className="font-medium text-xs">Claude Code</span>
                   <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                    Anthropic agent in this worktree
+                    Anthropic CLI agent lane
                   </span>
                 </div>
               </div>
               <span className="text-[10px] font-mono text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                + Chat
+                + Quick
               </span>
             </DropdownMenuItem>
 
             {/* OpenAI Codex Chat */}
             <DropdownMenuItem
               onClick={() => handleCreateChatInLane("Codex")}
-              className="flex items-center justify-between px-2.5 py-1.5 rounded-md cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 group"
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-none cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 group"
             >
               <div className="flex items-center gap-2">
-                <span className="flex size-5 items-center justify-center rounded bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40">
-                  <OpenAIIcon className="size-3 text-[var(--status-awake)]" />
+                <span className="flex size-5 items-center justify-center rounded-none bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40">
+                  <OpenAIIcon className="size-3.5 text-[var(--status-awake)]" />
                 </span>
                 <div className="flex flex-col">
-                  <span className="font-medium text-xs">OpenAI Codex Chat</span>
+                  <span className="font-medium text-xs">OpenAI Codex</span>
                   <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                    Codex agent in this worktree
+                    Reasoning & backend lane
                   </span>
                 </div>
               </div>
               <span className="text-[10px] font-mono text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                + Chat
+                + Quick
               </span>
             </DropdownMenuItem>
 
             {/* Antigravity Chat */}
             <DropdownMenuItem
               onClick={() => handleCreateChatInLane("Antigravity")}
-              className="flex items-center justify-between px-2.5 py-1.5 rounded-md cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 group"
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-none cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 group"
             >
               <div className="flex items-center gap-2">
-                <span className="flex size-5 items-center justify-center rounded bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/40">
-                  <Bot className="size-3 text-indigo-400" />
+                <span className="flex size-5 items-center justify-center rounded-none bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/40">
+                  <Bot className="size-3.5 text-indigo-400" />
                 </span>
                 <div className="flex flex-col">
-                  <span className="font-medium text-xs">Antigravity Chat</span>
+                  <span className="font-medium text-xs">Antigravity</span>
                   <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
                     Google DeepMind agent
                   </span>
                 </div>
               </div>
               <span className="text-[10px] font-mono text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                + Chat
+                + Quick
               </span>
             </DropdownMenuItem>
 
             {/* Terminal Shell */}
             <DropdownMenuItem
               onClick={() => handleCreateChatInLane("Shell")}
-              className="flex items-center justify-between px-2.5 py-1.5 rounded-md cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 group"
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-none cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 group"
             >
               <div className="flex items-center gap-2">
-                <span className="flex size-5 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
-                  <SquareTerminal className="size-3 text-zinc-700 dark:text-zinc-300" />
+                <span className="flex size-5 items-center justify-center rounded-none bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
+                  <SquareTerminal className="size-3.5 text-zinc-700 dark:text-zinc-300" />
                 </span>
                 <div className="flex flex-col">
-                  <span className="font-medium text-xs">Terminal Shell</span>
+                  <span className="font-medium text-xs">Pair Shell</span>
                   <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                    Interactive bash/zsh session
+                    Personal human worktree
                   </span>
                 </div>
               </div>
               <span className="text-[10px] font-mono text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                + PTY
+                + Quick
               </span>
             </DropdownMenuItem>
 
@@ -247,7 +247,7 @@ export function AgentTabBar() {
             {/* Custom Prompt Modal */}
             <DropdownMenuItem
               onClick={() => openCustomModal("Claude")}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-md cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[var(--accent-claude)] font-medium"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-none cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[var(--accent-claude)] font-medium"
             >
               <Sparkles className="size-3.5" />
               <span>New Worktree Branch...</span>

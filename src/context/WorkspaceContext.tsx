@@ -426,8 +426,38 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   const toggleDevServer = () => {
     if (hostState === "asleep") return;
-    executeTerminalCommand("npm run dev");
-    logActivity("Triggered dev server in terminal PTY");
+    const isCurrentlyRunning = services.some(
+      (s) => (s.lane_id === activeLaneId || !s.lane_id) && s.is_active
+    );
+    if (isCurrentlyRunning) {
+      setServices((prev) =>
+        prev.map((s) => (s.lane_id === activeLaneId ? { ...s, is_active: false } : s))
+      );
+      logActivity("Stopped dev server process");
+    } else {
+      const activeLaneObj = lanes.find((l) => l.id === activeLaneId);
+      const laneService: ServiceData = {
+        id: `srv-${activeLaneId || "default"}`,
+        lane_id: activeLaneId || undefined,
+        port: 3000,
+        protocol: "http",
+        address_subdomain: `${activeLaneObj?.slug || "ecommerce-app"}.preview`,
+        access_mode: "private",
+        is_active: true,
+        url: `/preview/${activeLaneId || "lane-pair"}/3000/`,
+      };
+      setServices((prev) => {
+        const existing = prev.findIndex((s) => s.lane_id === activeLaneId);
+        if (existing >= 0) {
+          const copy = [...prev];
+          copy[existing] = { ...copy[existing], is_active: true };
+          return copy;
+        }
+        return [...prev, laneService];
+      });
+      executeTerminalCommand("npm run dev");
+      logActivity("Started live dev server on port 3000 -> https://ecommerce-test-app.preview.congruence.dev");
+    }
   };
 
   const grantControl = async (actorId: string) => {
