@@ -228,6 +228,7 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
         }
       } else {
         setPersonalRepos([]);
+        setActiveCategory("personal");
       }
     } catch (err: any) {
       console.error("Failed to load GitHub status:", err);
@@ -516,7 +517,7 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
               ref={listRef}
               className="border-b sm:border-b-0 sm:border-r border-zinc-200 dark:border-zinc-800 overflow-y-auto scrollbar-thin divide-y divide-zinc-100 dark:divide-zinc-800/60 flex flex-col"
             >
-              {activeCategory === "personal" && !ghStatus?.connected ? (
+              {!ghStatus?.connected && activeCategory !== "templates" && searchQuery.trim().length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-8 text-center max-w-md mx-auto my-auto">
                   <div className="flex size-12 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 mb-3 border border-zinc-200 dark:border-zinc-700 shadow-xs">
                     <Github className="size-6" />

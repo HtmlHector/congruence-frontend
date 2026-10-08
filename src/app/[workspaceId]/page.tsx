@@ -177,11 +177,22 @@ function WorkspaceAppContent() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2 w-full max-w-sm mx-auto">
                 <button
                   type="button"
-                  onClick={() => setIsCloneOpen(true)}
+                  onClick={async () => {
+                    try {
+                      const res = await api.getGithubConnectUrl();
+                      if (res.authorize_url) {
+                        window.location.href = res.authorize_url;
+                        return;
+                      }
+                    } catch {
+                      // fallback
+                    }
+                    setIsCloneOpen(true);
+                  }}
                   className="w-full sm:w-auto px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-semibold rounded-[3.5px] hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center gap-2 shadow-xs"
                 >
                   <Github className="size-4" />
-                  <span>Connect GitHub</span>
+                  <span>Connect with GitHub</span>
                 </button>
                 <button
                   type="button"

@@ -428,7 +428,18 @@ export function SupersetSidebar() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => setIsCloneOpen(true)}
+                  onClick={async () => {
+                    try {
+                      const res = await api.getGithubConnectUrl();
+                      if (res.authorize_url) {
+                        window.location.href = res.authorize_url;
+                        return;
+                      }
+                    } catch {
+                      // fallback
+                    }
+                    setIsCloneOpen(true);
+                  }}
                   className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[11px] font-medium cursor-pointer rounded-[3.5px] hover:opacity-90 transition-opacity shadow-xs"
                 >
                   <Github className="size-3" />
