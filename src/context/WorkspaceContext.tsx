@@ -963,7 +963,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     setActorSidebarCollapsed((prev) => !prev);
   }, []);
 
-  // Keyboard shortcut ⌘B / Ctrl+B to toggle left sidebar, ⌘J to toggle actor sidebar
+  // Keyboard shortcut ⌘B / Ctrl+B to toggle left sidebar, ⌘J to toggle actor sidebar, ⌘, to open settings
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === ",") {
