@@ -38,6 +38,8 @@ import {
 import { RichMarkdown } from "./RichMarkdown";
 import { useWorkspace, PendingQuestion } from "@/context/WorkspaceContext";
 import { api, IntegrationsStatusData } from "@/lib/api";
+import { HARNESS_LOGIN_COMMANDS, HARNESS_LOGIN_HINTS } from "@/lib/harness-login";
+import { toast } from "sonner";
 import {
   playCompletionChime,
   playInputNeededChime,
@@ -342,7 +344,9 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
     setChatState,
     clearChatHistory,
     updateChatModel,
-    setIsIntegrationsOpen,
+    setMode: setWorkspaceMode,
+    setActiveTab,
+    executeTerminalCommand,
   } = useWorkspace();
 
   const effectiveChatId = chatIdOverride || activeChatId;
@@ -444,6 +448,33 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
     }, 5000);
     return () => clearInterval(t);
   }, [harnessDisconnected, project?.id]);
+
+  // Open the session terminal running the vendor's own login command for the
+  // active harness. Used both for the explicit Connect action and for the
+  // one-time auto-launch below when a disconnected harness chat is opened.
+  const launchHarnessLogin = () => {
+    if (!agentHarnessKey) return;
+    setWorkspaceMode("deck");
+    setActiveTab("terminal");
+    const command = HARNESS_LOGIN_COMMANDS[agentHarnessKey];
+    executeTerminalCommand(command);
+    toast.success(
+      `Running \`${command}\` in the terminal — ${HARNESS_LOGIN_HINTS[agentHarnessKey]}`
+    );
+  };
+
+  // When the user opens a Claude / Codex / Antigravity chat whose harness is
+  // not connected, proactively open the terminal with the login command.
+  // One launch per chat+harness: the banner's Connect button covers retries.
+  const autoLoginLaunchedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!harnessDisconnected || !agentHarnessKey) return;
+    const key = `${currentChatId}:${agentHarnessKey}`;
+    if (autoLoginLaunchedRef.current.has(key)) return;
+    autoLoginLaunchedRef.current.add(key);
+    launchHarnessLogin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [harnessDisconnected, agentHarnessKey, currentChatId]);
 
   const toggleRecording = () => {
     if (typeof window === "undefined") return;
@@ -1141,7 +1172,8 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
             </p>
             <button
               type="button"
-              onClick={() => setIsIntegrationsOpen(true)}
+              onClick={launchHarnessLogin}
+              title="Open the terminal and run the vendor's own login command"
               className="flex shrink-0 items-center gap-1.5 rounded-[3.5px] border border-amber-400/50 bg-amber-500/15 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 transition-colors cursor-pointer"
             >
               <Link2 className="size-3" />

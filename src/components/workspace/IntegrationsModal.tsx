@@ -19,30 +19,13 @@ import {
 import { AnthropicIcon, OpenAIIcon, AntigravityIcon } from "@/components/ui/brand-icons";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { api, IntegrationsStatusData, SupportedHarness } from "@/lib/api";
+import { HARNESS_LOGIN_COMMANDS, HARNESS_LOGIN_HINTS } from "@/lib/harness-login";
 import { toast } from "sonner";
 
 interface IntegrationsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-// Host-native sign-in per harness. The command runs in the lane PTY via the
-// vendor's own CLI; Congruence never observes the credential.
-const HARNESS_LOGIN_COMMANDS: Record<SupportedHarness, string> = {
-  claude: "claude login",
-  codex: "codex login",
-  antigravity: "agy",
-  opencode: "opencode auth login",
-};
-
-// What the user must do after the command starts, per sign-in flow.
-const HARNESS_LOGIN_HINTS: Record<SupportedHarness, string> = {
-  claude: "Follow the private bridge URL in the terminal to finish Anthropic sign-in.",
-  codex: "Follow the private bridge URL in the terminal to finish OpenAI sign-in.",
-  antigravity:
-    "Open the authorization URL printed in the terminal on any device, then paste the code back into the session.",
-  opencode: "Pick your provider in the session terminal and follow its prompts.",
-};
 
 interface HarnessLoginCardProps {
   name: SupportedHarness;
