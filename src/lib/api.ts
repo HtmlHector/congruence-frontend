@@ -106,6 +106,12 @@ export interface GrantData {
   granted_at?: string;
 }
 
+/** Harnesses for which the backend can relay a host-native sign-in. */
+export type SupportedHarness = "claude" | "codex" | "antigravity" | "opencode";
+
+/** How the browser participates in a harness sign-in (mirrors the backend `flow` field). */
+export type HarnessLoginFlow = "loopback_bridge" | "url_paste" | "interactive";
+
 export interface IntegrationsStatusData {
   project_id: string;
   github: {
@@ -122,8 +128,11 @@ export interface IntegrationsStatusData {
     {
       label: string;
       state: "disconnected" | "awaiting_user" | "connected" | "error";
-      credential_path: string;
+      credential_path: string | null;
       supports_login: boolean;
+      flow: HarnessLoginFlow | null;
+      /** Why sign-in cannot be relayed, when supports_login is false. */
+      note: string | null;
     }
   >;
 }
@@ -332,8 +341,17 @@ export const api = {
         body: JSON.stringify(keys),
       }
     ),
-  startHarnessLogin: (laneId: string, harness: "claude" | "codex") =>
-    request<{ status: string; instruction?: string; prompt?: string }>(
+  startHarnessLogin: (laneId: string, harness: SupportedHarness) =>
+    request<{
+      lane_id: string;
+      harness: string;
+      label: string;
+      state: string;
+      flow: HarnessLoginFlow;
+      host_command: string[];
+      credential_path: string | null;
+      note: string;
+    }>(
       `/integrations/harnesses/${harness}/login/${laneId}`,
       { method: "POST" }
     ),

@@ -13,15 +13,94 @@ import {
   CheckCircle2,
   Lock,
   ExternalLink,
+  SquareTerminal,
+  KeyRound,
 } from "lucide-react";
-import { AnthropicIcon, OpenAIIcon } from "@/components/ui/brand-icons";
+import { AnthropicIcon, OpenAIIcon, AntigravityIcon } from "@/components/ui/brand-icons";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { api, IntegrationsStatusData } from "@/lib/api";
+import { api, IntegrationsStatusData, SupportedHarness } from "@/lib/api";
 import { toast } from "sonner";
 
 interface IntegrationsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+// Host-native sign-in per harness. The command runs in the lane PTY via the
+// vendor's own CLI; Congruence never observes the credential.
+const HARNESS_LOGIN_COMMANDS: Record<SupportedHarness, string> = {
+  claude: "claude login",
+  codex: "codex login",
+  antigravity: "agy",
+  opencode: "opencode auth login",
+};
+
+// What the user must do after the command starts, per sign-in flow.
+const HARNESS_LOGIN_HINTS: Record<SupportedHarness, string> = {
+  claude: "Follow the private bridge URL in the terminal to finish Anthropic sign-in.",
+  codex: "Follow the private bridge URL in the terminal to finish OpenAI sign-in.",
+  antigravity:
+    "Open the authorization URL printed in the terminal on any device, then paste the code back into the session.",
+  opencode: "Pick your provider in the session terminal and follow its prompts.",
+};
+
+interface HarnessLoginCardProps {
+  name: SupportedHarness;
+  icon: React.ReactNode;
+  accentClass: string;
+  title: string;
+  subtitle: string;
+  detail: React.ReactNode;
+  statusData: IntegrationsStatusData | null;
+  onLogin: (harness: SupportedHarness) => void;
+}
+
+function HarnessLoginCard({
+  name,
+  icon,
+  accentClass,
+  title,
+  subtitle,
+  detail,
+  statusData,
+  onLogin,
+}: HarnessLoginCardProps) {
+  const state = statusData?.harnesses?.[name]?.state ?? "disconnected";
+  return (
+    <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-card)] p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className={`flex size-8 items-center justify-center rounded-md border ${accentClass}`}>
+            {icon}
+          </div>
+          <div>
+            <h4 className="text-xs font-medium text-[var(--foreground)]">
+              {title}{" "}
+              {state === "connected" && (
+                <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-[rgba(16,185,129,0.12)] px-1.5 py-0.5 text-[9px] font-mono text-emerald-400 border border-[rgba(16,185,129,0.2)] align-middle">
+                  <CheckCircle2 className="size-2.5" /> Connected
+                </span>
+              )}
+              {state === "awaiting_user" && (
+                <span className="ml-1.5 inline-flex items-center rounded-full bg-[rgba(232,128,74,0.12)] px-1.5 py-0.5 text-[9px] font-mono text-[var(--accent-claude)] border border-[rgba(232,128,74,0.2)] align-middle">
+                  Awaiting sign-in
+                </span>
+              )}
+            </h4>
+            <p className="text-[11px] text-[var(--muted-foreground)]">{subtitle}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onLogin(name)}
+          className="px-3 py-1 bg-[var(--surface-secondary)] hover:bg-[var(--surface-tertiary)] border border-[var(--border)] text-xs text-[var(--foreground)] rounded-md transition-colors cursor-pointer whitespace-nowrap"
+        >
+          Authenticate via Terminal
+        </button>
+      </div>
+      <p className="text-[11px] text-[var(--muted-foreground)]">{detail}</p>
+    </div>
+  );
 }
 
 export function IntegrationsModal({ open, onOpenChange }: IntegrationsModalProps) {
@@ -37,12 +116,19 @@ export function IntegrationsModal({ open, onOpenChange }: IntegrationsModalProps
     }
   }, [open, projectId]);
 
-  const handleLaunchHarnessLogin = (harness: "claude" | "codex") => {
+  const handleLaunchHarnessLogin = (harness: SupportedHarness) => {
     onOpenChange(false);
     setMode("deck");
     setActiveTab("terminal");
-    executeTerminalCommand(`${harness} login`);
-    toast.success(`${harness} authentication initiated in terminal.`);
+    executeTerminalCommand(HARNESS_LOGIN_COMMANDS[harness]);
+    if (activeLaneId) {
+      // Record that a sign-in is in flight so status polls report it. The
+      // CLI login itself remains the source of truth; this is best-effort.
+      api.startHarnessLogin(activeLaneId, harness).catch(() => {
+        /* status reporting is best-effort */
+      });
+    }
+    toast.success(HARNESS_LOGIN_HINTS[harness]);
   };
 
   return (
@@ -120,60 +206,92 @@ export function IntegrationsModal({ open, onOpenChange }: IntegrationsModalProps
             </div>
           </div>
 
-
           {/* 2. Anthropic Claude Code */}
-          <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-card)] p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex size-8 items-center justify-center rounded-md bg-[rgba(232,128,74,0.12)] border border-[rgba(232,128,74,0.25)] text-[var(--accent-claude)]">
-                  <AnthropicIcon className="size-4.5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-medium text-[var(--foreground)]">Claude Code CLI</h4>
-                  <p className="text-[11px] text-[var(--muted-foreground)]">
-                    Anthropic Pro / Max subscription custody
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleLaunchHarnessLogin("claude")}
-                className="px-3 py-1 bg-[var(--surface-secondary)] hover:bg-[var(--surface-tertiary)] border border-[var(--border)] text-xs text-[var(--foreground)] rounded-md transition-colors cursor-pointer"
-              >
-                Authenticate via Terminal
-              </button>
-            </div>
-            <p className="text-[11px] text-[var(--muted-foreground)]">
-              Runs <code className="font-mono text-[10px] bg-[var(--surface-secondary)] px-1 py-0.5 rounded">claude login</code> directly on the host VM. Session tokens persist across host sleep cycles in <code className="font-mono text-[10px] bg-[var(--surface-secondary)] px-1 py-0.5 rounded">~/.claude.json</code>.
-            </p>
-          </div>
+          <HarnessLoginCard
+            name="claude"
+            icon={<AnthropicIcon className="size-4.5" />}
+            accentClass="bg-[rgba(232,128,74,0.12)] border-[rgba(232,128,74,0.25)] text-[var(--accent-claude)]"
+            title="Claude Code CLI"
+            subtitle="Anthropic Pro / Max subscription custody"
+            statusData={statusData}
+            onLogin={handleLaunchHarnessLogin}
+            detail={
+              <>
+                Runs <code className="font-mono text-[10px] bg-[var(--surface-secondary)] px-1 py-0.5 rounded">claude login</code> directly on the host VM. Follow the private bridge URL to sign in; the session token persists across host sleep cycles in <code className="font-mono text-[10px] bg-[var(--surface-secondary)] px-1 py-0.5 rounded">~/.claude/.credentials.json</code>.
+              </>
+            }
+          />
 
           {/* 3. OpenAI Codex */}
-          <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-card)] p-4 space-y-3">
-            <div className="flex items-center justify-between">
+          <HarnessLoginCard
+            name="codex"
+            icon={<OpenAIIcon className="size-4.5" />}
+            accentClass="bg-[rgba(16,185,129,0.12)] border-[rgba(16,185,129,0.25)] text-[var(--accent-codex)]"
+            title="OpenAI Codex CLI"
+            subtitle="OpenAI Plus / Team account custody"
+            statusData={statusData}
+            onLogin={handleLaunchHarnessLogin}
+            detail={
+              <>
+                Runs <code className="font-mono text-[10px] bg-[var(--surface-secondary)] px-1 py-0.5 rounded">codex login</code> on the host VM and signs in via a private bridge URL.
+              </>
+            }
+          />
+
+          {/* 4. Google Antigravity */}
+          <HarnessLoginCard
+            name="antigravity"
+            icon={<AntigravityIcon className="size-4.5" />}
+            accentClass="bg-[rgba(99,102,241,0.12)] border-[rgba(99,102,241,0.25)] text-[var(--accent-antigravity)]"
+            title="Google Antigravity CLI"
+            subtitle="Google AI Pro / Ultra account custody"
+            statusData={statusData}
+            onLogin={handleLaunchHarnessLogin}
+            detail={
+              <>
+                Launches <code className="font-mono text-[10px] bg-[var(--surface-secondary)] px-1 py-0.5 rounded">agy</code> on the host VM. It prints a one-time authorization URL in the terminal — open it on any device and paste the code back into the session. The token lands in the host OS keyring.
+              </>
+            }
+          />
+
+          {/* 5. OpenCode */}
+          <HarnessLoginCard
+            name="opencode"
+            icon={<SquareTerminal className="size-4" />}
+            accentClass="bg-[rgba(96,165,250,0.12)] border-[rgba(96,165,250,0.25)] text-[var(--accent-opencode)]"
+            title="OpenCode CLI"
+            subtitle="Bring-your-own provider, 100+ models"
+            statusData={statusData}
+            onLogin={handleLaunchHarnessLogin}
+            detail={
+              <>
+                Runs <code className="font-mono text-[10px] bg-[var(--surface-secondary)] px-1 py-0.5 rounded">opencode auth login</code> on the host VM: an interactive provider picker in the session terminal. Any vendor authorize link passes through unmodified; credentials persist in <code className="font-mono text-[10px] bg-[var(--surface-secondary)] px-1 py-0.5 rounded">~/.local/share/opencode/auth.json</code>.
+              </>
+            }
+          />
+
+          {/* 6. Aider — no vendor sign-in exists to relay; keys come from the Vault */}
+          {statusData?.harnesses?.aider && (
+            <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-card)] p-4 space-y-3">
               <div className="flex items-center gap-2.5">
-                <div className="flex size-8 items-center justify-center rounded-md bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.25)] text-[var(--accent-codex)]">
-                  <OpenAIIcon className="size-4.5" />
+                <div className="flex size-8 items-center justify-center rounded-md bg-[var(--surface-tertiary)] border border-[var(--border)] text-[var(--muted-foreground)]">
+                  <KeyRound className="size-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-medium text-[var(--foreground)]">OpenAI Codex CLI</h4>
+                  <h4 className="text-xs font-medium text-[var(--foreground)]">
+                    {statusData.harnesses.aider.label || "Aider CLI"}
+                  </h4>
                   <p className="text-[11px] text-[var(--muted-foreground)]">
-                    OpenAI Plus / Team account custody
+                    API-key driven — no vendor sign-in to relay
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => handleLaunchHarnessLogin("codex")}
-                className="px-3 py-1 bg-[var(--surface-secondary)] hover:bg-[var(--surface-tertiary)] border border-[var(--border)] text-xs text-[var(--foreground)] rounded-md transition-colors cursor-pointer"
-              >
-                Authenticate via Terminal
-              </button>
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                {statusData.harnesses.aider.note ??
+                  "Aider reads API keys from the host environment or a .env file. Provide keys via the Vault."}
+              </p>
             </div>
-            <p className="text-[11px] text-[var(--muted-foreground)]">
-              Runs <code className="font-mono text-[10px] bg-[var(--surface-secondary)] px-1 py-0.5 rounded">codex login</code> on the host VM.
-            </p>
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
