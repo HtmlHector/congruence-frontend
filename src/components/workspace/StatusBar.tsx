@@ -44,12 +44,12 @@ export function StatusBar() {
   }, [project?.id, hostState]);
 
   return (
-    <footer className="flex h-7 w-full shrink-0 items-center justify-between border-t border-zinc-200 dark:border-zinc-800 bg-[#FAFAFA] dark:bg-[#0E0E12] px-3 font-mono text-[10px] text-zinc-500 dark:text-zinc-400 select-none rounded-[3.5px]">
+    <footer className="flex h-7 w-full shrink-0 items-center justify-between border-t border-zinc-200 dark:border-zinc-800 bg-[#FAFAFA] dark:bg-[#0E0E12] px-3 font-sans text-[11px] text-zinc-500 dark:text-zinc-400 select-none rounded-[3.5px]">
       {/* Left: Session, Branch, Worktree, Host */}
       <div className="flex items-center gap-3 min-w-0 overflow-x-auto scrollbar-none">
         {/* Session Indicator */}
         <div className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200 font-medium shrink-0">
-          <span className="size-1.5 bg-emerald-500 rounded-[3.5px]" />
+          <span className="size-1.5 bg-emerald-500 rounded-full" />
           <span>SESSION: {sessionName}</span>
         </div>
 
@@ -108,7 +108,7 @@ export function StatusBar() {
             Port {activeService.port} · HTTPS
           </span>
         )}
-        <span className="px-1.5 py-0.5 border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 text-[9px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-bold rounded-[3.5px]">
+        <span className="px-1.5 py-0.5 border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold rounded-[3.5px]">
           WRITE LEASE ACTIVE
         </span>
       </div>

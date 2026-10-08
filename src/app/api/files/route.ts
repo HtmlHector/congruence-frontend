@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { getProjectDirectory } from "@/lib/project-runner";
+import { authErrorResponse, requireProjectAccess } from "@/lib/api-auth";
 
 // Helper to ignore bulky or internal directories
 const IGNORED_NAMES = new Set([
@@ -80,6 +81,7 @@ export async function GET(req: Request) {
     const laneId = searchParams.get("laneId");
     const encoding = searchParams.get("encoding") ?? "utf-8";
 
+    await requireProjectAccess(projectId);
     const baseDir = getProjectDirectory(projectId, laneId);
 
     if (targetPath) {
@@ -131,6 +133,8 @@ export async function GET(req: Request) {
     const tree = buildTree(baseDir);
     return NextResponse.json({ tree, root: path.basename(baseDir), baseDir });
   } catch (err: any) {
+    const authErr = authErrorResponse(err);
+    if (authErr) return authErr;
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -145,6 +149,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Path is required" }, { status: 400 });
     }
 
+    await requireProjectAccess(projectId);
     const baseDir = getProjectDirectory(projectId, laneId);
     const safePath = path.normalize(relPath).replace(/^(\.\.[\/\\])+/, "");
     const fullPath = path.join(baseDir, safePath);
@@ -163,6 +168,8 @@ export async function POST(req: Request) {
       size: Buffer.byteLength(content, "utf8"),
     });
   } catch (err: any) {
+    const authErr = authErrorResponse(err);
+    if (authErr) return authErr;
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -179,6 +186,7 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Path is required" }, { status: 400 });
     }
 
+    await requireProjectAccess(projectId);
     const baseDir = getProjectDirectory(projectId, laneId);
     const safePath = path.normalize(targetPath).replace(/^(\.\.[\/\\])+/, "");
     const fullPath = path.join(baseDir, safePath);
@@ -196,6 +204,8 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json({ success: true, removed: safePath });
   } catch (err: any) {
+    const authErr = authErrorResponse(err);
+    if (authErr) return authErr;
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -210,6 +220,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Both oldPath and newPath are required" }, { status: 400 });
     }
 
+    await requireProjectAccess(projectId);
     const baseDir = getProjectDirectory(projectId, laneId);
     const safeOldPath = path.normalize(oldPath).replace(/^(\.\.[\/\\])+/, "");
     const safeNewPath = path.normalize(newPath).replace(/^(\.\.[\/\\])+/, "");
@@ -226,6 +237,8 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({ success: true, oldPath: safeOldPath, newPath: safeNewPath });
   } catch (err: any) {
+    const authErr = authErrorResponse(err);
+    if (authErr) return authErr;
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

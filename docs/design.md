@@ -34,11 +34,11 @@
      - **Claude Code (Anthropic)**: Multi-spoke coral/amber asterisk (`#E8804A`).
      - **OpenAI Codex**: Signature rosette ring (`#10B981` / `#18181B`).
      - **Google Antigravity (DeepMind)**: 4-point geometric astroid / star (`#6366F1` / `#818CF8`).
-     - **Pair Shell / PTY**: Geometric monospace badge (`›_`).
+     - **Pair Shell / PTY**: Geometric terminal badge (`›_`).
 
 4. **Information Density & Hierarchy**:
-   - Monospace font (`IBM Plex Mono` / `Geist Mono`) for all technical identifiers: git branches, diff counts (`+46 -1`), ports, session titles, and timestamps.
-   - Proportional sans (`Inter` / `Geist Sans`) for natural text and chat prompts.
+   - Clean, unified typography (`Inter` / `Geist Sans`) across interface copy, chat prompts, and technical metadata.
+   - Precise text weights and contrast levels for git branches, diff counts (`+46 -1`), ports, session titles, and timestamps.
    - Clean micro-badges (status indicators, execution state badges, lease indicators).
 
 ---
@@ -106,7 +106,7 @@
   - `BRANCH: <git_branch>`
   - `WORKTREE: <repo_name>`
   - `HOST: Local Runner` (pulsing status dot)
-  - `WRITE LEASE ACTIVE` badge (emerald monospace chip).
+  - `WRITE LEASE ACTIVE` badge (emerald status chip).
 
 ---
 
@@ -141,7 +141,7 @@
   --status-waiting: #F59E0B;
   
   /* Strict Geometry */
-  --radius: 0px;
+  --radius: 3.5px;
 }
 ```
 
@@ -150,8 +150,8 @@
 ## 4. Key Component Checklist for New Features
 
 When creating or modifying workspace components:
-1. **Always use `rounded-none`**: Never add `rounded-md`, `rounded-lg`, or `rounded-full` to cards, buttons, or containers.
+1. **Always use `rounded-[3.5px]`**: Use unified 3.5px precision corners for cards, buttons, tabs, and containers.
 2. **Include Brand Icons**: Use `ClaudeIcon`, `OpenAIIcon`, `AntigravityIcon`, or `SquareTerminal` from `@/components/ui/brand-icons`.
 3. **Respect Tab Group Ownership**: Tabs and chats should support being assigned to `primary` or `secondary` pane groups.
-4. **Preserve Monospace Accents**: Use `font-mono text-[10px]` or `text-[11px]` for session badges, diff statistics, and timestamps.
+4. **Clean Technical Hierarchy**: Use compact text sizing (`text-[10px]` or `text-[11px]`) with precise weight and tracking for session badges, diff statistics, and timestamps.
 5. **Keep Status in StatusBar**: Do not introduce top metadata headers inside canvas panes; pass session and branch info to `StatusBar.tsx`.

@@ -53,6 +53,7 @@ export function WorkspaceContextMenu({ children }: WorkspaceContextMenuProps) {
     setIsIntegrationsOpen,
     setIsCloneOpen,
     setIsNewWorkspaceOpen,
+    setIsSettingsOpen,
     refreshProjectData,
     submitPrompt,
     setMode,
