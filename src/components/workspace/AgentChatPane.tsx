@@ -33,10 +33,11 @@ import {
   MicOff,
   User,
   Search,
+  Link2,
 } from "lucide-react";
 import { RichMarkdown } from "./RichMarkdown";
 import { useWorkspace, PendingQuestion } from "@/context/WorkspaceContext";
-import { api } from "@/lib/api";
+import { api, IntegrationsStatusData } from "@/lib/api";
 import {
   playCompletionChime,
   playInputNeededChime,
@@ -398,6 +399,52 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
   const recognitionRef = useRef<any>(null);
   const startTimeRef = useRef<number | null>(null);
 
+  // Harness connection state from the backend status endpoint. Only used to
+  // *positively* detect a disconnected relatable harness; when the backend is
+  // unreachable we stay quiet and let the honest stream error speak.
+  const [harnessStatus, setHarnessStatus] = useState<IntegrationsStatusData | null>(null);
+  const agentHarnessKey = isClaude ? "claude" : isCodex ? "codex" : isAntigravity ? "antigravity" : null;
+  const harnessInfo = agentHarnessKey ? harnessStatus?.harnesses?.[agentHarnessKey] : undefined;
+  const harnessDisconnected = Boolean(
+    agentHarnessKey && harnessInfo?.supports_login && harnessInfo.state === "disconnected"
+  );
+
+  useEffect(() => {
+    const projId = project?.id;
+    if (!projId || !agentHarnessKey) {
+      setHarnessStatus(null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .getIntegrationsStatus(projId)
+      .then((s) => {
+        if (!cancelled) setHarnessStatus(s);
+      })
+      .catch(() => {
+        if (!cancelled) setHarnessStatus(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Re-check after each run completes so a terminal-side sign-in is picked up.
+  }, [project?.id, agentHarnessKey, isGenerating]);
+
+  // While a harness is known-disconnected, poll so the banner clears as soon
+  // as the user finishes "Authenticate via Terminal" in the integrations modal.
+  useEffect(() => {
+    if (!harnessDisconnected) return;
+    const projId = project?.id;
+    if (!projId) return;
+    const t = setInterval(() => {
+      api
+        .getIntegrationsStatus(projId)
+        .then((s) => setHarnessStatus(s))
+        .catch(() => {});
+    }, 5000);
+    return () => clearInterval(t);
+  }, [harnessDisconnected, project?.id]);
+
   const toggleRecording = () => {
     if (typeof window === "undefined") return;
     if (isRecording) {
@@ -552,7 +599,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
   };
 
   const handleSendPrompt = async (textToSend: string) => {
-    if (!textToSend.trim() || isGenerating) return;
+    if (!textToSend.trim() || isGenerating || harnessDisconnected) return;
 
     // Prompt user for browser desktop notifications on first interaction
     requestNotificationPermission().catch(() => {});
@@ -1087,6 +1134,21 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
 
       {/* Composer Dock */}
       <div className="p-3.5 shrink-0 select-none bg-white dark:bg-[#0A0A0C] rounded-[3.5px]">
+        {harnessDisconnected && (
+          <div className="max-w-3xl w-full mx-auto mb-2 flex items-center justify-between gap-3 rounded-[3.5px] border border-amber-400/40 bg-amber-500/10 px-3 py-2">
+            <p className="text-[11px] leading-snug text-amber-700 dark:text-amber-400">
+              <span className="font-semibold">{sessionName}</span> isn't linked on this host yet — prompts can't run until you connect it.
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsIntegrationsOpen(true)}
+              className="flex shrink-0 items-center gap-1.5 rounded-[3.5px] border border-amber-400/50 bg-amber-500/15 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 transition-colors cursor-pointer"
+            >
+              <Link2 className="size-3" />
+              Connect
+            </button>
+          </div>
+        )}
         <div className="max-w-3xl w-full mx-auto border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-[#141418] rounded-[3.5px] focus-within:border-zinc-950 dark:focus-within:border-zinc-200 transition-colors shadow-2xs">
           <textarea
             ref={textareaRef}
@@ -1094,8 +1156,13 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={`Instruct ${sessionName} (e.g. 'What time is it?' or 'Refactor auth middleware')…`}
-            className="w-full resize-none bg-transparent p-3 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-hidden leading-relaxed font-sans rounded-[3.5px]"
+            disabled={harnessDisconnected}
+            placeholder={
+              harnessDisconnected
+                ? `Connect ${sessionName} to send prompts…`
+                : `Instruct ${sessionName} (e.g. 'What time is it?' or 'Refactor auth middleware')…`
+            }
+            className="w-full resize-none bg-transparent p-3 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-hidden leading-relaxed font-sans rounded-[3.5px] disabled:opacity-60"
           />
 
           {/* Action Toolbar */}
@@ -1246,7 +1313,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
               <button
                 type="button"
                 onClick={() => handleSendPrompt(inputPrompt)}
-                disabled={!inputPrompt.trim() && !isGenerating}
+                disabled={harnessDisconnected || (!inputPrompt.trim() && !isGenerating)}
                 className={`flex h-6 items-center gap-1 px-3 text-xs font-semibold transition-all rounded-[3.5px] ${
                   inputPrompt.trim()
                     ? "bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 hover:opacity-90 shadow-2xs cursor-pointer"
