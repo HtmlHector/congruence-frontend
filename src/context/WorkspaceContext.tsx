@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import {
   api,
   setApiTokenProvider,
@@ -210,42 +210,55 @@ const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefin
 
 
 
-const DEFAULT_TENANTS: WorkspaceTenant[] = [
-  {
-    id: "u2XIBWLrbdEamg45Nq",
-    name: "ssssss",
-    slug: "ssssss",
-    role: "owner",
-    plan: "Pro",
-    ownerEmail: "trashdev098@gmail.com",
-    createdAt: "2026-10-05",
-    projectsCount: 1,
-  },
-  {
-    id: "Gvc64eAB48mFZNmUza",
-    name: "sqwqwd",
-    slug: "sqwqwd",
-    role: "admin",
-    plan: "Free",
-    ownerEmail: "team@sqwqwd.dev",
-    createdAt: "2026-10-06",
-    projectsCount: 1,
-  },
-];
-
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const params = useParams();
   const workspaceSlugOrId = params?.workspaceId as string | undefined;
+  const { user } = useUser();
 
-  const [tenants, setTenants] = useState<WorkspaceTenant[]>(DEFAULT_TENANTS);
+  const userEmail =
+    user?.primaryEmailAddress?.emailAddress ||
+    user?.emailAddresses?.[0]?.emailAddress ||
+    "";
+  const userDisplayName =
+    user?.fullName ||
+    (user?.firstName ? `${user.firstName}'s Workspace` : "Personal Workspace");
+
+  const [tenants, setTenants] = useState<WorkspaceTenant[]>(() => {
+    if (workspaceSlugOrId) {
+      const formatted = workspaceSlugOrId
+        .split(/[-_]/)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+      return [
+        {
+          id: workspaceSlugOrId,
+          name: formatted,
+          slug: workspaceSlugOrId,
+          role: "owner",
+          plan: "Pro",
+          ownerEmail: userEmail,
+          createdAt: new Date().toISOString().split("T")[0],
+          projectsCount: 1,
+        },
+      ];
+    }
+    return [
+      {
+        id: "personal",
+        name: userDisplayName,
+        slug: "personal",
+        role: "owner",
+        plan: "Pro",
+        ownerEmail: userEmail,
+        createdAt: new Date().toISOString().split("T")[0],
+        projectsCount: 0,
+      },
+    ];
+  });
 
   const [currentTenant, setCurrentTenant] = useState<WorkspaceTenant>(() => {
     if (workspaceSlugOrId) {
-      const match = DEFAULT_TENANTS.find(
-        (t) => t.slug === workspaceSlugOrId || t.id === workspaceSlugOrId
-      );
-      if (match) return match;
       const formatted = workspaceSlugOrId
         .split(/[-_]/)
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -256,12 +269,21 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         slug: workspaceSlugOrId,
         role: "owner",
         plan: "Pro",
-        ownerEmail: "trashdev098@gmail.com",
+        ownerEmail: userEmail,
         createdAt: new Date().toISOString().split("T")[0],
         projectsCount: 1,
       };
     }
-    return DEFAULT_TENANTS[0];
+    return {
+      id: "personal",
+      name: userDisplayName,
+      slug: "personal",
+      role: "owner",
+      plan: "Pro",
+      ownerEmail: userEmail,
+      createdAt: new Date().toISOString().split("T")[0],
+      projectsCount: 0,
+    };
   });
 
   // Fetch live workspaces directly from Docker PostgreSQL
@@ -283,8 +305,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
                   : r.plan_tier === "ENTERPRISE"
                   ? "Enterprise"
                   : "Pro",
-              ownerEmail: "trashdev098@gmail.com",
-              createdAt: r.created_at ? r.created_at.split("T")[0] : "2026-10-07",
+              ownerEmail: userEmail,
+              createdAt: r.created_at ? r.created_at.split("T")[0] : new Date().toISOString().split("T")[0],
               projectsCount: 1,
             }));
             setTenants(mapped);
@@ -305,7 +327,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       }
     }
     loadWorkspacesFromDb();
-  }, [workspaceSlugOrId]);
+  }, [workspaceSlugOrId, userEmail]);
 
   // Sync currentTenant when route param changes
   useEffect(() => {
@@ -328,7 +350,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         slug: workspaceSlugOrId,
         role: "owner",
         plan: "Pro",
-        ownerEmail: "trashdev098@gmail.com",
+        ownerEmail: userEmail,
         createdAt: new Date().toISOString().split("T")[0],
         projectsCount: 1,
       };
@@ -339,7 +361,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       );
       setCurrentTenant(autoTenant);
     }
-  }, [workspaceSlugOrId, tenants]);
+  }, [workspaceSlugOrId, tenants, userEmail]);
 
   const [isNewWorkspaceOpen, setIsNewWorkspaceOpen] = useState(false);
   const [mode, setMode] = useState<WorkspaceViewMode>("deck");
@@ -379,8 +401,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             slug: row.slug,
             role: "owner",
             plan,
-            ownerEmail: "trashdev098@gmail.com",
-            createdAt: row.created_at ? row.created_at.split("T")[0] : "2026-10-07",
+            ownerEmail: userEmail,
+            createdAt: row.created_at ? row.created_at.split("T")[0] : new Date().toISOString().split("T")[0],
             projectsCount: 1,
           };
           setTenants((prev) => [newTenant, ...prev.filter((t) => t.id !== newTenant.id)]);
@@ -404,7 +426,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         slug,
         role: "owner",
         plan,
-        ownerEmail: "trashdev098@gmail.com",
+        ownerEmail: userEmail,
         createdAt: new Date().toISOString().split("T")[0],
         projectsCount: 1,
       };
@@ -413,7 +435,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       router.push(`/${fallbackTenant.id}`);
       return fallbackTenant;
     },
-    [router]
+    [router, userEmail]
   );
 
   const addChatMessage = useCallback((chatId: string, message: any) => {

@@ -1,5 +1,8 @@
-import { redirect } from "next/navigation";
+"use client";
 
-export default function WorkspaceRedirectPage() {
-  redirect("/u2XIBWLrbdEamg45Nq");
+import React from "react";
+import WorkspacePage from "../[workspaceId]/page";
+
+export default function DefaultWorkspacePage() {
+  return <WorkspacePage />;
 }

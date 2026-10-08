@@ -45,7 +45,7 @@ export function InteractiveWorkspace() {
             Live Simulator
           </span>
           <Link
-            href="/u2XIBWLrbdEamg45Nq"
+            href="/workspace"
             className="hover:text-[var(--foreground)] underline underline-offset-4 hidden sm:inline"
           >
             Open production workspace ↗

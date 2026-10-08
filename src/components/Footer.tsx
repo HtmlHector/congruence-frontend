@@ -54,7 +54,7 @@ export function Footer() {
               FAQ
             </a>
             <Link
-              href="/u2XIBWLrbdEamg45Nq"
+              href="/workspace"
               className="hover:text-[var(--foreground)] transition-colors text-[var(--foreground)] font-medium"
             >
               Open Workspace ↗

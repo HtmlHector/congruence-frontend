@@ -32,7 +32,7 @@ export function CtaBanner() {
 
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
-              href="/u2XIBWLrbdEamg45Nq"
+              href="/workspace"
               className="group flex h-11 items-center justify-center gap-2 rounded-[3.5px] bg-[var(--foreground)] px-8 text-xs sm:text-sm font-mono font-medium text-[var(--background)] hover:bg-[var(--primary-hover)] transition-all w-full sm:w-auto shadow-sm"
             >
               <Play className="size-3.5 fill-current" />

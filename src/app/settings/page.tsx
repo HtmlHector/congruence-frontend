@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import {
   ArrowLeft,
   PanelLeft,
@@ -103,6 +104,19 @@ function SettingsLayoutContent() {
   const initialTab = (searchParams.get("tab") as SettingsTabId) || "environment";
 
   const { currentTenant, project, projectId, hostState } = useWorkspace();
+  const { user } = useUser();
+
+  const userEmail =
+    user?.primaryEmailAddress?.emailAddress ||
+    user?.emailAddresses?.[0]?.emailAddress ||
+    currentTenant?.ownerEmail ||
+    "";
+  const userName =
+    user?.fullName ||
+    (user?.firstName ? `${user.firstName} (You)` : "You");
+  const userInitial = (user?.firstName || user?.fullName || userEmail || "U")
+    .charAt(0)
+    .toUpperCase();
 
   const [activeTab, setActiveTab] = useState<SettingsTabId>(initialTab);
   const [searchQuery, setSearchQuery] = useState("");
@@ -137,9 +151,7 @@ function SettingsLayoutContent() {
 
   // 3. Team State
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    { id: "tm-1", name: "Hector (You)", email: "trashdev098@gmail.com", role: "Owner", hasLease: true, avatarColor: "bg-[#16a34a]" },
-    { id: "tm-2", name: "Sarah Chen", email: "sarah@congruence.dev", role: "Writer", hasLease: true, avatarColor: "bg-[#2563eb]" },
-    { id: "tm-3", name: "Alex Miller", email: "alex.m@productlead.io", role: "Watcher", hasLease: false, avatarColor: "bg-[#7c3aed]" },
+    { id: "tm-1", name: userName, email: userEmail, role: "Owner", hasLease: true, avatarColor: "bg-[#16a34a]" },
   ]);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"Writer" | "Watcher">("Writer");
@@ -423,14 +435,14 @@ function SettingsLayoutContent() {
           <div className="h-11 px-2.5 border-t border-zinc-200 dark:border-[#222227] flex items-center justify-between bg-[#F4F4F6] dark:bg-[#0E0E12] shrink-0">
             <div className="flex items-center gap-2 min-w-0">
               <div className="flex size-5 shrink-0 items-center justify-center bg-[#16a34a] text-white font-mono font-bold text-[10px] rounded-[3.5px] select-none">
-                H
+                {userInitial}
               </div>
               {!sidebarCollapsed && (
                 <div className="min-w-0 leading-tight">
                   <div className="font-mono text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                     {currentTenant?.name || "Workspace"}
                   </div>
-                  <div className="font-mono text-[9px] text-zinc-400 truncate">trashdev098@gmail.com</div>
+                  <div className="font-mono text-[9px] text-zinc-400 truncate">{userEmail}</div>
                 </div>
               )}
             </div>

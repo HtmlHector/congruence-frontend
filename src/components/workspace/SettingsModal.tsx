@@ -36,6 +36,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
+import { useUser } from "@clerk/nextjs";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { CodingProvidersSection } from "@/components/settings/CodingProvidersSection";
@@ -70,6 +71,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
     setSettingsTab,
     hostState,
     refreshProjectData,
+    currentTenant,
   } = useWorkspace();
 
   // General Settings State
@@ -122,31 +124,25 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   const [isSavingEnv, setIsSavingEnv] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
+  const { user } = useUser();
+  const userEmail =
+    user?.primaryEmailAddress?.emailAddress ||
+    user?.emailAddresses?.[0]?.emailAddress ||
+    currentTenant?.ownerEmail ||
+    "";
+  const userName =
+    user?.fullName ||
+    (user?.firstName ? `${user.firstName} (You)` : "You");
+
   // Team & Access State
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
     {
       id: "tm-1",
-      name: "Hector (You)",
-      email: "trashdev098@gmail.com",
+      name: userName,
+      email: userEmail,
       role: "Owner",
       hasLease: true,
       avatarColor: "bg-[#52a447]",
-    },
-    {
-      id: "tm-2",
-      name: "Sarah Chen",
-      email: "sarah@congruence.dev",
-      role: "Writer",
-      hasLease: true,
-      avatarColor: "bg-[#3b82f6]",
-    },
-    {
-      id: "tm-3",
-      name: "Alex Miller",
-      email: "alex.m@productlead.io",
-      role: "Watcher",
-      hasLease: false,
-      avatarColor: "bg-[#8b5cf6]",
     },
   ]);
   const [inviteEmail, setInviteEmail] = useState("");

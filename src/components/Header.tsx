@@ -72,7 +72,7 @@ export function Header() {
             Sign in
           </Link>
           <Link
-            href="/u2XIBWLrbdEamg45Nq"
+            href="/workspace"
             className="inline-flex items-center gap-1.5 rounded-[3.5px] bg-[var(--foreground)] px-3.5 py-1.5 font-mono text-xs font-medium text-[var(--background)] hover:bg-[var(--primary-hover)] transition-all shadow-sm"
           >
             <Play className="size-3 fill-current" />

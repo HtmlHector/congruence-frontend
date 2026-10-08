@@ -30,14 +30,14 @@ export function AuthLayout({ mode }: AuthLayoutProps) {
         await (clerk as any).authenticateWithRedirect({
           strategy,
           redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/u2XIBWLrbdEamg45Nq",
+          redirectUrlComplete: "/workspace",
         });
       } else {
-        router.push("/u2XIBWLrbdEamg45Nq");
+        router.push("/workspace");
       }
     } catch (err: any) {
       console.warn("OAuth redirect fallback to workspace:", err);
-      router.push("/u2XIBWLrbdEamg45Nq");
+      router.push("/workspace");
     } finally {
       setIsLoading(false);
     }
@@ -54,9 +54,9 @@ export function AuthLayout({ mode }: AuthLayoutProps) {
     setError(null);
 
     try {
-      router.push("/u2XIBWLrbdEamg45Nq");
+      router.push("/workspace");
     } catch (err: any) {
-      router.push("/u2XIBWLrbdEamg45Nq");
+      router.push("/workspace");
     } finally {
       setIsLoading(false);
     }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 import {
   Search,
   Plus,
@@ -68,6 +69,17 @@ export function SupersetSidebar() {
     sidebarCollapsed,
     toggleSidebar,
   } = useWorkspace();
+
+  const { user } = useUser();
+  const userEmail =
+    user?.primaryEmailAddress?.emailAddress ||
+    user?.emailAddresses?.[0]?.emailAddress ||
+    currentTenant.ownerEmail ||
+    "";
+  const userInitial = (user?.firstName || user?.fullName || userEmail || "U")
+    .charAt(0)
+    .toUpperCase();
+
   const [activeItem, setActiveItem] = useState<string>("deck");
   const [openProjects, setOpenProjects] = useState<Record<string, boolean>>({
     "ecommerce-test-app": true,
@@ -198,10 +210,10 @@ export function SupersetSidebar() {
         {/* Bottom User Profile */}
         <div className="mt-auto flex flex-col items-center gap-2 pt-2 border-t border-zinc-200 dark:border-[#222227] w-full">
           <div
-            title="trashdev098@gmail.com"
+            title={userEmail}
             className="flex size-6 items-center justify-center rounded-[3.5px] bg-[#16a34a] text-white font-mono font-bold text-[11px] select-none"
           >
-            H
+            {userInitial}
           </div>
           <Link
             href="/settings"
@@ -528,10 +540,10 @@ export function SupersetSidebar() {
       <div className="mt-auto flex h-11 items-center justify-between border-t border-zinc-200 dark:border-[#222227] px-2.5 bg-[#F4F4F6] dark:bg-[#0E0E12] rounded-[3.5px]">
         <div className="flex items-center gap-2 min-w-0">
           <div className="flex size-5 shrink-0 items-center justify-center rounded-[3.5px] bg-[#16a34a] text-white font-mono font-bold text-[10px] select-none">
-            H
+            {userInitial}
           </div>
           <span className="truncate font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
-            trashdev098@gmail.com
+            {userEmail}
           </span>
         </div>
         <Link

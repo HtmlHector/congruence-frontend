@@ -45,7 +45,7 @@ export function LandingHero() {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10">
           <Link
-            href="/u2XIBWLrbdEamg45Nq"
+            href="/workspace"
             className="group flex h-11 items-center justify-center gap-2 rounded-[3.5px] bg-[var(--foreground)] px-6 text-xs sm:text-sm font-mono font-medium text-[var(--background)] hover:bg-[var(--primary-hover)] transition-all w-full sm:w-auto shadow-sm"
           >
             <span>Open Shared Workspace</span>
