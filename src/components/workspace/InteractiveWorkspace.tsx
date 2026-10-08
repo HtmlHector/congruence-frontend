@@ -7,9 +7,10 @@ import { SupersetSidebar } from "./SupersetSidebar";
 import { PromptHub } from "./PromptHub";
 import { ExecutionDeck } from "./ExecutionDeck";
 import { IntegrationsModal } from "./IntegrationsModal";
+import { SettingsModal } from "./SettingsModal";
 
 export function InteractiveWorkspace() {
-  const { mode, isIntegrationsOpen, setIsIntegrationsOpen } = useWorkspace();
+  const { mode, isIntegrationsOpen, setIsIntegrationsOpen, isSettingsOpen, setIsSettingsOpen } = useWorkspace();
 
   return (
     <div
@@ -55,6 +56,9 @@ export function InteractiveWorkspace() {
 
       {/* Integrations & Vault Modal */}
       <IntegrationsModal open={isIntegrationsOpen} onOpenChange={setIsIntegrationsOpen} />
+
+      {/* Settings Modal (⌘,) */}
+      <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </div>
   );
 }

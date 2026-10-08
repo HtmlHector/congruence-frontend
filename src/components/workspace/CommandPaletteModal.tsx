@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
+import { useRouter } from "next/navigation";
 import {
   Search,
   Zap,
@@ -24,6 +25,7 @@ interface CommandPaletteProps {
 }
 
 export function CommandPaletteModal({ open, onOpenChange }: CommandPaletteProps) {
+  const router = useRouter();
   const { setMode, setIsIntegrationsOpen, executeTerminalCommand, lanes, switchLane } = useWorkspace();
   const [query, setQuery] = useState("");
 
@@ -39,6 +41,16 @@ export function CommandPaletteModal({ open, onOpenChange }: CommandPaletteProps)
   }, [open, onOpenChange]);
 
   const items = [
+    {
+      category: "Navigation",
+      id: "nav-settings",
+      label: "Open Workspace Settings (⌘,)",
+      icon: SlidersHorizontal,
+      action: () => {
+        router.push("/settings");
+        onOpenChange(false);
+      },
+    },
     {
       category: "Navigation",
       id: "nav-deck",

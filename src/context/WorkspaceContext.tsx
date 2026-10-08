@@ -38,6 +38,10 @@ interface WorkspaceContextType {
   activityEvents: ActivityEvent[];
   isIntegrationsOpen: boolean;
   setIsIntegrationsOpen: (open: boolean) => void;
+  isSettingsOpen: boolean;
+  setIsSettingsOpen: (open: boolean) => void;
+  settingsTab: "general" | "environment" | "team" | "billing";
+  setSettingsTab: (tab: "general" | "environment" | "team" | "billing") => void;
   isSearchOpen: boolean;
   setIsSearchOpen: (open: boolean) => void;
   isCloneOpen: boolean;
@@ -73,6 +77,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [activeLaneId, setActiveLaneId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"preview" | "terminal" | "changes">("preview");
   const [isIntegrationsOpen, setIsIntegrationsOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<"general" | "environment" | "team" | "billing">("general");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCloneOpen, setIsCloneOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -84,12 +90,17 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     setSidebarCollapsed((prev) => !prev);
   }, []);
 
-  // Keyboard shortcut ⌘B / Ctrl+B to toggle sidebar
+  // Keyboard shortcut ⌘B / Ctrl+B to toggle sidebar & ⌘, / Ctrl+, to open Settings
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
         e.preventDefault();
         toggleSidebar();
+      } else if ((e.metaKey || e.ctrlKey) && e.key === ",") {
+        e.preventDefault();
+        if (window.location.pathname !== "/settings") {
+          window.location.href = "/settings";
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -364,6 +375,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         activityEvents,
         isIntegrationsOpen,
         setIsIntegrationsOpen,
+        isSettingsOpen,
+        setIsSettingsOpen,
+        settingsTab,
+        setSettingsTab,
         isSearchOpen,
         setIsSearchOpen,
         isCloneOpen,

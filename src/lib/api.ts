@@ -20,6 +20,7 @@ export interface ProjectData {
   name: string;
   slug: string;
   repo_full_name: string;
+  repo_url?: string;
   default_branch?: string;
   host?: {
     id: string;
@@ -249,6 +250,17 @@ export const api = {
   // Integrations & Vault
   getIntegrationsStatus: (projectId: string) =>
     request<IntegrationsStatusData>(`/integrations/status/${projectId}`),
+  saveVaultKeys: (
+    projectId: string,
+    keys: { anthropic_api_key?: string; openai_api_key?: string }
+  ) =>
+    request<{ status: string; keys_stored: string[] }>(
+      `/integrations/vault/keys/${projectId}`,
+      {
+        method: "POST",
+        body: JSON.stringify(keys),
+      }
+    ),
   startHarnessLogin: (laneId: string, harness: "claude" | "codex") =>
     request<{ status: string; instruction?: string; prompt?: string }>(
       `/integrations/harnesses/${harness}/login/${laneId}`,

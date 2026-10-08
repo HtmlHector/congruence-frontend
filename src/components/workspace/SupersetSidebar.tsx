@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   Search,
   Plus,
@@ -30,6 +31,8 @@ export function SupersetSidebar() {
     mode,
     setMode,
     setIsIntegrationsOpen,
+    isSettingsOpen,
+    setIsSettingsOpen,
     setIsSearchOpen,
     setIsCloneOpen,
     sidebarCollapsed,
@@ -108,14 +111,13 @@ export function SupersetSidebar() {
           >
             H
           </div>
-          <button
-            type="button"
-            onClick={() => setIsIntegrationsOpen(true)}
-            title="Settings"
+          <Link
+            href="/settings"
+            title="Settings (⌘,)"
             className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors p-1 cursor-pointer"
           >
             <Settings className="size-3.5" />
-          </button>
+          </Link>
         </div>
       </aside>
     );
@@ -331,14 +333,13 @@ export function SupersetSidebar() {
             trashdev098@gmail.com
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsIntegrationsOpen(true)}
+        <Link
+          href="/settings"
           className="p-1 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors rounded cursor-pointer"
-          title="Settings"
+          title="Settings (⌘,)"
         >
           <Settings className="size-4" />
-        </button>
+        </Link>
       </div>
     </aside>
   );

@@ -7,6 +7,7 @@ import { PromptHub } from "@/components/workspace/PromptHub";
 import { ExecutionDeck } from "@/components/workspace/ExecutionDeck";
 import { PullRequestsView } from "@/components/workspace/PullRequestsView";
 import { IntegrationsModal } from "@/components/workspace/IntegrationsModal";
+import { SettingsModal } from "@/components/workspace/SettingsModal";
 import { CommandPaletteModal } from "@/components/workspace/CommandPaletteModal";
 import { CloneRepoModal } from "@/components/workspace/CloneRepoModal";
 
@@ -17,6 +18,8 @@ function WorkspaceAppContent() {
     isLoading,
     isIntegrationsOpen,
     setIsIntegrationsOpen,
+    isSettingsOpen,
+    setIsSettingsOpen,
     isSearchOpen,
     setIsSearchOpen,
     isCloneOpen,
@@ -78,6 +81,9 @@ function WorkspaceAppContent() {
 
       {/* Connected Integrations & Vault Modal */}
       <IntegrationsModal open={isIntegrationsOpen} onOpenChange={setIsIntegrationsOpen} />
+
+      {/* Workspace Settings Modal (⌘,) */}
+      <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
 
       {/* Omnibar Search / Command Palette (⌘K) */}
       <CommandPaletteModal open={isSearchOpen} onOpenChange={setIsSearchOpen} />
