@@ -383,28 +383,14 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           }
           router.push(`/${newTenant.id}`);
           return newTenant;
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || "Failed to create workspace in database");
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to insert workspace in Docker Postgres:", err);
+        throw err;
       }
-
-      // Fallback
-      const fallbackId = `ws_${Date.now().toString(36)}`;
-      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      const fallbackTenant: WorkspaceTenant = {
-        id: fallbackId,
-        name,
-        slug,
-        role: "owner",
-        plan,
-        ownerEmail: userEmail,
-        createdAt: new Date().toISOString().split("T")[0],
-        projectsCount: 1,
-      };
-      setTenants((prev) => [fallbackTenant, ...prev]);
-      setCurrentTenant(fallbackTenant);
-      router.push(`/${fallbackTenant.id}`);
-      return fallbackTenant;
     },
     [router, userEmail]
   );
