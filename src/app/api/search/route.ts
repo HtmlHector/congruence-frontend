@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { authErrorResponse, requireUser } from "@/lib/api-auth";
 
 export interface TopStory {
   title: string;
@@ -53,6 +54,7 @@ function getThematicImage(query: string, index: number): string {
 
 export async function GET(req: Request) {
   try {
+    await requireUser();
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("q") || "";
 
@@ -330,6 +332,8 @@ export async function GET(req: Request) {
       relatedSearches,
     });
   } catch (error: any) {
+    const authErr = authErrorResponse(error);
+    if (authErr) return authErr;
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

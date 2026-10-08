@@ -91,14 +91,9 @@ export async function GET() {
       return NextResponse.json(rows);
     }
 
-    // Unauthenticated fallback
-    const rows = await query(`
-      SELECT workspace_id, name, slug, plan_tier, created_at
-      FROM workspace.workspaces
-      WHERE deleted_at IS NULL
-      ORDER BY created_at DESC
-    `);
-    return NextResponse.json(rows);
+    // Unauthenticated callers get nothing: listing every workspace would
+    // leak every tenant's data.
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   } catch (err: any) {
     console.error("Failed to query or auto-provision workspaces:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -118,6 +113,10 @@ export async function POST(req: Request) {
       clerkUser = await currentUser();
     } catch {
       // unauthenticated
+    }
+    if (!clerkUser) {
+      // Workspaces must belong to a signed-in owner.
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
     const workspaceId = generateWorkspaceNanoId();

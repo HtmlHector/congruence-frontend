@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import { ApiAuthError, requireUser } from "@/lib/api-auth";
 
 export async function GET(req: Request) {
   try {
+    // Open URL proxy: only signed-in users may use it.
+    await requireUser();
     const { searchParams } = new URL(req.url);
     let targetUrl = searchParams.get("url");
 
@@ -89,6 +92,9 @@ export async function GET(req: Request) {
       },
     });
   } catch (err: any) {
+    if (err instanceof ApiAuthError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return new NextResponse(
       `<!DOCTYPE html>
       <html>

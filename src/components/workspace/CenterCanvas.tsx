@@ -8,6 +8,10 @@ import {
   Eye,
   FileCode,
   FileCode2,
+  FileJson,
+  FileText,
+  FileImage,
+  File,
   Sparkles,
   PanelRight,
   Columns2,
@@ -63,6 +67,74 @@ interface TabItemInfo {
   title: string;
   filePath?: string;
   chat?: WorktreeChat;
+}
+
+function renderTabIcon(tab: TabItemInfo) {
+  if (tab.type === "preview") {
+    return <Eye className="size-3.5 text-emerald-500 shrink-0" />;
+  }
+  if (tab.type === "changes") {
+    return <FileCode className="size-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" />;
+  }
+  if (tab.type === "file") {
+    const raw = tab.filePath || tab.title || tab.id || "";
+    const ext = raw.split(".").pop()?.toLowerCase() || "";
+    switch (ext) {
+      case "tsx":
+      case "jsx":
+        return <FileCode2 className="size-3.5 text-sky-500 dark:text-sky-400 shrink-0" />;
+      case "ts":
+      case "js":
+      case "mjs":
+      case "cjs":
+        return <FileCode2 className="size-3.5 text-amber-500 dark:text-amber-400 shrink-0" />;
+      case "json":
+        return <FileJson className="size-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />;
+      case "yaml":
+      case "yml":
+        return <FileText className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />;
+      case "md":
+      case "mdx":
+      case "markdown":
+      case "txt":
+        return <FileText className="size-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />;
+      case "html":
+      case "htm":
+        return <FileCode className="size-3.5 text-rose-500 dark:text-rose-400 shrink-0" />;
+      case "css":
+      case "scss":
+      case "less":
+        return <FileCode className="size-3.5 text-cyan-500 dark:text-cyan-400 shrink-0" />;
+      case "svg":
+      case "png":
+      case "jpg":
+      case "jpeg":
+      case "webp":
+      case "gif":
+      case "ico":
+        return <FileImage className="size-3.5 text-rose-500 dark:text-rose-400 shrink-0" />;
+      case "sh":
+      case "bash":
+      case "zsh":
+        return <Terminal className="size-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />;
+      default:
+        return <File className="size-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" />;
+    }
+  }
+
+  const isClaude = tab.chat?.harness === "Claude";
+  const isCodex = tab.chat?.harness === "Codex";
+  const isAntigravity = tab.chat?.harness === "Antigravity";
+
+  if (isClaude) return <ClaudeIcon className="size-3.5 text-[var(--accent-claude)] shrink-0" />;
+  if (isCodex) return <OpenAIIcon className="size-3.5 text-[var(--status-awake)] shrink-0" />;
+  if (isAntigravity) return <AntigravityIcon className="size-3.5 text-indigo-500 shrink-0" />;
+
+  return (
+    <div className="flex items-center justify-center size-3.5 rounded-[3px] bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-sans text-[10px] font-semibold shrink-0">
+      ›_
+    </div>
+  );
 }
 
 function PaneGroupView({
@@ -315,8 +387,8 @@ function PaneGroupView({
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-white dark:bg-[#0A0A0C] min-w-0">
-      {/* Pane Group Tab Bar Header (Height 40px, matched with workspace switcher) */}
-      <header className="flex h-10 shrink-0 items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-[#FAFAFA] dark:bg-[#0E0E12] pl-0 pr-2 select-none gap-2 overflow-hidden">
+      {/* Pane Group Tab Bar Header */}
+      <header className="flex h-9 shrink-0 items-center justify-between border-b border-zinc-200 dark:border-[#222227] bg-[#FAFAFA] dark:bg-[#0B0B0E] pl-0 pr-2 select-none gap-2 overflow-hidden">
         {/* Left: Tab list and '+' button */}
         <div
           ref={tabStripRef}
@@ -336,14 +408,11 @@ function PaneGroupView({
                 dropSide === "right" &&
                 draggedTabId !== tab.id;
 
-              const isClaude = tab.chat?.harness === "Claude";
-              const isCodex = tab.chat?.harness === "Codex";
-              const isAntigravity = tab.chat?.harness === "Antigravity";
-
               return (
                 <ContextMenu key={tab.id}>
                   <ContextMenuTrigger asChild>
                     <div
+                      data-tab-id={tab.id}
                       draggable
                       onDragStart={(e) => handleTabDragStart(e, tab.id)}
                       onDragOver={(e) => handleTabDragOver(e, tab.id)}
@@ -351,14 +420,14 @@ function PaneGroupView({
                       onDrop={(e) => handleTabDrop(e, tab.id)}
                       onDragEnd={handleTabDragEnd}
                       onClick={() => setGroupActiveTab(groupId, tab.id)}
-                      className={`group relative flex h-full items-center gap-2 px-3 border-r border-zinc-200 dark:border-zinc-800 transition-all cursor-grab active:cursor-grabbing min-w-[100px] max-w-[170px] shrink-0 select-none ${
+                      className={`group relative flex h-full items-center gap-2 px-3 border-r border-zinc-200 dark:border-[#222227] transition-all cursor-grab active:cursor-grabbing min-w-[105px] max-w-[175px] shrink-0 select-none ${
                         isDragging
                           ? "opacity-40 bg-zinc-200/60 dark:bg-zinc-800/60 border-dashed border-zinc-400 dark:border-zinc-600"
                           : isActive
-                          ? "bg-white dark:bg-[#15151a] text-zinc-900 dark:text-zinc-100 font-medium"
-                          : "bg-[#f5f5f7]/80 dark:bg-[#0e0e12] text-zinc-600 dark:text-zinc-400 hover:bg-[#eaecef] dark:hover:bg-[#16161c] hover:text-zinc-900 dark:hover:text-zinc-200"
+                          ? "bg-white dark:bg-[#141418] text-zinc-950 dark:text-zinc-100 font-medium"
+                          : "bg-transparent text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-[#16161c] hover:text-zinc-900 dark:hover:text-zinc-200"
                       }`}
-                      title={`${tab.title} · Right click for options`}
+                      title={tab.title}
                     >
                       {/* Drop Insert Indicators */}
                       {isOverLeft && (
@@ -368,43 +437,27 @@ function PaneGroupView({
                         <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-emerald-500 z-30 pointer-events-none" />
                       )}
 
-                      {/* Active Solid Bottom Line */}
+                      {/* Active Top Accent Line */}
                       {isActive && !isDragging && (
-                        <div className="absolute bottom-0 inset-x-0 h-[2.5px] bg-zinc-950 dark:bg-zinc-100 pointer-events-none" />
+                        <div className="absolute top-0 inset-x-0 h-[2px] bg-zinc-950 dark:bg-zinc-100 pointer-events-none" />
                       )}
 
                       {/* Tab Left Icon */}
                       <div className="flex items-center gap-1.5 shrink-0 pointer-events-none">
-                        {tab.type === "preview" ? (
-                          <Eye className="size-3.5 text-emerald-500" />
-                        ) : tab.type === "changes" ? (
-                          <FileCode className="size-3.5 text-zinc-500" />
-                        ) : tab.type === "file" ? (
-                          <FileCode2 className="size-3.5 text-cyan-600 dark:text-cyan-400" />
-                        ) : isClaude ? (
-                          <ClaudeIcon className="size-3.5 text-[var(--accent-claude)]" />
-                        ) : isCodex ? (
-                          <OpenAIIcon className="size-3.5 text-[var(--status-awake)]" />
-                        ) : isAntigravity ? (
-                          <AntigravityIcon className="size-3.5 text-indigo-500" />
-                        ) : (
-                          <div className="flex items-center justify-center size-3.5 rounded-[3.5px] bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-mono text-[9px] font-bold">
-                            <span className="text-[10px] leading-none">›_</span>
-                          </div>
-                        )}
+                        {renderTabIcon(tab)}
                       </div>
 
                       {/* Tab Title */}
-                      <span className="truncate text-[12px] font-normal tracking-tight pointer-events-none">
+                      <span className="truncate text-xs font-normal tracking-tight pointer-events-none">
                         {tab.title}
                       </span>
 
                       {/* Status Badges */}
                       {tab.type === "preview" && isDevRunning && (
-                        <span className="size-1.5 rounded-[3.5px] bg-emerald-500 animate-pulse ml-0.5 pointer-events-none" />
+                        <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse ml-0.5 pointer-events-none" />
                       )}
                       {tab.type === "changes" && filesChanged > 0 && (
-                        <span className="font-mono text-[9px] px-1 rounded-[3.5px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold pointer-events-none">
+                        <span className="text-[10px] px-1.5 py-0.2 rounded-[3.5px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold pointer-events-none">
                           {filesChanged}
                         </span>
                       )}
@@ -458,23 +511,23 @@ function PaneGroupView({
                             e.stopPropagation();
                             closeTabInGroup(groupId, tab.id);
                           }}
-                          className={`ml-auto rounded-[3.5px] p-0.5 transition-opacity cursor-pointer ${
+                          className={`ml-auto rounded-[3.5px] p-0.5 transition-all cursor-pointer ${
                             isActive
-                              ? "opacity-60 hover:opacity-100 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                              : "opacity-0 group-hover:opacity-60 hover:!opacity-100 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                              ? "opacity-60 hover:opacity-100 hover:bg-zinc-100 dark:hover:bg-zinc-700/60 text-zinc-600 dark:text-zinc-300"
+                              : "opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:bg-zinc-200/70 dark:hover:bg-zinc-700/60 text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
                           }`}
                           title="Close tab"
                         >
-                          <X className="size-3 stroke-[2.5]" />
+                          <X className="size-3 stroke-[2.2]" />
                         </button>
                       )}
                     </div>
                   </ContextMenuTrigger>
 
                   <ContextMenuContent className="w-60 bg-white/95 dark:bg-[#121216]/95 border border-zinc-200 dark:border-zinc-800 rounded-[3.5px] shadow-2xl p-1 text-xs">
-                    <ContextMenuLabel className="text-[10px] font-mono uppercase text-zinc-400 dark:text-zinc-500 flex items-center justify-between">
+                    <ContextMenuLabel className="text-[10px] uppercase font-semibold text-zinc-400 dark:text-zinc-500 flex items-center justify-between">
                       <span className="truncate max-w-[150px]">{tab.title}</span>
-                      <span className="text-[9px] uppercase px-1 py-0.2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                      <span className="text-[9px] uppercase px-1 py-0.2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-[2px]">
                         {tab.type}
                       </span>
                     </ContextMenuLabel>
@@ -573,7 +626,7 @@ function PaneGroupView({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="flex h-full px-2.5 items-center justify-center border-r border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer shrink-0 rounded-[3.5px]"
+                className="flex h-full px-2.5 items-center justify-center border-r border-zinc-200 dark:border-[#222227] text-zinc-400 hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer shrink-0"
                 title="Add tab in this group"
               >
                 <Plus className="size-3.5 stroke-[2]" />
@@ -643,13 +696,13 @@ function PaneGroupView({
         <div className="flex items-center gap-1.5 shrink-0">
           {/* Chat / PTY switch */}
           {activeTabItem?.type === "chat" && isAgentChat && (
-            <div className="flex items-center rounded-[3.5px] bg-zinc-200/70 dark:bg-zinc-800 p-0.5 text-[10px]">
+            <div className="flex items-center rounded-[3.5px] bg-zinc-200/60 dark:bg-zinc-800/80 p-0.5 text-[10px]">
               <button
                 type="button"
                 onClick={() => setGroupAgentView(groupId, "chat")}
-                className={`px-1.5 py-0.5 rounded-[3.5px] transition-colors cursor-pointer ${
+                className={`px-2 py-0.5 rounded-[3px] transition-colors cursor-pointer ${
                   group.agentView === "chat" || !group.agentView
-                    ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-medium shadow-2xs"
+                    ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-medium shadow-xs"
                     : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
                 }`}
               >
@@ -658,9 +711,9 @@ function PaneGroupView({
               <button
                 type="button"
                 onClick={() => setGroupAgentView(groupId, "pty")}
-                className={`px-1.5 py-0.5 rounded-[3.5px] transition-colors cursor-pointer ${
+                className={`px-2 py-0.5 rounded-[3px] transition-colors cursor-pointer ${
                   group.agentView === "pty"
-                    ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-medium shadow-2xs"
+                    ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-medium shadow-xs"
                     : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
                 }`}
               >
@@ -675,20 +728,21 @@ function PaneGroupView({
               type="button"
               onClick={toggleDevServer}
               disabled={hostState === "asleep"}
-              className={`flex items-center gap-1.5 rounded-[3.5px] border px-2.5 py-1 font-sans text-xs font-medium transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 rounded-[3.5px] border px-2.5 py-1 text-xs font-medium transition-all cursor-pointer ${
                 isDevRunning
-                  ? "bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100"
-                  : "bg-zinc-900 border-zinc-900 text-white hover:bg-zinc-800"
-              } disabled:opacity-30 disabled:cursor-not-allowed shadow-2xs`}
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 shadow-xs"
+                  : "bg-white dark:bg-[#16161b] border-zinc-200 dark:border-zinc-700/80 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 shadow-2xs hover:text-zinc-900 dark:hover:text-white"
+              } disabled:opacity-30 disabled:cursor-not-allowed`}
             >
               {isDevRunning ? (
                 <>
-                  <Square className="size-2.5 fill-current text-emerald-600" />
+                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <Square className="size-2.5 fill-current text-emerald-600 dark:text-emerald-400" />
                   <span>Running</span>
                 </>
               ) : (
                 <>
-                  <Play className="size-2.5 fill-current" />
+                  <Play className="size-2.5 fill-current text-zinc-500 dark:text-zinc-400" />
                   <span>Run dev</span>
                 </>
               )}
@@ -703,8 +757,8 @@ function PaneGroupView({
                 title="Split View"
                 className={`p-1.5 rounded-[3.5px] border transition-colors cursor-pointer ${
                   splitState.isSplit
-                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400"
-                    : "border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    : "border-transparent text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 }`}
               >
                 <Columns2 className="size-3.5" />
@@ -731,7 +785,7 @@ function PaneGroupView({
                   <Columns2 className="size-3.5 text-emerald-500" />
                   <span>Split Right</span>
                 </div>
-                <span className="text-[10px] font-mono text-zinc-400">⌘\</span>
+                <span className="text-[10px] font-sans font-medium text-zinc-400">⌘\</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() =>

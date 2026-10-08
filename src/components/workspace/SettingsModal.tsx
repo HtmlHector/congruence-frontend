@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Dialog,
   DialogContent,
@@ -324,6 +325,15 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/settings"
+              onClick={() => onOpenChange(false)}
+              className="flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded bg-[var(--wash)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--surface-tertiary)] transition-colors cursor-pointer"
+              title="Open full-page settings suite"
+            >
+              <span>Full Page</span>
+              <ExternalLink className="size-3" />
+            </Link>
             <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-[var(--wash)] border border-[var(--border)] text-[var(--muted-foreground)]">
               ⌘,
             </span>

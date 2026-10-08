@@ -138,7 +138,24 @@ export function setApiTokenProvider(provider: TokenProvider | null): void {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
-  const token = tokenProvider ? await tokenProvider() : null;
+  let token: string | null = null;
+  if (tokenProvider) {
+    try {
+      token = await tokenProvider();
+    } catch {
+      token = null;
+    }
+    if (!token) {
+      // Clerk may still be hydrating on first load; brief retry so early
+      // calls don't fail with a headerless 401.
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      try {
+        token = tokenProvider ? await tokenProvider() : null;
+      } catch {
+        token = null;
+      }
+    }
+  }
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -358,9 +375,13 @@ export const api = {
     onChunk: (event: any) => void
   ) => {
     const url = `${API_BASE_URL}/agents/chat/stream`;
+    const token = tokenProvider ? await tokenProvider() : null;
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify(data),
     });
     if (!response.ok) {

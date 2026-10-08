@@ -203,14 +203,14 @@ export function AgentTabBar() {
                     switchChat(chat.id);
                     setActiveTab("terminal");
                   }}
-                  className={`group relative flex h-full items-center gap-2 px-3 border-r border-zinc-200 dark:border-zinc-800 transition-all cursor-grab active:cursor-grabbing min-w-[110px] max-w-[180px] shrink-0 rounded-[3.5px] select-none ${
+                  className={`group relative flex h-full items-center gap-2 px-3 border-r border-zinc-200 dark:border-[#222227] transition-all cursor-grab active:cursor-grabbing min-w-[105px] max-w-[175px] shrink-0 select-none ${
                     isDragging
                       ? "opacity-40 bg-zinc-200/60 dark:bg-zinc-800/60 border-dashed border-zinc-400 dark:border-zinc-600"
                       : isActive
-                      ? "bg-white dark:bg-[#15151a] text-zinc-900 dark:text-zinc-100 font-medium"
-                      : "bg-[#f5f5f7]/80 dark:bg-[#0e0e12] text-zinc-600 dark:text-zinc-400 hover:bg-[#eaecef] dark:hover:bg-[#16161c] hover:text-zinc-900 dark:hover:text-zinc-200"
+                      ? "bg-white dark:bg-[#141418] text-zinc-950 dark:text-zinc-100 font-medium"
+                      : "bg-transparent text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-[#16161c] hover:text-zinc-900 dark:hover:text-zinc-200"
                   }`}
-                  title={`${chatTitle} (${chat.harness}) · Drag to reorganize`}
+                  title={`${chatTitle} (${chat.harness})`}
                 >
                   {/* Drop Insert Indicators */}
                   {isOverLeft && (
@@ -220,40 +220,28 @@ export function AgentTabBar() {
                     <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-emerald-500 z-30 pointer-events-none" />
                   )}
 
-                  {/* Active Bottom Solid Line Indicator */}
+                  {/* Active Top Accent Line */}
                   {isActive && !isDragging && (
-                    <div className="absolute bottom-0 inset-x-0 h-[2.5px] bg-zinc-950 dark:bg-zinc-100 pointer-events-none" />
+                    <div className="absolute top-0 inset-x-0 h-[2px] bg-zinc-950 dark:bg-zinc-100 pointer-events-none" />
                   )}
 
                   {/* Left Harness Icon */}
                   <div className="flex items-center gap-1.5 shrink-0 pointer-events-none">
                     {isClaude ? (
-                      <div className="flex items-center gap-1">
-                        <span className="flex size-3.5 items-center justify-center text-[var(--accent-claude)]">
-                          <ClaudeIcon className="size-3.5" />
-                        </span>
-                      </div>
+                      <ClaudeIcon className="size-3.5 text-[var(--accent-claude)]" />
                     ) : isCodex ? (
-                      <div className="flex items-center gap-1">
-                        <span className="flex size-3.5 items-center justify-center text-[var(--status-awake)]">
-                          <OpenAIIcon className="size-3.5" />
-                        </span>
-                      </div>
+                      <OpenAIIcon className="size-3.5 text-[var(--status-awake)]" />
                     ) : isAntigravity ? (
-                      <div className="flex items-center gap-1">
-                        <span className="flex size-3.5 items-center justify-center text-indigo-500 dark:text-indigo-400">
-                          <AntigravityIcon className="size-3.5" />
-                        </span>
-                      </div>
+                      <AntigravityIcon className="size-3.5 text-indigo-500 dark:text-indigo-400" />
                     ) : (
-                      <div className="flex items-center justify-center size-3.5 rounded-[3.5px] bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-mono text-[9px] font-bold">
-                        <span className="text-[10px] leading-none">›_</span>
+                      <div className="flex items-center justify-center size-3.5 rounded-[3px] bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-sans text-[10px] font-semibold">
+                        ›_
                       </div>
                     )}
                   </div>
 
                   {/* Tab Title */}
-                  <span className="truncate text-[12px] font-normal tracking-tight pointer-events-none">
+                  <span className="truncate text-xs font-normal tracking-tight pointer-events-none">
                     {chatTitle}
                   </span>
 
@@ -278,7 +266,7 @@ export function AgentTabBar() {
                   )}
                   {chat.state === "awaiting_input" && (
                     <span
-                      className="flex size-4 items-center justify-center bg-amber-500 text-black font-bold text-[9px] rounded-[3.5px] animate-bounce shrink-0 shadow-xs px-0.5 pointer-events-none"
+                      className="flex size-4 items-center justify-center bg-amber-500 text-black font-semibold text-[9px] rounded-[3.5px] animate-bounce shrink-0 shadow-xs px-0.5 pointer-events-none"
                       title="Agent needs your input or confirmation"
                     >
                       ?
@@ -301,14 +289,14 @@ export function AgentTabBar() {
                       onPointerDown={(e) => e.stopPropagation()}
                       onMouseDown={(e) => e.stopPropagation()}
                       onClick={(e) => closeChat(chat.id, e)}
-                      className={`ml-auto rounded-[3.5px] p-0.5 transition-opacity cursor-pointer ${
+                      className={`ml-auto rounded-[3.5px] p-0.5 transition-all cursor-pointer ${
                         isActive
-                          ? "opacity-60 hover:opacity-100 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                          : "opacity-0 group-hover:opacity-60 hover:!opacity-100 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                          ? "opacity-60 hover:opacity-100 hover:bg-zinc-100 dark:hover:bg-zinc-700/60 text-zinc-600 dark:text-zinc-300"
+                          : "opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:bg-zinc-200/70 dark:hover:bg-zinc-700/60 text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
                       }`}
                       title="Close chat"
                     >
-                      <X className="size-3 stroke-[2.5]" />
+                      <X className="size-3 stroke-[2.2]" />
                     </button>
                   )}
                 </div>
@@ -327,14 +315,14 @@ export function AgentTabBar() {
                   onDrop={(e) => handleDrop(e, "preview")}
                   onDragEnd={handleDragEnd}
                   onClick={() => setActiveTab("preview")}
-                  className={`group relative flex h-full items-center gap-2 px-3 border-r border-zinc-200 dark:border-zinc-800 transition-all cursor-grab active:cursor-grabbing min-w-[100px] shrink-0 rounded-[3.5px] select-none ${
+                  className={`group relative flex h-full items-center gap-2 px-3 border-r border-zinc-200 dark:border-[#222227] transition-all cursor-grab active:cursor-grabbing min-w-[105px] shrink-0 select-none ${
                     isDragging
                       ? "opacity-40 bg-zinc-200/60 dark:bg-zinc-800/60 border-dashed border-zinc-400 dark:border-zinc-600"
                       : isActive
-                      ? "bg-white dark:bg-[#15151a] text-zinc-900 dark:text-zinc-100 font-medium"
-                      : "bg-[#f5f5f7]/80 dark:bg-[#0e0e12] text-zinc-600 dark:text-zinc-400 hover:bg-[#eaecef] dark:hover:bg-[#16161c] hover:text-zinc-900 dark:hover:text-zinc-200"
+                      ? "bg-white dark:bg-[#141418] text-zinc-950 dark:text-zinc-100 font-medium"
+                      : "bg-transparent text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-[#16161c] hover:text-zinc-900 dark:hover:text-zinc-200"
                   }`}
-                  title="Live Web Preview · Drag to reorganize"
+                  title="Live Web Preview"
                 >
                   {/* Drop Insert Indicators */}
                   {isOverLeft && (
@@ -344,18 +332,18 @@ export function AgentTabBar() {
                     <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-emerald-500 z-30 pointer-events-none" />
                   )}
 
-                  {/* Active Bottom Solid Line Indicator */}
+                  {/* Active Top Accent Line */}
                   {isActive && !isDragging && (
-                    <div className="absolute bottom-0 inset-x-0 h-[2.5px] bg-zinc-950 dark:bg-zinc-100 pointer-events-none" />
+                    <div className="absolute top-0 inset-x-0 h-[2px] bg-zinc-950 dark:bg-zinc-100 pointer-events-none" />
                   )}
                   <div className="flex items-center gap-1.5 shrink-0 pointer-events-none">
                     <Eye className="size-3.5 text-emerald-500" />
                   </div>
-                  <span className="truncate text-[12px] font-normal tracking-tight pointer-events-none">
+                  <span className="truncate text-xs font-normal tracking-tight pointer-events-none">
                     Preview
                   </span>
                   {isDevRunning && (
-                    <span className="size-1.5 rounded-[3.5px] bg-emerald-500 animate-pulse ml-0.5 pointer-events-none" />
+                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse ml-0.5 pointer-events-none" />
                   )}
                 </div>
               );
@@ -373,14 +361,14 @@ export function AgentTabBar() {
                   onDrop={(e) => handleDrop(e, "changes")}
                   onDragEnd={handleDragEnd}
                   onClick={() => setActiveTab("changes")}
-                  className={`group relative flex h-full items-center gap-2 px-3 border-r border-zinc-200 dark:border-zinc-800 transition-all cursor-grab active:cursor-grabbing min-w-[100px] shrink-0 rounded-[3.5px] select-none ${
+                  className={`group relative flex h-full items-center gap-2 px-3 border-r border-zinc-200 dark:border-[#222227] transition-all cursor-grab active:cursor-grabbing min-w-[105px] shrink-0 select-none ${
                     isDragging
                       ? "opacity-40 bg-zinc-200/60 dark:bg-zinc-800/60 border-dashed border-zinc-400 dark:border-zinc-600"
                       : isActive
-                      ? "bg-white dark:bg-[#15151a] text-zinc-900 dark:text-zinc-100 font-medium"
-                      : "bg-[#f5f5f7]/80 dark:bg-[#0e0e12] text-zinc-600 dark:text-zinc-400 hover:bg-[#eaecef] dark:hover:bg-[#16161c] hover:text-zinc-900 dark:hover:text-zinc-200"
+                      ? "bg-white dark:bg-[#141418] text-zinc-950 dark:text-zinc-100 font-medium"
+                      : "bg-transparent text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-[#16161c] hover:text-zinc-900 dark:hover:text-zinc-200"
                   }`}
-                  title="Git Changes & Diff · Drag to reorganize"
+                  title="Git Changes & Diff"
                 >
                   {/* Drop Insert Indicators */}
                   {isOverLeft && (
@@ -390,18 +378,18 @@ export function AgentTabBar() {
                     <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-emerald-500 z-30 pointer-events-none" />
                   )}
 
-                  {/* Active Bottom Solid Line Indicator */}
+                  {/* Active Top Accent Line */}
                   {isActive && !isDragging && (
-                    <div className="absolute bottom-0 inset-x-0 h-[2.5px] bg-zinc-950 dark:bg-zinc-100 pointer-events-none" />
+                    <div className="absolute top-0 inset-x-0 h-[2px] bg-zinc-950 dark:bg-zinc-100 pointer-events-none" />
                   )}
                   <div className="flex items-center gap-1.5 shrink-0 pointer-events-none">
-                    <FileCode className="size-3.5 text-zinc-500 dark:text-zinc-400" />
+                    <FileCode className="size-3.5 text-zinc-400 dark:text-zinc-500" />
                   </div>
-                  <span className="truncate text-[12px] font-normal tracking-tight pointer-events-none">
+                  <span className="truncate text-xs font-normal tracking-tight pointer-events-none">
                     Changes
                   </span>
                   {filesChanged > 0 && (
-                    <span className="font-mono text-[9px] px-1 rounded-[3.5px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold pointer-events-none">
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-[3.5px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold pointer-events-none">
                       {filesChanged}
                     </span>
                   )}
@@ -418,7 +406,7 @@ export function AgentTabBar() {
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex h-full px-2.5 items-center justify-center border-r border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer shrink-0"
+              className="flex h-full px-2.5 items-center justify-center border-r border-zinc-200 dark:border-[#222227] text-zinc-400 hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer shrink-0"
               title="Add chat or task in this worktree"
             >
               <Plus className="size-3.5 stroke-[2]" />
@@ -431,7 +419,7 @@ export function AgentTabBar() {
           >
             <DropdownMenuLabel className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-zinc-400 px-2 py-1">
               <span>New Chat in Worktree</span>
-              <span className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400">{activeLane?.branch || "main"}</span>
+              <span className="text-[10px] font-sans font-medium text-emerald-600 dark:text-emerald-400">{activeLane?.branch || "main"}</span>
             </DropdownMenuLabel>
 
             {/* Claude Code Chat */}
@@ -450,7 +438,7 @@ export function AgentTabBar() {
                   </span>
                 </div>
               </div>
-              <span className="text-[10px] font-mono text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="text-[10px] font-sans text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
                 + Quick
               </span>
             </DropdownMenuItem>
@@ -471,7 +459,7 @@ export function AgentTabBar() {
                   </span>
                 </div>
               </div>
-              <span className="text-[10px] font-mono text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="text-[10px] font-sans text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
                 + Quick
               </span>
             </DropdownMenuItem>
@@ -492,7 +480,7 @@ export function AgentTabBar() {
                   </span>
                 </div>
               </div>
-              <span className="text-[10px] font-mono text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="text-[10px] font-sans text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
                 + Quick
               </span>
             </DropdownMenuItem>
@@ -513,7 +501,7 @@ export function AgentTabBar() {
                   </span>
                 </div>
               </div>
-              <span className="text-[10px] font-mono text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="text-[10px] font-sans text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
                 + PTY
               </span>
             </DropdownMenuItem>

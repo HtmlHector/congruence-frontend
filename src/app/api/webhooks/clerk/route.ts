@@ -1,15 +1,78 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { query } from "@/lib/db";
 import { customAlphabet } from "nanoid";
+import { ApiAuthError, authErrorResponse } from "@/lib/api-auth";
 
 const generateWorkspaceNanoId = customAlphabet(
   "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
   18
 );
 
+/**
+ * Verify a Svix-signed Clerk webhook (HMAC-SHA256 over id.timestamp.body).
+ * Rejects when the secret is unset: forged user.created events could create
+ * users and workspaces for arbitrary identities.
+ */
+function verifySvixSignature(req: Request, body: string): void {
+  const secret = process.env.CLERK_WEBHOOK_SECRET;
+  if (!secret) {
+    throw new ApiAuthError(
+      503,
+      "CLERK_WEBHOOK_SECRET is not configured; refusing unsigned webhooks"
+    );
+  }
+
+  const svixId = req.headers.get("svix-id");
+  const svixTimestamp = req.headers.get("svix-timestamp");
+  const svixSignature = req.headers.get("svix-signature");
+  if (!svixId || !svixTimestamp || !svixSignature) {
+    throw new ApiAuthError(401, "Missing webhook signature headers");
+  }
+
+  const timestamp = parseInt(svixTimestamp, 10);
+  if (!Number.isFinite(timestamp)) {
+    throw new ApiAuthError(401, "Invalid webhook timestamp");
+  }
+  const ageSeconds = Math.abs(Date.now() / 1000 - timestamp);
+  if (ageSeconds > 300) {
+    throw new ApiAuthError(401, "Webhook timestamp outside tolerance");
+  }
+
+  const secretBytes = Buffer.from(secret.replace(/^whsec_/, ""), "base64");
+  const signedContent = `${svixId}.${svixTimestamp}.${body}`;
+  const expected = crypto
+    .createHmac("sha256", secretBytes)
+    .update(signedContent)
+    .digest("base64");
+
+  const passes = svixSignature.split(" ").some((entry) => {
+    const parts = entry.split(",");
+    const provided = parts.length === 2 ? parts[1] : parts[0];
+    try {
+      return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(provided));
+    } catch {
+      return false;
+    }
+  });
+  if (!passes) {
+    throw new ApiAuthError(401, "Invalid webhook signature");
+  }
+}
+
 export async function POST(req: Request) {
+  let payload: any;
   try {
-    const payload = await req.json();
+    const rawBody = await req.text();
+    verifySvixSignature(req, rawBody);
+    payload = JSON.parse(rawBody || "{}");
+  } catch (err: any) {
+    const authErr = authErrorResponse(err);
+    if (authErr) return authErr;
+    return NextResponse.json({ error: "Invalid webhook payload" }, { status: 400 });
+  }
+
+  try {
     const eventType = payload?.type;
 
     if (eventType === "user.created") {

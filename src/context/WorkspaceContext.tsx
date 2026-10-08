@@ -3,6 +3,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth, useUser } from "@clerk/nextjs";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  workspaceKeys,
+  useWorkspacesQuery,
+  useTenantProjectsQuery,
+} from "@/hooks/queries/useWorkspaceQueries";
 import {
   api,
   setApiTokenProvider,
@@ -215,100 +221,99 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const workspaceSlugOrId = params?.workspaceId as string | undefined;
   const { user } = useUser();
+  const queryClient = useQueryClient();
 
   const userEmail =
     user?.primaryEmailAddress?.emailAddress ||
     user?.emailAddresses?.[0]?.emailAddress ||
     "";
 
-  const [tenants, setTenants] = useState<WorkspaceTenant[]>([]);
-  const [currentTenant, setCurrentTenant] = useState<WorkspaceTenant | null>(null);
-  const [workspaceNotFound, setWorkspaceNotFound] = useState(false);
-  const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(true);
+  // Synchronously initialize tenants from localStorage cache
+  const [tenants, setTenants] = useState<WorkspaceTenant[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const cached = localStorage.getItem("congruence_cached_tenants");
+      if (cached) return JSON.parse(cached);
+    } catch {}
+    return [];
+  });
 
-  // Fetch live workspaces directly from Docker PostgreSQL
-  useEffect(() => {
-    async function loadWorkspacesFromDb() {
-      setIsWorkspaceLoading(true);
-      try {
-        const res = await fetch("/api/workspaces");
-        if (res.ok) {
-          const rows = await res.json();
-          if (Array.isArray(rows)) {
-            const mapped: WorkspaceTenant[] = rows.map((r: any) => ({
-              id: r.workspace_id,
-              name: r.name,
-              slug: r.slug,
-              role: "owner",
-              plan:
-                r.plan_tier === "FREE"
-                  ? "Free"
-                  : r.plan_tier === "ENTERPRISE"
-                  ? "Enterprise"
-                  : "Pro",
-              ownerEmail: userEmail,
-              createdAt: r.created_at ? r.created_at.split("T")[0] : new Date().toISOString().split("T")[0],
-              projectsCount: 1,
-            }));
-            if (mapped.length === 0 && user) {
-              const defaultName = user.firstName
-                ? `${user.firstName}'s Workspace`
-                : user.fullName
-                ? `${user.fullName}'s Workspace`
-                : "Personal Workspace";
-              const createRes = await fetch("/api/workspaces", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: defaultName, plan: "PRO" }),
-              });
-              if (createRes.ok) {
-                const row = await createRes.json();
-                const autoCreated: WorkspaceTenant = {
-                  id: row.workspace_id,
-                  name: row.name,
-                  slug: row.slug,
-                  role: "owner",
-                  plan: "Pro",
-                  ownerEmail: userEmail,
-                  createdAt: row.created_at ? row.created_at.split("T")[0] : new Date().toISOString().split("T")[0],
-                  projectsCount: 1,
-                };
-                setTenants([autoCreated]);
-                setCurrentTenant(autoCreated);
-                setWorkspaceNotFound(false);
-                return;
-              }
-            }
-
-            setTenants(mapped);
-            if (workspaceSlugOrId) {
-              const matched = mapped.find(
-                (m) => m.id === workspaceSlugOrId || m.slug === workspaceSlugOrId
-              );
-              if (matched) {
-                setCurrentTenant(matched);
-                setWorkspaceNotFound(false);
-              } else {
-                setCurrentTenant(null);
-                setWorkspaceNotFound(true);
-              }
-            } else if (mapped.length > 0) {
-              setCurrentTenant(mapped[0]);
-              setWorkspaceNotFound(false);
-            } else {
-              setCurrentTenant(null);
-              setWorkspaceNotFound(false);
-            }
+  const [currentTenant, setCurrentTenant] = useState<WorkspaceTenant | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const cached = localStorage.getItem("congruence_cached_tenants");
+      if (cached) {
+        const parsed: WorkspaceTenant[] = JSON.parse(cached);
+        if (parsed.length > 0) {
+          if (workspaceSlugOrId) {
+            const found = parsed.find((t) => t.id === workspaceSlugOrId || t.slug === workspaceSlugOrId);
+            if (found) return found;
           }
+          const saved = localStorage.getItem("congruence_active_tenant");
+          if (saved) {
+            const found = parsed.find((t) => t.id === saved || t.slug === saved);
+            if (found) return found;
+          }
+          return parsed[0];
         }
-      } catch (err) {
-        console.warn("Could not load workspaces from DB API:", err);
-      } finally {
-        setIsWorkspaceLoading(false);
+      }
+    } catch {}
+    return null;
+  });
+
+  const [workspaceNotFound, setWorkspaceNotFound] = useState(false);
+  const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const cached = localStorage.getItem("congruence_cached_tenants");
+    return !cached;
+  });
+
+  // TanStack Query for live workspaces
+  const { data: workspacesData } = useWorkspacesQuery();
+
+  // Synchronize workspaces from TanStack Query
+  useEffect(() => {
+    if (!workspacesData || !Array.isArray(workspacesData)) return;
+    const mapped: WorkspaceTenant[] = workspacesData.map((r: any) => ({
+      id: r.workspace_id,
+      name: r.name,
+      slug: r.slug,
+      role: "owner",
+      plan:
+        r.plan_tier === "FREE"
+          ? "Free"
+          : r.plan_tier === "ENTERPRISE"
+          ? "Enterprise"
+          : "Pro",
+      ownerEmail: userEmail,
+      createdAt: r.created_at ? r.created_at.split("T")[0] : new Date().toISOString().split("T")[0],
+      projectsCount: 1,
+    }));
+
+    if (mapped.length > 0) {
+      setTenants(mapped);
+      try {
+        localStorage.setItem("congruence_cached_tenants", JSON.stringify(mapped));
+      } catch {}
+
+      if (workspaceSlugOrId) {
+        const matched = mapped.find(
+          (m) => m.id === workspaceSlugOrId || m.slug === workspaceSlugOrId
+        );
+        if (matched) {
+          setCurrentTenant(matched);
+          setWorkspaceNotFound(false);
+        } else {
+          setCurrentTenant(null);
+          setWorkspaceNotFound(true);
+        }
+      } else if (!currentTenant || !mapped.some((t) => t.id === currentTenant.id)) {
+        setCurrentTenant(mapped[0]);
+        setWorkspaceNotFound(false);
       }
     }
-    loadWorkspacesFromDb();
-  }, [workspaceSlugOrId, userEmail]);
+    setIsWorkspaceLoading(false);
+  }, [workspacesData, workspaceSlugOrId, userEmail, currentTenant]);
 
   // Sync currentTenant when route param changes
   useEffect(() => {
@@ -328,7 +333,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     if (existing) {
       setCurrentTenant(existing);
       setWorkspaceNotFound(false);
-    } else {
+    } else if (tenants.length > 0) {
       setCurrentTenant(null);
       setWorkspaceNotFound(true);
     }
@@ -350,6 +355,20 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       setCurrentTenant(found);
       if (typeof window !== "undefined") {
         localStorage.setItem("congruence_active_tenant", found.id);
+        try {
+          const cachedProj = localStorage.getItem(`congruence_cached_projects_${found.id}`);
+          if (cachedProj) {
+            const parsed: ProjectData[] = JSON.parse(cachedProj);
+            setProjects(parsed);
+            if (parsed.length > 0) {
+              setProject(parsed[0]);
+              setProjectId(parsed[0].id);
+            } else {
+              setProject(null);
+              setProjectId(null);
+            }
+          }
+        } catch {}
       }
       router.push(`/${found.id}`);
     },
@@ -434,9 +453,49 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     },
     []
   );
-  const [projectId, setProjectId] = useState<string | null>(null);
-  const [project, setProject] = useState<ProjectData | null>(null);
-  const [projects, setProjects] = useState<ProjectData[]>([]);
+  // Synchronously initialize projects cache from localStorage
+  const [projects, setProjects] = useState<ProjectData[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const activeTenantId = currentTenant?.id || workspaceSlugOrId || localStorage.getItem("congruence_active_tenant");
+      if (activeTenantId) {
+        const cached = localStorage.getItem(`congruence_cached_projects_${activeTenantId}`);
+        if (cached) return JSON.parse(cached);
+      }
+    } catch {}
+    return [];
+  });
+
+  const [project, setProject] = useState<ProjectData | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const activeTenantId = currentTenant?.id || workspaceSlugOrId || localStorage.getItem("congruence_active_tenant");
+      if (activeTenantId) {
+        const cached = localStorage.getItem(`congruence_cached_projects_${activeTenantId}`);
+        if (cached) {
+          const parsed: ProjectData[] = JSON.parse(cached);
+          return parsed[0] || null;
+        }
+      }
+    } catch {}
+    return null;
+  });
+
+  const [projectId, setProjectId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const activeTenantId = currentTenant?.id || workspaceSlugOrId || localStorage.getItem("congruence_active_tenant");
+      if (activeTenantId) {
+        const cached = localStorage.getItem(`congruence_cached_projects_${activeTenantId}`);
+        if (cached) {
+          const parsed: ProjectData[] = JSON.parse(cached);
+          return parsed[0]?.id || null;
+        }
+      }
+    } catch {}
+    return null;
+  });
+
   const [services, setServices] = useState<ServiceData[]>([]);
   const [diff, setDiff] = useState<GitDiffData | null>(null);
   const [activeLaneId, setActiveLaneId] = useState<string | null>(null);
@@ -457,6 +516,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [actorSidebarCollapsed, setActorSidebarCollapsed] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+
+  // TanStack Query for workspace projects
+  const { data: tenantProjectsData } = useTenantProjectsQuery(currentTenant?.id);
   const [pendingCommand, setPendingCommand] = useState<string | null>(null);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
   const [tabOrders, setTabOrders] = useState<Record<string, string[]>>({});
@@ -947,9 +1009,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === ",") {
         e.preventDefault();
-        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/settings")) {
-          window.location.href = "/settings";
-        }
+        router.push("/settings");
       } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
         e.preventDefault();
         toggleSidebar();
@@ -960,7 +1020,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleSidebar, toggleActorSidebar]);
+  }, [toggleSidebar, toggleActorSidebar, router]);
 
 
   const logActivity = (text: string) => {
@@ -1193,115 +1253,63 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProjectData = useCallback(async () => {
     if (!currentTenant?.id) return;
-    try {
-      const res = await fetch(`/api/workspaces/${currentTenant.id}/projects`);
-      if (res.ok) {
-        const rows = await res.json();
-        if (Array.isArray(rows) && rows.length > 0) {
-          const mapped: ProjectData[] = rows.map((r: any) => {
-            const connectedRepos = Array.isArray(r.connected_repo_ids)
-              ? r.connected_repo_ids
-              : [];
-            const repoFullName = connectedRepos[0] || r.name;
-            return {
-              id: r.id,
-              name: r.name,
-              slug: r.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-              repo_full_name: repoFullName,
-              default_branch: "main",
-              host: {
-                id: `host-${r.id.slice(0, 6)}`,
-                state: "awake",
-                backend_type: "docker",
-              },
-            };
-          });
-          setProjects(mapped);
-          const currentOrFirst = mapped.find((p) => p.id === projectId) || mapped[0];
-          setProject(currentOrFirst);
-          setProjectId(currentOrFirst.id);
-          await loadProjectDetails(currentOrFirst.id);
-        } else {
-          setProjects([]);
-          setProject(null);
-          setProjectId(null);
-          setLanes([]);
-          setChats([]);
-          setActiveLaneId(null);
-          setActiveChatId(null);
-        }
-      }
-    } catch (e) {
-      console.warn("Failed to refresh workspace projects:", e);
-    }
-  }, [currentTenant?.id, projectId, loadProjectDetails]);
+    await queryClient.invalidateQueries({ queryKey: workspaceKeys.projects(currentTenant.id) });
+    await queryClient.invalidateQueries({ queryKey: workspaceKeys.tenants() });
+  }, [currentTenant?.id, queryClient]);
 
-  // Load workspace-specific projects whenever currentTenant.id changes
+  // Synchronize projects from TanStack Query
   useEffect(() => {
-    async function loadTenantProjects() {
-      if (!currentTenant?.id) return;
-      setIsLoading(true);
+    if (!currentTenant?.id || tenantProjectsData === undefined) return;
+    if (Array.isArray(tenantProjectsData) && tenantProjectsData.length > 0) {
+      const mapped: ProjectData[] = tenantProjectsData.map((r: any) => {
+        const connectedRepos = Array.isArray(r.connected_repo_ids)
+          ? r.connected_repo_ids
+          : [];
+        const repoFullName = connectedRepos[0] || r.name;
+        return {
+          id: r.id,
+          name: r.name,
+          slug: r.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          repo_full_name: repoFullName,
+          default_branch: r.environments?.[0]?.default_branch || r.default_branch || "main",
+          host: {
+            id: `host-${r.id.slice(0, 6)}`,
+            state: "awake",
+            backend_type: "docker",
+          },
+        };
+      });
+
+      setProjects(mapped);
       try {
-        const res = await fetch(`/api/workspaces/${currentTenant.id}/projects`);
-        if (res.ok) {
-          const rows = await res.json();
-          if (Array.isArray(rows) && rows.length > 0) {
-            const mapped: ProjectData[] = rows.map((r: any) => {
-              const connectedRepos = Array.isArray(r.connected_repo_ids)
-                ? r.connected_repo_ids
-                : [];
-              const repoFullName = connectedRepos[0] || r.name;
-              return {
-                id: r.id,
-                name: r.name,
-                slug: r.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-                repo_full_name: repoFullName,
-                default_branch: "main",
-                host: {
-                  id: `host-${r.id.slice(0, 6)}`,
-                  state: "awake",
-                  backend_type: "docker",
-                },
-              };
-            });
-            setProjects(mapped);
-            setProject(mapped[0]);
-            setProjectId(mapped[0].id);
-            await loadProjectDetails(mapped[0].id);
-          } else {
-            // Workspace is empty (0 projects)
-            setProjects([]);
-            setProject(null);
-            setProjectId(null);
-            setLanes([]);
-            setChats([]);
-            setActiveLaneId(null);
-            setActiveChatId(null);
-          }
-        } else {
-          setProjects([]);
-          setProject(null);
-          setProjectId(null);
-          setLanes([]);
-          setChats([]);
-          setActiveLaneId(null);
-          setActiveChatId(null);
-        }
-      } catch (err) {
-        console.warn("Could not load projects for tenant:", err);
-        setProjects([]);
-        setProject(null);
-        setProjectId(null);
-        setLanes([]);
-        setChats([]);
-        setActiveLaneId(null);
-        setActiveChatId(null);
-      } finally {
-        setIsLoading(false);
-      }
+        localStorage.setItem(`congruence_cached_projects_${currentTenant.id}`, JSON.stringify(mapped));
+      } catch {}
+
+      setProject((prev) => {
+        const matched = prev ? mapped.find((p) => p.id === prev.id) : null;
+        return matched || mapped[0];
+      });
+      setProjectId((prev) => {
+        const matched = prev ? mapped.find((p) => p.id === prev) : null;
+        return matched ? matched.id : mapped[0].id;
+      });
+
+      const activeProjId = (projectId && mapped.some((p) => p.id === projectId)) ? projectId : mapped[0].id;
+      loadProjectDetails(activeProjId);
+    } else if (Array.isArray(tenantProjectsData) && tenantProjectsData.length === 0) {
+      setProjects([]);
+      setProject(null);
+      setProjectId(null);
+      setLanes([]);
+      setChats([]);
+      setActiveLaneId(null);
+      setActiveChatId(null);
+      try {
+        localStorage.setItem(`congruence_cached_projects_${currentTenant.id}`, JSON.stringify([]));
+      } catch {}
     }
-    loadTenantProjects();
-  }, [currentTenant?.id, loadProjectDetails]);
+    setIsLoading(false);
+  }, [tenantProjectsData, currentTenant?.id, projectId, loadProjectDetails]);
 
   const createProject = useCallback(
     async (name: string, repoUrl?: string, repoFullName?: string) => {
@@ -1330,9 +1338,25 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
               backend_type: "docker",
             },
           };
-          setProjects((prev) => [...prev, newProj]);
+
+          setProjects((prev) => {
+            const filtered = prev.filter((p) => p.id !== newProj.id);
+            const updated = [...filtered, newProj];
+            try {
+              localStorage.setItem(`congruence_cached_projects_${currentTenant.id}`, JSON.stringify(updated));
+            } catch {}
+            return updated;
+          });
           setProject(newProj);
           setProjectId(newProj.id);
+
+          // Update TanStack Query cache directly
+          queryClient.setQueryData(workspaceKeys.projects(currentTenant.id), (old: any[] = []) => {
+            const filtered = Array.isArray(old) ? old.filter((p) => p.id !== row.id) : [];
+            return [...filtered, row];
+          });
+          queryClient.invalidateQueries({ queryKey: workspaceKeys.projects(currentTenant.id) });
+
           await loadProjectDetails(newProj.id);
           logActivity(`Created project ${newProj.name} (${newProj.repo_full_name})`);
           return newProj;
@@ -1342,7 +1366,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       }
       return null;
     },
-    [currentTenant?.id, loadProjectDetails]
+    [currentTenant?.id, loadProjectDetails, queryClient]
   );
 
   // Fetch diff when active lane changes
@@ -1359,6 +1383,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const target = projects.find((p) => p.id === targetProjId);
     if (target) {
       setProject(target);
+      setProjectId(target.id);
       await loadProjectDetails(target.id);
       logActivity(`Switched to project ${target.name} (${target.repo_full_name})`);
     }

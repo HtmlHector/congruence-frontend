@@ -15,6 +15,7 @@ import { NewWorktreeModal } from "@/components/workspace/NewWorktreeModal";
 import { WorkspaceContextMenu } from "@/components/workspace/WorkspaceContextMenu";
 import { Github, FolderGit2, Plus, Sparkles } from "lucide-react";
 import { api, GitHubStatusData } from "@/lib/api";
+import { useGithubStatusQuery } from "@/hooks/queries/useWorkspaceQueries";
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
@@ -22,7 +23,7 @@ import { useAuth } from "@clerk/nextjs";
 function WorkspaceAppContent() {
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
-  const [ghStatus, setGhStatus] = useState<GitHubStatusData | null>(null);
+  const { data: ghStatus } = useGithubStatusQuery();
   const {
     currentTenant,
     tenants,
@@ -45,12 +46,6 @@ function WorkspaceAppContent() {
     isSettingsOpen,
     setIsSettingsOpen,
   } = useWorkspace();
-
-  useEffect(() => {
-    api.getGithubStatus()
-      .then(setGhStatus)
-      .catch(() => setGhStatus({ connected: false, username: null, avatar_url: null, github_user_id: null }));
-  }, [isCloneOpen]);
 
   if (!isLoaded || isWorkspaceLoading) {
     return (

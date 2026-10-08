@@ -138,8 +138,8 @@ export function CommandPaletteModal({ open, onOpenChange }: CommandPaletteProps)
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs animate-in fade-in" />
-        <Dialog.Content className="fixed left-1/2 top-[20%] z-50 w-full max-w-xl -translate-x-1/2 rounded-xl border border-[var(--border-strong)] bg-[#0d0e12] p-0 shadow-2xl focus:outline-none overflow-hidden animate-in zoom-in-95">
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/75 backdrop-blur-[2px] data-[state=open]:animate-dialog-overlay-in data-[state=closed]:animate-dialog-overlay-out" />
+        <Dialog.Content className="fixed left-1/2 top-[20%] z-50 w-full max-w-xl -translate-x-1/2 rounded-[3.5px] border border-[var(--border-strong)] bg-[#0d0e12] p-0 shadow-2xl focus:outline-none overflow-hidden data-[state=open]:animate-dialog-content-in data-[state=closed]:animate-dialog-content-out">
           {/* Search Header */}
           <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3 bg-[var(--surface-primary)]">
             <Search className="size-4 text-[var(--muted-foreground)] shrink-0" />

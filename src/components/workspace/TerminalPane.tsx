@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import {
   RotateCcw,
@@ -63,6 +64,7 @@ const TERMINAL_FONTS = [
 export function TerminalPane() {
   const { activeLane, hostState, pendingCommand, clearPendingCommand, project } =
     useWorkspace();
+  const { getToken } = useAuth();
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermInstance = useRef<any>(null);
   const fitAddonInstance = useRef<any>(null);
@@ -248,7 +250,11 @@ export function TerminalPane() {
             typeof window !== "undefined" ? window.location.hostname : "localhost"
           }:8000/api/v1`;
         const cleanBase = rawWs.replace(/\/+$/, "").replace(/\/ws.*$/, "");
-        const wsUrl = `${cleanBase}/ws/session/sess_${activeLane?.id || "main"}`;
+        // The gateway enforces auth + lane tenancy; attach a bearer token.
+        const wsToken = await getToken().catch(() => null);
+        const wsUrl = `${cleanBase}/ws/session/sess_${
+          activeLane?.id || "main"
+        }${wsToken ? `?token=${encodeURIComponent(wsToken)}` : ""}`;
 
         ws = new WebSocket(wsUrl);
         wsRef.current = ws;

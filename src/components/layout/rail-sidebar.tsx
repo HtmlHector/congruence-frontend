@@ -23,7 +23,7 @@ const navItems: NavItem[] = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { name: "Resources", href: "/dashboard/resources", icon: Box },
   { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function RailSidebar({ userEmail }: { userEmail?: string }) {

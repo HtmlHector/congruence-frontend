@@ -219,6 +219,16 @@
 
   --status-success: var(--status-awake);
   --status-error: var(--diff-del);
+  /* Motion & Easing Tokens (design-taste standard) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.1);
+
+  /* Animation Durations */
+  --duration-fast: 140ms;
+  --duration-normal: 200ms;
+  --duration-smooth: 280ms;
 }
 
 /* =====================================================================
@@ -307,12 +317,6 @@
 
 /*
  * Base element styles MUST live inside `@layer base`.
- *
- * In Tailwind v4 an unlayered rule outranks every `@layer`, regardless of
- * specificity. The old unlayered `a { color: inherit }` therefore beat
- * `text-[var(--ink-inverted)]` in the utilities layer, and every inverted
- * button rendered its label in the same colour as its own background. Wrapping
- * these in `@layer base` restores the intended precedence: utilities win.
  */
 @layer base {
   * {
@@ -357,5 +361,151 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: var(--scrollbar-thumb-hover);
+  }
+}
+
+/* =====================================================================
+ * ANIMATION KEYFRAMES & UTILITIES (design-taste motion craft)
+ * =================================================================== */
+@keyframes overlay-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes overlay-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes modal-scale-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes modal-scale-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+}
+
+@keyframes popover-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes popover-exit {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes sheet-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes sheet-out-right {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+
+@keyframes sheet-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes sheet-out-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+/* Radix animation hook classes */
+.animate-dialog-overlay-in {
+  animation: overlay-fade-in var(--duration-fast) var(--ease-out) forwards;
+}
+.animate-dialog-overlay-out {
+  animation: overlay-fade-out var(--duration-fast) ease-in forwards;
+}
+
+.animate-dialog-content-in {
+  animation: modal-scale-in var(--duration-normal) var(--ease-out) forwards;
+}
+.animate-dialog-content-out {
+  animation: modal-scale-out var(--duration-fast) ease-in forwards;
+}
+
+.animate-popover-in {
+  animation: popover-enter var(--duration-fast) var(--ease-out) forwards;
+}
+.animate-popover-out {
+  animation: popover-exit var(--duration-fast) ease-in forwards;
+}
+
+.animate-accordion-down {
+  animation: accordion-down var(--duration-normal) var(--ease-out) forwards;
+}
+.animate-accordion-up {
+  animation: accordion-up var(--duration-normal) var(--ease-out) forwards;
+}
+
+/* Smooth Interactive Component States */
+button:not(:disabled):active,
+[role="button"]:not([aria-disabled="true"]):active {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

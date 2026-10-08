@@ -2,6 +2,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
 import {
   ChevronLeft,
   ChevronRight,
@@ -141,14 +143,30 @@ const WWE_CURATED_STORIES: {
 };
 
 export function PreviewPane() {
-  const { activeLane, services, project } = useWorkspace();
+  const { activeLane, services, project, setIsSettingsOpen } = useWorkspace();
+  const { getToken } = useAuth();
+  const [previewToken, setPreviewToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getToken()
+      .then((t) => {
+        if (!cancelled) setPreviewToken(t);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [getToken]);
 
   const activeService =
     services.find((s) => s.lane_id === activeLane?.id && s.is_active) ||
     services.find((s) => s.is_active);
 
   const defaultLocalUrl = activeService
-    ? `${API_BASE_URL.replace("/api/v1", "")}${activeService.url}`
+    ? `${API_BASE_URL.replace("/api/v1", "")}${activeService.url}${
+        previewToken ? `?token=${encodeURIComponent(previewToken)}` : ""
+      }`
     : `http://localhost:3000`;
 
   // Browser navigation history & omnibar
@@ -525,9 +543,13 @@ export function PreviewPane() {
 
                     {/* Right: Google Actions & Sign In */}
                     <div className="flex items-center justify-end gap-3 shrink-0 text-[#5F6368] dark:text-[#9AA0A6]">
-                      <button type="button" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full cursor-pointer" title="Quick settings">
+                      <Link
+                        href="/settings"
+                        className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full cursor-pointer text-[#5F6368] dark:text-[#9AA0A6]"
+                        title="Quick settings"
+                      >
                         <Settings className="size-5" />
-                      </button>
+                      </Link>
                       <button type="button" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full cursor-pointer" title="Share">
                         <Share2 className="size-5" />
                       </button>

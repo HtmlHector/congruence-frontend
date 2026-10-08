@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { getProjectDirectory, createWorktreeLaneDisk } from "@/lib/project-runner";
+import { authErrorResponse, requireProjectAccess } from "@/lib/api-auth";
 
 const execAsync = promisify(exec);
 
@@ -12,6 +13,7 @@ export async function GET(req: Request) {
     const projectId = searchParams.get("projectId");
     const laneId = searchParams.get("laneId");
 
+    await requireProjectAccess(projectId);
     const targetDir = getProjectDirectory(projectId, laneId);
 
     // 1. Current branch
@@ -95,6 +97,8 @@ export async function GET(req: Request) {
       targetDir,
     });
   } catch (err: any) {
+    const authErr = authErrorResponse(err);
+    if (authErr) return authErr;
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -105,6 +109,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { action, file, message, branch, projectId, laneId, laneSlug } = body;
 
+    await requireProjectAccess(projectId);
     const targetDir = getProjectDirectory(projectId, laneId);
 
     switch (action) {
@@ -151,6 +156,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
   } catch (err: any) {
+    const authErr = authErrorResponse(err);
+    if (authErr) return authErr;
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
