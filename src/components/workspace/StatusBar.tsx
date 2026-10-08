@@ -1,11 +1,13 @@
 "use client";
 
-import React from "react";
-import { useWorkspace } from "@/context/WorkspaceContext";
+import React, { useEffect, useState } from "react";
 import { Laptop } from "lucide-react";
+import { useWorkspace } from "@/context/WorkspaceContext";
+import { api, HostUsageData } from "@/lib/api";
 
 export function StatusBar() {
   const { hostState, activeLane, project, services, chats, activeChatId } = useWorkspace();
+  const [usage, setUsage] = useState<HostUsageData | null>(null);
 
   const activeChat = chats.find((c) => c.id === activeChatId);
   const isClaude = activeChat?.harness === "Claude";
@@ -23,6 +25,23 @@ export function StatusBar() {
       : activeLane?.name || "Terminal Shell");
 
   const activeService = services.find((s) => s.is_active) || services[0];
+
+  // Refresh spend when the project or host state changes (awake time accrues on sleep).
+  useEffect(() => {
+    if (!project?.id) return;
+    let cancelled = false;
+    api
+      .getHostUsage(project.id)
+      .then((data) => {
+        if (!cancelled) setUsage(data);
+      })
+      .catch(() => {
+        if (!cancelled) setUsage(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [project?.id, hostState]);
 
   return (
     <footer className="flex h-7 w-full shrink-0 items-center justify-between border-t border-zinc-200 dark:border-zinc-800 bg-[#FAFAFA] dark:bg-[#0E0E12] px-3 font-mono text-[10px] text-zinc-500 dark:text-zinc-400 select-none rounded-[3.5px]">
@@ -57,15 +76,33 @@ export function StatusBar() {
           <Laptop className="size-3" />
           <span>HOST: Local Runner</span>
           <span
-            className={`size-1.5 rounded-[3.5px] ${
-              hostState === "awake" ? "bg-emerald-500" : "bg-amber-500"
+            className={`size-1.5 rounded-full ${
+              hostState === "awake"
+                ? "bg-emerald-500"
+                : hostState === "waking" || hostState === "sleeping"
+                  ? "bg-amber-500 animate-pulse"
+                  : "bg-zinc-400"
             }`}
           />
+          <span className="text-zinc-500 dark:text-zinc-400">
+            {hostState === "waking"
+              ? "waking…"
+              : hostState === "sleeping"
+                ? "sleeping…"
+                : hostState === "asleep"
+                  ? "asleep"
+                  : "awake"}
+          </span>
         </div>
       </div>
 
       {/* Right: Write Lease Active Badge & Port */}
       <div className="flex items-center gap-3 shrink-0 ml-2">
+        {usage && (
+          <span title="Estimated from awake time this month" className="text-zinc-500 dark:text-zinc-400">
+            {`~$${usage.estimated_cost_usd_month.toFixed(2)}/mo · ${(usage.awake_seconds_month / 3600).toFixed(1)}h awake`}
+          </span>
+        )}
         {activeService && (
           <span className="hidden lg:inline text-zinc-400">
             Port {activeService.port} · HTTPS
