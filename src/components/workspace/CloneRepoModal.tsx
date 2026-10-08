@@ -25,6 +25,7 @@ import {
   Plus,
   RefreshCw,
   SlidersHorizontal,
+  KeyRound,
 } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { api, GitHubRepoItem, GitHubStatusData } from "@/lib/api";
@@ -301,8 +302,12 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
   const allItems = useMemo(() => {
     let combined: RepositoryItem[] = [];
 
+    if (!ghStatus?.connected && activeCategory !== "templates" && searchQuery.trim().length === 0) {
+      return [];
+    }
+
     if (activeCategory === "all") {
-      combined = [...personalRepos, ...STARTER_TEMPLATES];
+      combined = ghStatus?.connected ? [...personalRepos, ...STARTER_TEMPLATES] : [...STARTER_TEMPLATES];
     } else if (activeCategory === "personal") {
       combined = [...personalRepos];
     } else if (activeCategory === "templates") {
@@ -806,6 +811,55 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
                     </button>
                   </div>
                 </div>
+              ) : !ghStatus?.connected && activeCategory !== "templates" && searchQuery.trim().length === 0 ? (
+                <div className="flex flex-col justify-between h-full p-2 space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="flex size-7 items-center justify-center bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 rounded-[3.5px] border border-zinc-200 dark:border-zinc-800 shadow-xs">
+                        <Github className="size-3.5" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
+                          GitHub Integration
+                        </h4>
+                        <span className="text-[10px] font-mono text-zinc-400">
+                          Workspace Repositories
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                      Connect your GitHub account or Personal Access Token to browse, clone, and manage repositories directly inside your workspaces.
+                    </p>
+
+                    <div className="space-y-2 border-t border-b border-zinc-200 dark:border-zinc-800/80 py-3 text-[11px] font-mono">
+                      <div className="flex items-center justify-between">
+                        <span className="text-zinc-400 flex items-center gap-1.5">
+                          <Lock className="size-3 text-zinc-500" /> Private Repos
+                        </span>
+                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">Supported</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-zinc-400 flex items-center gap-1.5">
+                          <KeyRound className="size-3 text-zinc-500" /> OAuth or PAT
+                        </span>
+                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">Supported</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-zinc-400 flex items-center gap-1.5">
+                          <GitBranch className="size-3 text-zinc-500" /> Git Worktrees
+                        </span>
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400 text-[10px]">
+                          Isolated Leases
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-[10px] text-zinc-400 text-center pb-1">
+                    Select <span className="font-semibold text-zinc-700 dark:text-zinc-300">Templates</span> above to explore starter kits.
+                  </div>
+                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center text-zinc-400 p-4">
                   <p className="text-xs">Select a repository to preview details</p>
@@ -835,7 +889,9 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
             </div>
 
             <div className="text-zinc-400 font-medium">
-              {allItems.length} repositories available
+              {!ghStatus?.connected && activeCategory !== "templates" && searchQuery.trim().length === 0
+                ? "GitHub not connected"
+                : `${allItems.length} ${allItems.length === 1 ? "repository" : "repositories"} available`}
             </div>
           </div>
         </Dialog.Content>
