@@ -250,6 +250,36 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
               createdAt: r.created_at ? r.created_at.split("T")[0] : new Date().toISOString().split("T")[0],
               projectsCount: 1,
             }));
+            if (mapped.length === 0 && user) {
+              const defaultName = user.firstName
+                ? `${user.firstName}'s Workspace`
+                : user.fullName
+                ? `${user.fullName}'s Workspace`
+                : "Personal Workspace";
+              const createRes = await fetch("/api/workspaces", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: defaultName, plan: "PRO" }),
+              });
+              if (createRes.ok) {
+                const row = await createRes.json();
+                const autoCreated: WorkspaceTenant = {
+                  id: row.workspace_id,
+                  name: row.name,
+                  slug: row.slug,
+                  role: "owner",
+                  plan: "Pro",
+                  ownerEmail: userEmail,
+                  createdAt: row.created_at ? row.created_at.split("T")[0] : new Date().toISOString().split("T")[0],
+                  projectsCount: 1,
+                };
+                setTenants([autoCreated]);
+                setCurrentTenant(autoCreated);
+                setWorkspaceNotFound(false);
+                return;
+              }
+            }
+
             setTenants(mapped);
             if (workspaceSlugOrId) {
               const matched = mapped.find(
