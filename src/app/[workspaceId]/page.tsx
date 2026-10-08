@@ -46,6 +46,12 @@ function WorkspaceAppContent() {
     setIsSettingsOpen,
   } = useWorkspace();
 
+  useEffect(() => {
+    api.getGithubStatus()
+      .then(setGhStatus)
+      .catch(() => setGhStatus({ connected: false, username: null, avatar_url: null, github_user_id: null }));
+  }, [isCloneOpen]);
+
   if (!isLoaded || isWorkspaceLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-[var(--background)] text-[var(--foreground)]">
@@ -115,12 +121,6 @@ function WorkspaceAppContent() {
       </div>
     );
   }
-
-  useEffect(() => {
-    api.getGithubStatus()
-      .then(setGhStatus)
-      .catch(() => setGhStatus({ connected: false, username: null, avatar_url: null, github_user_id: null }));
-  }, [isCloneOpen]);
 
   const renderActiveView = () => {
     if (isLoading) {
