@@ -284,6 +284,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!workspaceSlugOrId) {
       setWorkspaceNotFound(false);
+      if (tenants.length > 0 && (!currentTenant || !tenants.some((t) => t.id === currentTenant.id))) {
+        setCurrentTenant(tenants[0]);
+      }
       return;
     }
     if (isWorkspaceLoading) return;
@@ -299,7 +302,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       setCurrentTenant(null);
       setWorkspaceNotFound(true);
     }
-  }, [workspaceSlugOrId, tenants, isWorkspaceLoading]);
+  }, [workspaceSlugOrId, tenants, isWorkspaceLoading, currentTenant]);
 
   const [isNewWorkspaceOpen, setIsNewWorkspaceOpen] = useState(false);
   const [mode, setMode] = useState<WorkspaceViewMode>("deck");
