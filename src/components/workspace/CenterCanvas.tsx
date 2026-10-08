@@ -499,6 +499,17 @@ function PaneGroupView({
                           ✓
                         </span>
                       )}
+                      {tab.chat?.state === "error" && (
+                        <span
+                          className="flex size-3.5 items-center justify-center text-red-500 shrink-0 pointer-events-none"
+                          title="Agent run failed — see the chat for details"
+                        >
+                          <svg className="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M15 9l-6 6M9 9l6 6" />
+                          </svg>
+                        </span>
+                      )}
 
                       {/* Close 'x' button */}
                       {resolvedTabs.length > 1 && (

@@ -705,26 +705,20 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
         `${runnerLabel} finished response on branch ${activeLane?.branch || "main"}`
       );
     } catch (err: any) {
-      console.warn("Agent stream notice:", err);
-      const branchName = activeLane?.branch || "main";
-      const isGreeting = /^(hi|hello|hey|sup|greetings|howdy|yo)[\s!.]*$/i.test(userText);
-      const isTimeQuery = /time|clock|date/i.test(userText);
-
-      let fallbackText = "";
-      if (isTimeQuery) {
-        fallbackText = `The current local host time is ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} (${new Date().toLocaleDateString()}).`;
-      } else if (isGreeting) {
-        fallbackText = `Hello! I am ${runnerLabel} linked to repository \`${project?.repo_full_name || project?.name || "workspace"}\` on branch \`${branchName}\`. How can I help you in this workspace?`;
-      } else {
-        fallbackText = `Executed task on branch \`${branchName}\`: "${userText}". All modifications and type checks are isolated to this worktree.`;
-      }
+      // Never fabricate an agent reply. If the stream failed, the honest
+      // answer is the error itself: the backend runner may be unreachable,
+      // the CLI missing from the host, or the harness not yet connected.
+      console.warn("Agent stream failed:", err);
+      const detail = err?.message || "the agent runner could not be reached";
+      const errorText =
+        `⚠️ Couldn't run ${runnerLabel} on this lane: ${detail}\n\n` +
+        `The agent runner didn't respond — the backend may be unreachable, or this harness isn't connected on the host yet. Open the Integrations modal (Repositories & Harness Logins) and use "Authenticate via Terminal" to link ${runnerLabel}.`;
 
       updateChatMessage(currentChatId, assistantMsgId, (prev: ChatMessage) => ({
         ...prev,
-        content: fallbackText,
+        content: accumulatedText ? `${accumulatedText}\n\n${errorText}` : errorText,
       }));
-      setChatState(currentChatId, "completed");
-      playCompletionChime();
+      setChatState(currentChatId, "error");
     } finally {
       setIsGenerating(false);
     }
