@@ -15,6 +15,13 @@ export const WS_BASE_URL = rawWsUrl.endsWith("/api/v1")
   : `${rawWsUrl.replace(/\/+$/, "")}/api/v1`;
 
 
+export interface HostUsageData {
+  state: "awake" | "asleep" | "waking" | "sleeping";
+  awake_seconds_month: number;
+  rate_usd_per_hour: number;
+  estimated_cost_usd_month: number;
+}
+
 export interface ProjectData {
   id: string;
   name: string;
@@ -120,10 +127,20 @@ export interface IntegrationsStatusData {
   >;
 }
 
+type TokenProvider = () => Promise<string | null>;
+let tokenProvider: TokenProvider | null = null;
+
+/** Register how to obtain the signed-in user's bearer token (the backend requires auth). */
+export function setApiTokenProvider(provider: TokenProvider | null): void {
+  tokenProvider = provider;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
+  const token = tokenProvider ? await tokenProvider() : null;
   const headers: HeadersInit = {
     "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };
 
@@ -186,6 +203,8 @@ export const api = {
     }),
 
   // Host lifecycle
+  getHostUsage: (projectId: string) =>
+    request<HostUsageData>(`/projects/${projectId}/host/usage`),
   getHost: (projectId: string) =>
     request<{ id: string; state: "awake" | "asleep" | "waking" | "sleeping" }>(
       `/projects/${projectId}/host`

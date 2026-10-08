@@ -1,8 +1,10 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { useAuth } from "@clerk/nextjs";
 import {
   api,
+  setApiTokenProvider,
   ProjectData,
   WorkLaneData,
   WorkspaceActor,
@@ -167,6 +169,13 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [pendingCommand, setPendingCommand] = useState<string | null>(null);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
+
+  // Backend requires a bearer token on every project route; attach the signed-in user's Clerk token.
+  const { getToken } = useAuth();
+  useEffect(() => {
+    setApiTokenProvider(() => getToken());
+    return () => setApiTokenProvider(null);
+  }, [getToken]);
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed((prev) => !prev);
