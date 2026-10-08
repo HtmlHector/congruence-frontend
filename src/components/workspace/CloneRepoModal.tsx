@@ -189,6 +189,9 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
   const [isLoadingRepos, setIsLoadingRepos] = useState(false);
   const [isCloning, setIsCloning] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [patToken, setPatToken] = useState("");
+  const [isConnectingPat, setIsConnectingPat] = useState(false);
+  const [showPatInput, setShowPatInput] = useState(false);
 
   const listRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -223,6 +226,8 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
         } finally {
           setIsLoadingRepos(false);
         }
+      } else {
+        setPersonalRepos([]);
       }
     } catch (err: any) {
       console.error("Failed to load GitHub status:", err);
@@ -233,6 +238,8 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
     if (open) {
       setSearchQuery("");
       setSelectedIndex(0);
+      setShowPatInput(false);
+      setPatToken("");
       fetchGithubStatusAndRepos();
       setTimeout(() => {
         searchInputRef.current?.focus();
@@ -248,6 +255,33 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to initiate GitHub OAuth");
+    }
+  };
+
+  const handleConnectPat = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!patToken.trim()) {
+      toast.error("Please enter a valid GitHub token (e.g. ghp_... or github_pat_...)");
+      return;
+    }
+    setIsConnectingPat(true);
+    try {
+      const res = await api.connectGithubPat(patToken.trim());
+      setGhStatus({
+        connected: true,
+        username: res.username,
+        avatar_url: res.avatar_url,
+        github_user_id: res.github_user_id,
+      });
+      setPatToken("");
+      setShowPatInput(false);
+      toast.success(`Connected GitHub account @${res.username}`);
+      await fetchGithubStatusAndRepos();
+      setActiveCategory("personal");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to connect GitHub Personal Access Token");
+    } finally {
+      setIsConnectingPat(false);
     }
   };
 
@@ -480,10 +514,81 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
             {/* Left Column: Repository Master List */}
             <div
               ref={listRef}
-              className="border-b sm:border-b-0 sm:border-r border-zinc-200 dark:border-zinc-800 overflow-y-auto scrollbar-thin divide-y divide-zinc-100 dark:divide-zinc-800/60"
+              className="border-b sm:border-b-0 sm:border-r border-zinc-200 dark:border-zinc-800 overflow-y-auto scrollbar-thin divide-y divide-zinc-100 dark:divide-zinc-800/60 flex flex-col"
             >
-              {allItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-12 text-center text-zinc-400">
+              {activeCategory === "personal" && !ghStatus?.connected ? (
+                <div className="flex flex-col items-center justify-center p-8 text-center max-w-md mx-auto my-auto">
+                  <div className="flex size-12 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 mb-3 border border-zinc-200 dark:border-zinc-700 shadow-xs">
+                    <Github className="size-6" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                    Connect GitHub to Access Repositories
+                  </h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 mb-5 leading-relaxed">
+                    Authorize Congruence with your GitHub account or paste a Personal Access Token to search, browse, and clone your repositories directly into your workspaces.
+                  </p>
+
+                  <div className="flex flex-col gap-2.5 w-full">
+                    <button
+                      type="button"
+                      onClick={handleConnectGithub}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-semibold rounded-[3.5px] hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+                    >
+                      <Github className="size-4" />
+                      <span>Connect with GitHub (OAuth)</span>
+                    </button>
+
+                    {!showPatInput ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowPatInput(true)}
+                        className="w-full py-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 rounded-[3.5px] hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+                      >
+                        Use Personal Access Token (PAT)
+                      </button>
+                    ) : (
+                      <form onSubmit={handleConnectPat} className="flex flex-col gap-2 p-3 bg-zinc-50 dark:bg-[#121218] border border-zinc-200 dark:border-zinc-800 rounded-[3.5px] text-left">
+                        <label className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
+                          GitHub Token (<code className="font-mono text-[10px]">ghp_...</code> or <code className="font-mono text-[10px]">github_pat_...</code>)
+                        </label>
+                        <input
+                          type="password"
+                          placeholder="Paste GitHub access token..."
+                          value={patToken}
+                          onChange={(e) => setPatToken(e.target.value)}
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-[3.5px] text-xs font-mono text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-500"
+                        />
+                        <div className="flex items-center gap-2 mt-1">
+                          <button
+                            type="submit"
+                            disabled={isConnectingPat || !patToken.trim()}
+                            className="flex-1 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium rounded-[3.5px] hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            {isConnectingPat ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                            <span>{isConnectingPat ? "Connecting..." : "Save Token"}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowPatInput(false);
+                              setPatToken("");
+                            }}
+                            className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                </div>
+              ) : isLoadingRepos ? (
+                <div className="flex flex-col items-center justify-center p-12 text-center text-zinc-400 my-auto">
+                  <Loader2 className="size-6 text-zinc-400 animate-spin mb-2" />
+                  <p className="text-xs font-medium text-zinc-600 dark:text-zinc-300">Loading GitHub repositories...</p>
+                </div>
+              ) : allItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-12 text-center text-zinc-400 my-auto">
                   <FolderGit2 className="size-8 text-zinc-300 dark:text-zinc-700 mb-2 stroke-1" />
                   <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">No repositories found</p>
                   <p className="text-xs text-zinc-400 mt-1 max-w-xs">

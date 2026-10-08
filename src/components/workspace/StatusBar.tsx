@@ -66,7 +66,7 @@ export function StatusBar() {
         {/* Worktree Repo */}
         <div className="hidden sm:flex items-center gap-1.5 shrink-0 truncate">
           <span className="text-zinc-400">WORKTREE:</span>
-          <span className="text-zinc-700 dark:text-zinc-300 truncate">{project?.repo_full_name || project?.slug || "ecommerce-test-app"}</span>
+          <span className="text-zinc-700 dark:text-zinc-300 truncate">{project?.repo_full_name || project?.name || "No Active Repo"}</span>
         </div>
 
         <span className="hidden md:inline text-zinc-300 dark:text-zinc-700 shrink-0">|</span>

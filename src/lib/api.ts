@@ -330,6 +330,14 @@ export const api = {
     ),
   getGithubStatus: () => request<GitHubStatusData>("/integrations/github/status"),
   getGithubRepos: () => request<GitHubRepoItem[]>("/integrations/github/repos"),
+  connectGithubPat: (token: string) =>
+    request<{ connected: boolean; username: string; avatar_url: string; github_user_id: string }>(
+      "/integrations/github/connect-pat",
+      {
+        method: "POST",
+        body: JSON.stringify({ token }),
+      }
+    ),
   disconnectGithub: () =>
     request<{ connected: boolean; disconnected: boolean }>("/integrations/github/disconnect", {
       method: "DELETE",

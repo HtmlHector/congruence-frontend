@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { WorkspaceProvider, useWorkspace } from "@/context/WorkspaceContext";
 import { SupersetSidebar } from "@/components/workspace/SupersetSidebar";
 import { PromptHub } from "@/components/workspace/PromptHub";
@@ -13,6 +13,8 @@ import { CloneRepoModal } from "@/components/workspace/CloneRepoModal";
 import { NewWorkspaceModal } from "@/components/workspace/NewWorkspaceModal";
 import { NewWorktreeModal } from "@/components/workspace/NewWorktreeModal";
 import { WorkspaceContextMenu } from "@/components/workspace/WorkspaceContextMenu";
+import { Github, FolderGit2, Plus, Sparkles } from "lucide-react";
+import { api, GitHubStatusData } from "@/lib/api";
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
@@ -20,6 +22,7 @@ import { useAuth } from "@clerk/nextjs";
 function WorkspaceAppContent() {
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
+  const [ghStatus, setGhStatus] = useState<GitHubStatusData | null>(null);
   const {
     currentTenant,
     tenants,
@@ -113,6 +116,12 @@ function WorkspaceAppContent() {
     );
   }
 
+  useEffect(() => {
+    api.getGithubStatus()
+      .then(setGhStatus)
+      .catch(() => setGhStatus({ connected: false, username: null, avatar_url: null, github_user_id: null }));
+  }, [isCloneOpen]);
+
   const renderActiveView = () => {
     if (isLoading) {
       return (
@@ -127,20 +136,63 @@ function WorkspaceAppContent() {
 
     if (!project && mode !== "hub") {
       return (
-        <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-          <div className="w-12 h-12 rounded-[3.5px] bg-[var(--surface-tertiary)] border border-[var(--border-subtle)] flex items-center justify-center text-lg mb-4">
-            ⎇
-          </div>
-          <h2 className="text-lg font-medium text-[var(--foreground)] mb-2">No Active Repository</h2>
-          <p className="text-sm text-[var(--foreground-muted)] max-w-md mb-6 leading-relaxed">
-            Open a GitHub repository or clone a project to start a collaborative execution workspace with Claude and Codex.
-          </p>
-          <button
-            onClick={() => setIsCloneOpen(true)}
-            className="px-4 py-2 bg-[var(--foreground)] text-[var(--background)] font-medium text-xs rounded-[3.5px] hover:opacity-90 transition-opacity"
-          >
-            + Open a repository
-          </button>
+        <div className="flex flex-1 flex-col items-center justify-center p-8 text-center max-w-lg mx-auto">
+          {ghStatus?.connected ? (
+            <div className="space-y-4">
+              <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl mx-auto">
+                <FolderGit2 className="size-7" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                  No Active Repository in Workspace
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-md mx-auto leading-relaxed">
+                  Connected as <span className="font-mono font-medium text-zinc-800 dark:text-zinc-200">@{ghStatus.username}</span>. Open or clone a GitHub repository to start multi-agent execution with Claude and Codex.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCloneOpen(true)}
+                  className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-semibold rounded-[3.5px] hover:opacity-90 transition-opacity cursor-pointer flex items-center gap-2 shadow-xs"
+                >
+                  <Plus className="size-3.5" />
+                  <span>Open Repository</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="w-14 h-14 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 flex items-center justify-center mx-auto shadow-xs">
+                <Github className="size-7" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                  Connect GitHub to Your Workspace
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-md mx-auto leading-relaxed">
+                  Connect your GitHub account or paste a token to clone and collaborate on your repositories with AI pair programmers.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2 w-full max-w-sm mx-auto">
+                <button
+                  type="button"
+                  onClick={() => setIsCloneOpen(true)}
+                  className="w-full sm:w-auto px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-semibold rounded-[3.5px] hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+                >
+                  <Github className="size-4" />
+                  <span>Connect GitHub</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCloneOpen(true)}
+                  className="w-full sm:w-auto px-4 py-2 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 text-xs font-medium rounded-[3.5px] hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                >
+                  <span>Open Starter Kit / URL</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       );
     }

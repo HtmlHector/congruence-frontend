@@ -27,6 +27,7 @@ import {
   ExternalLink,
   Layers,
   Building2,
+  Github,
 } from "lucide-react";
 import {
   ClaudeIcon,
@@ -42,6 +43,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useWorkspace } from "@/context/WorkspaceContext";
+import { api, GitHubStatusData } from "@/lib/api";
 
 export function SupersetSidebar() {
   const {
@@ -64,6 +66,7 @@ export function SupersetSidebar() {
     setIsSettingsOpen,
     setSettingsTab,
     setIsSearchOpen,
+    isCloneOpen,
     setIsCloneOpen,
     openNewWorktreeModal,
     sidebarCollapsed,
@@ -81,10 +84,14 @@ export function SupersetSidebar() {
     .toUpperCase();
 
   const [activeItem, setActiveItem] = useState<string>("deck");
-  const [openProjects, setOpenProjects] = useState<Record<string, boolean>>({
-    "ecommerce-test-app": true,
-    "spec-docs": false,
-  });
+  const [openProjects, setOpenProjects] = useState<Record<string, boolean>>({});
+  const [ghStatus, setGhStatus] = useState<GitHubStatusData | null>(null);
+
+  useEffect(() => {
+    api.getGithubStatus()
+      .then(setGhStatus)
+      .catch(() => setGhStatus({ connected: false, username: null, avatar_url: null, github_user_id: null }));
+  }, [isCloneOpen]);
 
   const toggleProjectFolder = (projName: string) => {
     setOpenProjects((prev) => ({
@@ -228,7 +235,7 @@ export function SupersetSidebar() {
   }
 
   const activeProjectName =
-    project?.name || project?.repo_full_name || "ecommerce-test-app";
+    project?.name || project?.repo_full_name || "No Active Project";
 
   return (
     <aside className="flex h-full w-[240px] shrink-0 flex-col border-r border-zinc-200 dark:border-[#222227] bg-[#FAFAFA] dark:bg-[#0E0E12] text-xs select-none transition-all duration-150 z-30">
@@ -399,18 +406,36 @@ export function SupersetSidebar() {
         {/* Project Items & Nested Worktrees */}
         <div className="mt-1 space-y-1">
           {projects.length === 0 ? (
-            <div className="px-3 py-6 text-center border border-dashed border-zinc-200 dark:border-zinc-800 my-2">
-              <Folder className="size-4 text-zinc-400 mx-auto mb-1.5" />
-              <p className="text-[11px] text-zinc-500 font-medium">No repositories</p>
-              <p className="text-[10px] text-zinc-400 mt-0.5 mb-2.5">Add a repo to this workspace</p>
-              <button
-                type="button"
-                onClick={() => setIsCloneOpen(true)}
-                className="px-2.5 py-1 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[10px] font-medium cursor-pointer rounded-[3.5px] hover:opacity-90 transition-opacity"
-              >
-                + Open Repository
-              </button>
-            </div>
+            ghStatus?.connected ? (
+              <div className="px-3 py-5 text-center border border-dashed border-zinc-200 dark:border-zinc-800 my-2 rounded-[3.5px]">
+                <Folder className="size-4 text-zinc-400 mx-auto mb-1.5" />
+                <p className="text-[11px] text-zinc-700 dark:text-zinc-300 font-medium">No repositories</p>
+                <p className="text-[10px] text-zinc-400 mt-0.5 mb-2.5">Open a repo to start working</p>
+                <button
+                  type="button"
+                  onClick={() => setIsCloneOpen(true)}
+                  className="px-2.5 py-1 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[10px] font-medium cursor-pointer rounded-[3.5px] hover:opacity-90 transition-opacity"
+                >
+                  + Open Repository
+                </button>
+              </div>
+            ) : (
+              <div className="px-3 py-4 text-center border border-dashed border-zinc-300 dark:border-zinc-800 my-2 rounded-[3.5px] bg-zinc-50/50 dark:bg-[#121216]/50">
+                <Github className="size-4 text-zinc-600 dark:text-zinc-400 mx-auto mb-1.5" />
+                <p className="text-[11px] text-zinc-800 dark:text-zinc-200 font-semibold">Connect GitHub</p>
+                <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2.5 leading-tight">
+                  Connect your GitHub account to access and clone your repositories
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsCloneOpen(true)}
+                  className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[11px] font-medium cursor-pointer rounded-[3.5px] hover:opacity-90 transition-opacity shadow-xs"
+                >
+                  <Github className="size-3" />
+                  <span>Connect GitHub</span>
+                </button>
+              </div>
+            )
           ) : (
             projects.map((proj) => {
               const isOpen = openProjects[proj.id] ?? true;

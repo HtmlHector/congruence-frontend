@@ -212,7 +212,7 @@ export function TerminalPane() {
         term.writeln("\x1b[38;2;169;78;25m┌─────────────────────────────────────────────────────────────┐\x1b[0m");
         term.writeln("\x1b[38;2;169;78;25m│\x1b[0m  \x1b[1;38;2;24;24;27mCONGRUENCE SESSION GATEWAY\x1b[0m \x1b[38;2;4;120;87m● HOST ONLINE\x1b[0m                   \x1b[38;2;169;78;25m│\x1b[0m");
         term.writeln(
-          `\x1b[38;2;169;78;25m│\x1b[0m  \x1b[38;2;113;113;122mWorktree:\x1b[0m \x1b[38;2;24;24;27m${project?.slug || "ecommerce-test-app"}\x1b[0m  \x1b[38;2;113;113;122mBranch:\x1b[0m \x1b[38;2;4;120;87m${activeLane?.branch || "main"}\x1b[0m     \x1b[38;2;169;78;25m│\x1b[0m`
+          `\x1b[38;2;169;78;25m│\x1b[0m  \x1b[38;2;113;113;122mWorktree:\x1b[0m \x1b[38;2;24;24;27m${project?.slug || project?.name || "workspace"}\x1b[0m  \x1b[38;2;113;113;122mBranch:\x1b[0m \x1b[38;2;4;120;87m${activeLane?.branch || "main"}\x1b[0m     \x1b[38;2;169;78;25m│\x1b[0m`
         );
         term.writeln("\x1b[38;2;169;78;25m│\x1b[0m  \x1b[38;2;113;113;122mType \x1b[38;2;180;83;9m'help'\x1b[38;2;113;113;122m or click quick chips to dispatch commands     \x1b[38;2;169;78;25m│\x1b[0m");
         term.writeln("\x1b[38;2;169;78;25m└─────────────────────────────────────────────────────────────┘\x1b[0m\r\n");
@@ -220,15 +220,15 @@ export function TerminalPane() {
         term.writeln("\x1b[38;2;232;128;74m┌─────────────────────────────────────────────────────────────┐\x1b[0m");
         term.writeln("\x1b[38;2;232;128;74m│\x1b[0m  \x1b[1;38;2;255;255;255mCONGRUENCE SESSION GATEWAY\x1b[0m \x1b[38;2;16;185;129m● HOST ONLINE\x1b[0m                   \x1b[38;2;232;128;74m│\x1b[0m");
         term.writeln(
-          `\x1b[38;2;232;128;74m│\x1b[0m  \x1b[90mWorktree:\x1b[0m \x1b[38;2;237;237;237m${project?.slug || "ecommerce-test-app"}\x1b[0m  \x1b[90mBranch:\x1b[0m \x1b[38;2;16;185;129m${activeLane?.branch || "main"}\x1b[0m     \x1b[38;2;232;128;74m│\x1b[0m`
+          `\x1b[38;2;232;128;74m│\x1b[0m  \x1b[90mWorktree:\x1b[0m \x1b[38;2;237;237;237m${project?.slug || project?.name || "workspace"}\x1b[0m  \x1b[90mBranch:\x1b[0m \x1b[38;2;16;185;129m${activeLane?.branch || "main"}\x1b[0m     \x1b[38;2;232;128;74m│\x1b[0m`
         );
         term.writeln("\x1b[38;2;232;128;74m│\x1b[0m  \x1b[90mType \x1b[38;2;251;191;36m'help'\x1b[90m or click quick chips to dispatch commands     \x1b[38;2;232;128;74m│\x1b[0m");
         term.writeln("\x1b[38;2;232;128;74m└─────────────────────────────────────────────────────────────┘\x1b[0m\r\n");
       }
 
       const promptStr = isLight
-        ? `\x1b[1;38;2;4;120;87m➜\x1b[0m \x1b[1;38;2;29;78;216m${project?.slug || "ecommerce-test-app"}\x1b[0m \x1b[38;2;113;113;122mon\x1b[0m \x1b[38;2;169;78;25mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;24;24;27m$\x1b[0m `
-        : `\x1b[1;38;2;16;185;129m➜\x1b[0m \x1b[1;38;2;96;165;250m${project?.slug || "ecommerce-test-app"}\x1b[0m \x1b[90mon\x1b[0m \x1b[38;2;232;128;74mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;255;255;255m$\x1b[0m `;
+        ? `\x1b[1;38;2;4;120;87m➜\x1b[0m \x1b[1;38;2;29;78;216m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[38;2;113;113;122mon\x1b[0m \x1b[38;2;169;78;25mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;24;24;27m$\x1b[0m `
+        : `\x1b[1;38;2;16;185;129m➜\x1b[0m \x1b[1;38;2;96;165;250m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[90mon\x1b[0m \x1b[38;2;232;128;74mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;255;255;255m$\x1b[0m `;
 
       const printPrompt = () => {
         term.write(promptStr);
@@ -448,7 +448,7 @@ export function TerminalPane() {
     } else if (bin === "clear") {
       term.clear();
     } else if (bin === "pwd") {
-      term.writeln(`/Users/admin/congruence-worktrees/${project?.slug || "ecommerce-test-app"}`);
+      term.writeln(`/Users/admin/congruence-worktrees/${project?.slug || project?.name || "workspace"}`);
     } else if (bin === "ls") {
       term.writeln("src/  public/  docs/  package.json  next.config.ts  design.md  README.md");
     } else if (cmd.startsWith("git status")) {
@@ -537,8 +537,8 @@ export function TerminalPane() {
         term.writeln(cmd);
         const isLight = themeMode === "light";
         const promptStr = isLight
-          ? `\x1b[1;38;2;4;120;87m➜\x1b[0m \x1b[1;38;2;29;78;216m${project?.slug || "ecommerce-test-app"}\x1b[0m \x1b[38;2;113;113;122mon\x1b[0m \x1b[38;2;169;78;25mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;24;24;27m$\x1b[0m `
-          : `\x1b[1;38;2;16;185;129m➜\x1b[0m \x1b[1;38;2;96;165;250m${project?.slug || "ecommerce-test-app"}\x1b[0m \x1b[90mon\x1b[0m \x1b[38;2;232;128;74mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;255;255;255m$\x1b[0m `;
+          ? `\x1b[1;38;2;4;120;87m➜\x1b[0m \x1b[1;38;2;29;78;216m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[38;2;113;113;122mon\x1b[0m \x1b[38;2;169;78;25mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;24;24;27m$\x1b[0m `
+          : `\x1b[1;38;2;16;185;129m➜\x1b[0m \x1b[1;38;2;96;165;250m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[90mon\x1b[0m \x1b[38;2;232;128;74mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;255;255;255m$\x1b[0m `;
         handleLocalCommand(cmd, term, () => term.write(promptStr));
       }
     }
@@ -549,8 +549,8 @@ export function TerminalPane() {
       xtermInstance.current.clear();
       const isLight = themeMode === "light";
       const promptStr = isLight
-        ? `\x1b[1;38;2;4;120;87m➜\x1b[0m \x1b[1;38;2;29;78;216m${project?.slug || "ecommerce-test-app"}\x1b[0m \x1b[38;2;113;113;122mon\x1b[0m \x1b[38;2;169;78;25mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;24;24;27m$\x1b[0m `
-        : `\x1b[1;38;2;16;185;129m➜\x1b[0m \x1b[1;38;2;96;165;250m${project?.slug || "ecommerce-test-app"}\x1b[0m \x1b[90mon\x1b[0m \x1b[38;2;232;128;74mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;255;255;255m$\x1b[0m `;
+        ? `\x1b[1;38;2;4;120;87m➜\x1b[0m \x1b[1;38;2;29;78;216m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[38;2;113;113;122mon\x1b[0m \x1b[38;2;169;78;25mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;24;24;27m$\x1b[0m `
+        : `\x1b[1;38;2;16;185;129m➜\x1b[0m \x1b[1;38;2;96;165;250m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[90mon\x1b[0m \x1b[38;2;232;128;74mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;255;255;255m$\x1b[0m `;
       xtermInstance.current.write(promptStr);
     }
   };
@@ -566,8 +566,8 @@ export function TerminalPane() {
           : "\x1b[38;2;232;128;74m◆ Congruence Session Gateway (Restarted)\x1b[0m\r\n"
       );
       const promptStr = isLight
-        ? `\x1b[1;38;2;4;120;87m➜\x1b[0m \x1b[1;38;2;29;78;216m${project?.slug || "ecommerce-test-app"}\x1b[0m \x1b[38;2;113;113;122mon\x1b[0m \x1b[38;2;169;78;25mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;24;24;27m$\x1b[0m `
-        : `\x1b[1;38;2;16;185;129m➜\x1b[0m \x1b[1;38;2;96;165;250m${project?.slug || "ecommerce-test-app"}\x1b[0m \x1b[90mon\x1b[0m \x1b[38;2;232;128;74mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;255;255;255m$\x1b[0m `;
+        ? `\x1b[1;38;2;4;120;87m➜\x1b[0m \x1b[1;38;2;29;78;216m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[38;2;113;113;122mon\x1b[0m \x1b[38;2;169;78;25mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;24;24;27m$\x1b[0m `
+        : `\x1b[1;38;2;16;185;129m➜\x1b[0m \x1b[1;38;2;96;165;250m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[90mon\x1b[0m \x1b[38;2;232;128;74mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;255;255;255m$\x1b[0m `;
       term.write(promptStr);
 
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && activeLane) {

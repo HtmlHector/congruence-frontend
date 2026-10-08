@@ -713,7 +713,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
       if (isTimeQuery) {
         fallbackText = `The current local host time is ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} (${new Date().toLocaleDateString()}).`;
       } else if (isGreeting) {
-        fallbackText = `Hello! I am ${runnerLabel} linked to repository \`${project?.repo_full_name || "ecommerce-test-app"}\` on branch \`${branchName}\`. How can I help you in this workspace?`;
+        fallbackText = `Hello! I am ${runnerLabel} linked to repository \`${project?.repo_full_name || project?.name || "workspace"}\` on branch \`${branchName}\`. How can I help you in this workspace?`;
       } else {
         fallbackText = `Executed task on branch \`${branchName}\`: "${userText}". All modifications and type checks are isolated to this worktree.`;
       }
