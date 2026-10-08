@@ -39,9 +39,22 @@ export function StatusBar() {
           <span className="text-[var(--accent-claude)]">Local Runner</span>
           <span
             className={`size-1.5 rounded-full ${
-              hostState === "awake" ? "bg-[var(--status-awake)]" : "bg-[var(--status-asleep)]"
+              hostState === "awake"
+                ? "bg-[var(--status-awake)]"
+                : hostState === "waking" || hostState === "sleeping"
+                  ? "bg-[var(--accent-claude)] animate-pulse"
+                  : "bg-[var(--status-asleep)]"
             }`}
           />
+          <span className="text-[var(--subtle-foreground)]">
+            {hostState === "waking"
+              ? "waking…"
+              : hostState === "sleeping"
+                ? "sleeping…"
+                : hostState === "asleep"
+                  ? "asleep"
+                  : "awake"}
+          </span>
         </div>
 
         {/* Project Tag */}
