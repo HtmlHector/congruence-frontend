@@ -28,8 +28,8 @@ export async function GET() {
       // 1. Ensure user exists in identity.users
       const userRes = await query(
         `
-        INSERT INTO identity.users (user_id, supabase_user_id, email, full_name, avatar_url, created_at, updated_at)
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())
+        INSERT INTO identity.users (user_id, supabase_user_id, email, full_name, avatar_url, is_active, metadata, created_at, updated_at)
+        VALUES (gen_random_uuid(), $1, $2, $3, $4, TRUE, '{}'::jsonb, NOW(), NOW())
         ON CONFLICT (supabase_user_id) DO UPDATE 
         SET email = EXCLUDED.email, full_name = EXCLUDED.full_name, avatar_url = COALESCE(EXCLUDED.avatar_url, identity.users.avatar_url)
         RETURNING user_id;
@@ -149,8 +149,8 @@ export async function POST(req: Request) {
 
       const userRes = await query(
         `
-        INSERT INTO identity.users (user_id, supabase_user_id, email, full_name, avatar_url, created_at, updated_at)
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())
+        INSERT INTO identity.users (user_id, supabase_user_id, email, full_name, avatar_url, is_active, metadata, created_at, updated_at)
+        VALUES (gen_random_uuid(), $1, $2, $3, $4, TRUE, '{}'::jsonb, NOW(), NOW())
         ON CONFLICT (supabase_user_id) DO UPDATE 
         SET email = EXCLUDED.email, full_name = EXCLUDED.full_name, avatar_url = COALESCE(EXCLUDED.avatar_url, identity.users.avatar_url)
         RETURNING user_id;
