@@ -41,7 +41,7 @@ export function LanesSidebar() {
             type="button"
             onClick={handleAddLane}
             className="hover:text-[var(--foreground)] transition-colors p-0.5 rounded"
-            title="Add worktree lane"
+            title="Add project"
           >
             <Plus className="size-3" />
           </button>

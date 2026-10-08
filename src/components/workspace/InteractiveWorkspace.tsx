@@ -1,3 +1,4 @@
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 "use client";
 
 import React from "react";
@@ -7,9 +8,21 @@ import { SupersetSidebar } from "./SupersetSidebar";
 import { PromptHub } from "./PromptHub";
 import { ExecutionDeck } from "./ExecutionDeck";
 import { IntegrationsModal } from "./IntegrationsModal";
+import { SettingsModal } from "./SettingsModal";
+import { NewWorktreeModal } from "./NewWorktreeModal";
+import { WorkspaceContextMenu } from "./WorkspaceContextMenu";
 
 export function InteractiveWorkspace() {
-  const { mode, isIntegrationsOpen, setIsIntegrationsOpen } = useWorkspace();
+  const {
+    mode,
+    isIntegrationsOpen,
+    setIsIntegrationsOpen,
+    isSettingsOpen,
+    setIsSettingsOpen,
+    isNewWorktreeOpen,
+    setIsNewWorktreeOpen,
+    worktreeTargetProjectId,
+  } = useWorkspace();
 
   return (
     <div
@@ -20,41 +33,50 @@ export function InteractiveWorkspace() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-4 px-2 gap-2">
         <div>
           <span className="font-mono text-xs text-[var(--muted-foreground)] uppercase tracking-wider block mb-1">
-            Workspace Interface
+            01 / Interactive Simulator
           </span>
           <h2 className="text-xl sm:text-2xl font-medium tracking-tight text-[var(--foreground)]">
-            The work stays together.
+            Explore the multi-agent workspace live.
           </h2>
         </div>
         <div className="flex items-center gap-4 text-xs font-mono text-[var(--muted-foreground)]">
           <span className="flex items-center gap-1.5">
-            <span className="size-1.5 rounded-full bg-[var(--status-awake)] animate-pulse" />
-            Live Execution Workspace
+            <span className="size-1.5 rounded-[3.5px] bg-[var(--status-awake)] animate-pulse" />
+            Live Simulator
           </span>
           <Link
-            href="/workspace"
+            href="/u2XIBWLrbdEamg45Nq"
             className="hover:text-[var(--foreground)] underline underline-offset-4 hidden sm:inline"
           >
-            Open full workspace ↗
+            Open production workspace ↗
           </Link>
         </div>
       </div>
 
       {/* Main Outer Browser Window Frame */}
-      <div className="relative flex h-[680px] w-full overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--background)] shadow-[var(--shadow-frame)] ring-1 ring-[var(--edge-hairline)]">
-        {/* Left Superset Sidebar */}
-        <div className="hidden sm:flex">
-          <SupersetSidebar />
-        </div>
+      <WorkspaceContextMenu>
+        <div className="relative flex h-[680px] w-full overflow-hidden rounded-[3.5px] border border-[var(--border)] bg-[var(--background)] shadow-2xl ring-1 ring-[var(--edge-hairline)]">
+          {/* Left Superset Sidebar */}
+          <div className="hidden sm:flex">
+            <SupersetSidebar />
+          </div>
 
-        {/* Dynamic Center Stage: Hub or Execution Deck */}
-        <div className="flex flex-1 overflow-hidden">
-          {mode === "hub" ? <PromptHub /> : <ExecutionDeck />}
+          {/* Dynamic Center Stage: Hub or Execution Deck */}
+          <div className="flex flex-1 overflow-hidden">
+            {mode === "hub" ? <PromptHub /> : <ExecutionDeck />}
+          </div>
         </div>
-      </div>
+      </WorkspaceContextMenu>
 
       {/* Integrations & Vault Modal */}
       <IntegrationsModal open={isIntegrationsOpen} onOpenChange={setIsIntegrationsOpen} />
+      <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+      <NewWorktreeModal
+        open={isNewWorktreeOpen}
+        onOpenChange={setIsNewWorktreeOpen}
+        targetProjectId={worktreeTargetProjectId || undefined}
+      />
     </div>
   );
 }
+

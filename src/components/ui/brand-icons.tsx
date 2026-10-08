@@ -33,3 +33,20 @@ export function OpenAIIcon({ className = "size-3.5", ...props }: React.SVGProps<
 }
 
 export const CodexIcon = OpenAIIcon;
+
+export function AntigravityIcon({ className = "size-3.5", ...props }: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M12 24C12 17.3726 6.62742 12 0 12C6.62742 12 12 6.62742 12 0C12 6.62742 17.3726 12 24 12C17.3726 12 12 17.3726 12 24Z" />
+    </svg>
+  );
+}
+
+export const GeminiIcon = AntigravityIcon;

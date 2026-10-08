@@ -1,8 +1,21 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
+import { QueryProvider } from "@/components/providers/QueryProvider";
 import "@/styles/globals.css";
+
+const geistSans = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist-sans",
+  display: "swap",
+});
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+  display: "swap",
+});
 
 const inter = Inter({
   subsets: ["latin"],
@@ -36,32 +49,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    /*
-     * Theme is driven by `prefers-color-scheme` in globals.css, so `<html>`
-     * must not carry a hard-coded `dark` class or `color-scheme: dark`.
-     * Both were here and both pinned every surface to the obsidian palette.
-     *
-     * Clerk is wired to the app tokens rather than a fixed `@clerk/themes`
-     * import, so Clerk chrome follows the same OS preference. Clerk renders
-     * the whole /login card, so leaving it on a hard-coded dark theme would
-     * have made auth the one dark-only island on the site.
-     */
     <ClerkProvider
       appearance={{
         variables: {
           colorPrimary: "var(--primary)",
           colorBackground: "var(--surface-card)",
-          // Clerk mixes its neutral down to 62% alpha for secondary labels
-          // (the social buttons). Pointing that at --foreground rather than
-          // --muted-foreground is what keeps them above 4.5:1 in both modes;
-          // at --muted-foreground they measured ~2.8:1.
           colorNeutral: "var(--foreground)",
         },
       }}
     >
-      <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
         <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)] font-sans antialiased selection:bg-[var(--accent-claude-subtle)] selection:text-[var(--selection-fg)]">
-          {children}
+          <QueryProvider>
+            {children}
+          </QueryProvider>
           <Toaster position="bottom-right" />
         </body>
       </html>

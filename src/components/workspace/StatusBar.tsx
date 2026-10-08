@@ -1,55 +1,80 @@
 "use client";
 
 import React from "react";
-import { Laptop, GitBranch } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
+import { Laptop } from "lucide-react";
 
 export function StatusBar() {
-  const { hostState, activeLane, project, services } = useWorkspace();
+  const { hostState, activeLane, project, services, chats, activeChatId } = useWorkspace();
+
+  const activeChat = chats.find((c) => c.id === activeChatId);
+  const isClaude = activeChat?.harness === "Claude";
+  const isCodex = activeChat?.harness === "Codex";
+  const isAntigravity = activeChat?.harness === "Antigravity";
+
+  const sessionName =
+    activeChat?.title ||
+    (isAntigravity
+      ? "Google Antigravity"
+      : isCodex
+      ? "OpenAI Codex"
+      : isClaude
+      ? "Claude Code"
+      : activeLane?.name || "Terminal Shell");
 
   const activeService = services.find((s) => s.is_active) || services[0];
 
   return (
-    <div className="flex h-8 w-full items-center justify-between border-t border-[var(--border)] px-4 bg-[var(--surface-sidebar)] text-[10px] font-mono text-[var(--muted-foreground)] select-none">
-      <div className="flex items-center gap-4">
-        {/* Host / Device Indicator */}
-        <div className="flex items-center gap-1.5 hover:text-[var(--foreground)] transition-colors">
+    <footer className="flex h-7 w-full shrink-0 items-center justify-between border-t border-zinc-200 dark:border-zinc-800 bg-[#FAFAFA] dark:bg-[#0E0E12] px-3 font-mono text-[10px] text-zinc-500 dark:text-zinc-400 select-none rounded-[3.5px]">
+      {/* Left: Session, Branch, Worktree, Host */}
+      <div className="flex items-center gap-3 min-w-0 overflow-x-auto scrollbar-none">
+        {/* Session Indicator */}
+        <div className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200 font-medium shrink-0">
+          <span className="size-1.5 bg-emerald-500 rounded-[3.5px]" />
+          <span>SESSION: {sessionName}</span>
+        </div>
+
+        <span className="text-zinc-300 dark:text-zinc-700 shrink-0">|</span>
+
+        {/* Branch */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-zinc-400">BRANCH:</span>
+          <span className="text-zinc-800 dark:text-zinc-200 font-semibold">{activeLane?.branch || "main"}</span>
+        </div>
+
+        <span className="text-zinc-300 dark:text-zinc-700 shrink-0">|</span>
+
+        {/* Worktree Repo */}
+        <div className="hidden sm:flex items-center gap-1.5 shrink-0 truncate">
+          <span className="text-zinc-400">WORKTREE:</span>
+          <span className="text-zinc-700 dark:text-zinc-300 truncate">{project?.repo_full_name || project?.slug || "ecommerce-test-app"}</span>
+        </div>
+
+        <span className="hidden md:inline text-zinc-300 dark:text-zinc-700 shrink-0">|</span>
+
+        {/* Host Status */}
+        <div className="hidden md:flex items-center gap-1.5 text-zinc-500 shrink-0">
           <Laptop className="size-3" />
-          <span>Host</span>
-          <span className="text-[var(--subtle-foreground)]">/</span>
-          <span className="text-[var(--accent-claude)]">Local Runner</span>
+          <span>HOST: Local Runner</span>
           <span
-            className={`size-1.5 rounded-full ${
-              hostState === "awake" ? "bg-[var(--status-awake)]" : "bg-[var(--status-asleep)]"
+            className={`size-1.5 rounded-[3.5px] ${
+              hostState === "awake" ? "bg-emerald-500" : "bg-amber-500"
             }`}
           />
         </div>
-
-        {/* Project Tag */}
-        {project && (
-          <div className="hidden sm:flex items-center gap-1 hover:text-[var(--foreground)] transition-colors">
-            <span className="text-[var(--foreground)] font-medium">{project.slug}</span>
-          </div>
-        )}
-
-        {/* Worktree & Branch Indicator */}
-        <div className="flex items-center gap-1.5 hover:text-[var(--foreground)] transition-colors">
-          <GitBranch className="size-3" />
-          <span>Worktree</span>
-          <span className="text-[var(--subtle-foreground)]">⇕</span>
-          <span className="text-[var(--foreground)] font-medium">
-            {activeLane?.branch || "main"}
-          </span>
-        </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <span>
-          {activeService
-            ? `Port ${activeService.port} · HTTPS private`
-            : "No service listening"}
+      {/* Right: Write Lease Active Badge & Port */}
+      <div className="flex items-center gap-3 shrink-0 ml-2">
+        {activeService && (
+          <span className="hidden lg:inline text-zinc-400">
+            Port {activeService.port} · HTTPS
+          </span>
+        )}
+        <span className="px-1.5 py-0.5 border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 text-[9px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-bold rounded-[3.5px]">
+          WRITE LEASE ACTIVE
         </span>
       </div>
-    </div>
+    </footer>
   );
 }

@@ -1,197 +1,157 @@
-# Congruence · UI & UX Design Brief
+# Congruence Design System & Architecture Spec (`design.md`)
 
-> **Purpose:** Concrete visual direction, typography scales, layout rules, and copy-pasteable CSS design tokens for Congruence (`congruence.dev`).  
-> **Status:** Approved  
-> **Design Stylist:** design-stylist  
-> **Visual Reference:** Superset (`superset.sh`) Precision Agent Workspace  
-> **Skill Standard:** Hallmark Anti-AI-Slop Standard  
-> **Date:** 2026-10-07  
+> **Product:** Congruence (`congruence.dev`)  
+> **Aesthetic:** Geometric Precision Obsidian & Paper Technical Workspace  
+> **Core Principle:** Strict Zero-Rounding (`rounded-none` / 0px radius), High Information Density, and Pure Geometric Clarity.
 
 ---
 
-## System
+## 1. Core Visual Principles & Anti-Slop Guidelines
 
-* **Genre:** Precision Obsidian Agent Workspace (Superset-inspired CLI Orchestrator)
-* **Macrostructure:** Multi-pane execution environment, dual-mode. Left collapsible navigation sidebar with Workspaces, Tasks, and Worktree Sessions (`+46 -1`); Center canvas hosting the `{< >}` prompt hub, floating omnibar, and multi-lane execution deck (Terminal PTY, live HTTPS preview, Git diff).
-* **Theme:** Deep Obsidian (dark) **and** Paper Neutral (light), selected by the OS. Dark values (Canvas `#0A0A0C`, Sidebar `#0E0E12`, Card surface `#121216`, Hairline border `#222227`, Foreground `#EDEDED`, Muted text `#878790`, Claude Anthropic Amber `#E8804A`, Emerald status `#10B981`). Light values are re-picked, not derived (Canvas `#F4F4F5`, Card surface `#FDFDFD`, Hairline border `#DCDCE1`, Foreground `#17171A`, Muted text `#5C5C64`, Claude Amber `#A94E19`, Emerald status `#047857`).
-  - **Selection:** `prefers-color-scheme` only. There is no in-app toggle, no persisted preference, and no JavaScript in the critical path, so there is no flash-of-wrong-theme and no hydration mismatch. Dark is the `:root` base (and the no-media-query fallback); light is the `@media (prefers-color-scheme: light)` override.
-* **Axes:**
-  - *Density:* High-precision technical density (11px/12px monospace chips, diff badges `+46 -1`, compact worktree trees)
-  - *Contrast:* Ultra-High in both modes. Dark holds white/light-gray on obsidian; light holds off-black ink on paper. Body text is never below 4.5:1 in either mode, verified by `npm run audit:contrast` and `npm run audit:theme`.
-  - *Corner Radius:* Subtle geometric precision (`4px` to `6px` for cards/inputs, `12px` to `14px` for the floating omnibar pill, `2px` for monospace status chips)
-  - *Texture:* Matte Obsidian with hairline borders, crisp top inset highlights, and zero fuzzy neon gradients.
+1. **Zero-Rounding Geometry (`rounded-none`)**:
+   - All interactive controls, tab bars, buttons, dropdown menus, cards, modals, message bubbles, and drop zones must use strict `rounded-none` (0px border-radius).
+   - No pill shapes, no bubbly corners, and no softened edges. Crisp, mechanical, IDE-grade precision.
 
-### Mode-independent token families
+2. **True Dual-Theme Contrast**:
+   - **Dark Mode (Default Obsidian)**: 
+     - Base Canvas: `#0A0A0C`
+     - Header & Tab Bars: `#0E0E12`
+     - Card / Surface Elev 1: `#121216`
+     - Card / Surface Elev 2: `#141418`
+     - Hairline Borders: `#222227` / `border-zinc-800`
+     - Text Primary: `#EDEDED`
+     - Text Muted: `#71717A` / `#A1A1AA`
+   - **Light Mode (Paper Clean)**:
+     - Base Canvas: `#FFFFFF`
+     - Header & Tab Bars: `#FAFAFA`
+     - Card / Surface Elev 1: `#F8F9FA`
+     - Hairline Borders: `#E4E4E7` / `border-zinc-200`
+     - Text Primary: `#09090B` / `#18181B`
+     - Text Muted: `#71717A`
 
-Three families in `globals.css` are deliberately **not** overridden by the light block. Adding them to the light override is the main way to break this system:
+3. **Official Frontier Agent Iconography (Elements Standard)**:
+   - Official SVG brand vectors matching [Elements](https://www.tryelements.dev/docs/logos):
+     - **Claude Code (Anthropic)**: Multi-spoke coral/amber asterisk (`#E8804A`).
+     - **OpenAI Codex**: Signature rosette ring (`#10B981` / `#18181B`).
+     - **Google Antigravity (DeepMind)**: 4-point geometric astroid / star (`#6366F1` / `#818CF8`).
+     - **Pair Shell / PTY**: Geometric monospace badge (`›_`).
 
-| Family | Why it is mode-independent | Rule |
-| :--- | :--- | :--- |
-| `--radius-*` | Geometry | Never reference a colour to set a radius. |
-| `--wash-*`, `--edge-hairline` | Derived from `--foreground` via `color-mix()` | Replaces hardcoded `bg-white/[0.0x]` hover states. Because it mixes the foreground, it inverts on its own. **Never write `bg-white/[0.04]`.** |
-| `--surface-terminal`, `--terminal-*`, `--diff-*-bg`, `--diff-*-fg` | Terminal and git-diff panes stay dark in both modes, like a real terminal or `git diff` viewer | Panes must consume this family, **not** `--foreground` / `--muted-foreground` / `--surface-inset`, which invert and would leave near-black text on a near-black pane. |
-
-Semantic aliases (`--ink-primary`, `--ink-muted`, `--bg-canvas`, `--bg-surface`, `--border-line`, `--accent-primary`, `--status-success`, `--status-error`) exist because `/dashboard` and `rail-sidebar` were authored against that vocabulary. They only reference other custom properties, so they are correct in both modes with no duplication. Prefer the canonical token in new code.
-
+4. **Information Density & Hierarchy**:
+   - Monospace font (`IBM Plex Mono` / `Geist Mono`) for all technical identifiers: git branches, diff counts (`+46 -1`), ports, session titles, and timestamps.
+   - Proportional sans (`Inter` / `Geist Sans`) for natural text and chat prompts.
+   - Clean micro-badges (status indicators, execution state badges, lease indicators).
 
 ---
 
-## 2. Design Tokens (`:root`)
+## 2. Workspace Layout & Architecture
 
-The governing source of truth is **`src/styles/globals.css`**. The block below is the historical dark-mode excerpt and is kept for reference only; do not paste it into a project, because it predates the light palette and the three mode-independent token families described above.
+```
++---------------------------------------------------------------------------------------+
+|  TOP HEADER / TAB STRIP (36px)                                                        |
+|  [main] | [Claude 1] [Kilo CLI] [Preview] [Changes] [+] |  [Chat|PTY] [◫] [▶ Dev] [⌘J]|
++-------------------------------------------+-------------------------------------------+
+|  PRIMARY PANE GROUP (50%)                 |  SECONDARY PANE GROUP (50%)               |
+|  [Tab 1] [Tab 2] [+]        [Chat|PTY][X] |  [Preview] [Changes] [+]       [Swap] [X] |
+|                                           |                                           |
+|  [YOU] 06:42 PM                           |  +-------------------------------------+  |
+|  Refactor auth middleware                 |  | Live HTTPS Web Preview              |  |
+|                                           |  |                                     |  |
+|  [GOOGLE ANTIGRAVITY]                     |  |  localhost:3000                     |  |
+|  - Inspected middleware.ts                |  |                                     |  |
+|  - Updated session token validation       |  |                                     |  |
+|                                           |  +-------------------------------------+  |
+|                                           |                                           |
+|  +-------------------------------------+  |                                           |
+|  | Instruct Antigravity...             |  |                                           |
+|  | [Context] [Gemini 3.7] [SEND ^]     |  |                                           |
+|  +-------------------------------------+  |                                           |
++-------------------------------------------+-------------------------------------------+
+|  STATUS BAR (28px): SESSION: Antigravity | BRANCH: main | WORKTREE: repo  WRITE LEASE |
++---------------------------------------------------------------------------------------+
+```
+
+### 2.1 Multi-Tab Pane Groups (Editor Groups)
+- **Independent Tab Bars**:
+  - In single-pane mode, the top header hosts the worktree's tab bar.
+  - In split-view mode, each pane group (Left/Right or Top/Bottom) renders its own dedicated tab bar with full tab controls.
+- **Per-Group `+` Tab Spawning**:
+  - Each tab bar has a dedicated `+` button to spawn Claude, Codex, Antigravity, Shell, Preview, or Changes directly within that specific group.
+- **Drag-and-Drop Capabilities**:
+  - **Horizontal Reordering**: Drag tabs within any group to reorder them with live left/right insertion indicators.
+  - **Cross-Group Transfer**: Drag a tab from one group's tab bar into another group's tab bar.
+  - **Drag to Split**: Dragging any tab toward the canvas boundaries (Right, Left, Bottom, Top) reveals live drop zones (`[ SPLIT RIGHT ]`, `[ SPLIT DOWN ]`, `[ SPLIT LEFT ]`, `[ SPLIT UP ]`) to split the layout.
+- **Resizable Split Divider**:
+  - Interactive 4px divider bar with hover gripper cues, allowing proportional resizing from 20% to 80%.
+
+### 2.2 Conversation Stream & Composer
+- **Unified Column Width**:
+  - Both the message stream and composer dock share `w-full max-w-3xl mx-auto`.
+  - No floating or shrinking blocks; cards span the full column cleanly.
+- **User Prompt Box (`[YOU]`)**:
+  - Background `#F8F9FA` (light) / `#121216` (dark) with `border-l-2 border-l-zinc-900 dark:border-l-zinc-100`.
+- **Assistant Response Box (`[RUNNER]`)**:
+  - Header: Runner name, active model, response duration (`✓ 3.9s`), and timestamp.
+  - Collapsible Thought Process & Strategy accordion.
+  - Real-time tool execution chips (running, done, error).
+  - Clarification question cards with quick-response option pills.
+- **Composer Dock**:
+  - Seamless, borderless transition above the input box (`border-t-0`).
+  - Textarea with auto-resizing and Enter-to-send.
+  - Toolbar controls: Context attachments (`@file`, git diff, design spec), model selector, and Send button.
+
+### 2.3 Consolidated Bottom Status Bar
+- The top of the chat view is kept completely clean of metadata.
+- All session context is consolidated into the bottom 28px bar:
+  - `SESSION: <active_session_title>`
+  - `BRANCH: <git_branch>`
+  - `WORKTREE: <repo_name>`
+  - `HOST: Local Runner` (pulsing status dot)
+  - `WRITE LEASE ACTIVE` badge (emerald monospace chip).
+
+---
+
+## 3. Design Tokens Reference
+
+### CSS Custom Properties (`src/styles/globals.css`)
 
 ```css
 :root {
-  /* Obsidian Dark Canvas & Surfaces (Default Experience) */
+  /* Surfaces */
   --background: #0A0A0C;
   --foreground: #EDEDED;
-  
   --surface-sidebar: #0E0E12;
   --surface-primary: #121216;
-  --surface-secondary: #18181D;
-  --surface-tertiary: #202026;
-  --surface-omnibar: #16161B;
-  --surface-card: #131318;
-  --surface-inset: #0C0C0F;
+  --surface-card: #141418;
+  --surface-header: #0E0E12;
 
-  /* Borders & Dividers */
+  /* Borders */
   --border: #222227;
-  --border-subtle: #1A1A1F;
+  --border-subtle: #18181C;
   --border-strong: #33333A;
-  --border-focus: #FFFFFF;
 
-  /* Primary Interactive Elements */
-  --primary: #EDEDED;
-  --primary-foreground: #0A0A0C;
-  --primary-hover: #FFFFFF;
-
-  --secondary: #1C1C22;
-  --secondary-foreground: #EDEDED;
-  --secondary-hover: #26262E;
-
-  /* Muted Text & Accents */
-  --muted: #1A1A20;
-  --muted-foreground: #71717A;
-  --subtle-foreground: #52525B;
-
-  /* Provider Brand Colors */
-  --accent-claude: #E8804A; /* Anthropic Claude Coral / Amber */
-  --accent-claude-subtle: rgba(232, 128, 74, 0.12);
-  --accent-codex: #10B981;  /* OpenAI Codex Emerald */
-  --accent-codex-subtle: rgba(16, 185, 129, 0.12);
-  --accent-opencode: #60A5FA;
-  --accent-aider: #A78BFA;
-
-  /* Status Indicators */
+  /* Brand Accents */
+  --accent-claude: #E8804A;
+  --accent-codex: #10B981;
+  --accent-antigravity: #6366F1;
+  
+  /* Status Colors */
   --status-awake: #10B981;
-  --status-asleep: #71717A;
-  --status-running: #E8804A;
-  --diff-add: #22C55E;
-  --diff-del: #EF4444;
-
-  /* Inputs & Forms */
-  --input: #121216;
-  --input-border: #26262C;
-  --ring: #EDEDED;
-
-  /* Geometry & Radius */
-  --radius-xs: 2px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-  --radius-omnibar: 14px;
-  --radius-pill: 9999px;
-  --radius: 6px;
-
-  /* Typography Scale */
-  --font-sans: 'Inter', 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'Geist Mono', monospace;
-
-  /* Shadows (Subtle, Crisp Inset Hairline Highlights) */
-  --shadow-frame: 0 16px 40px -12px rgba(0, 0, 0, 0.6), 0 32px 90px -24px rgba(0, 0, 0, 0.75);
-  --shadow-omnibar: 0 12px 32px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --shadow-dropdown: 0 8px 24px -4px rgba(0, 0, 0, 0.6);
+  --status-working: #10B981;
+  --status-thinking: #A855F7;
+  --status-waiting: #F59E0B;
+  
+  /* Strict Geometry */
+  --radius: 0px;
 }
 ```
 
 ---
 
-## 3. Typography Hierarchy
+## 4. Key Component Checklist for New Features
 
-| Style Element | Font Family | Size | Weight | Tracking / Line Height | Role |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Hub Headline** | Sans | `32px` / `40px` | Medium (500) | `-0.02em` / `1.2` | "What should we build next?" |
-| **Hero Display** | Sans | `44px` / `56px` | SemiBold (600) | `-0.03em` / `1.15` | Landing headline |
-| **Section Header** | Sans | `24px` / `30px` | Medium (500) | `-0.02em` / `1.25` | Section titles ("Changing devices...") |
-| **Omnibar Input** | Sans | `15px` / `16px` | Regular (400) | `normal` / `1.4` | Primary task composer input |
-| **Sidebar Nav / Labels** | Sans | `12px` / `13px` | Regular (400) | `normal` / `1.4` | Sidebar menu items, actor list |
-| **Prompt Chip / Badges**| Sans | `12px` | Regular (400) | `normal` / `1.3` | Starter suggestions (💡 *Set up...*) |
-| **Worktree / Branch / Diffs**| Mono | `11px` | Regular (400) | `+0.02em` / `1.4` | `+46 -1`, `main`, `/lanes/<id>` |
-| **Terminal / PTY Output**| Mono | `12px` / `13px` | Regular (400) | `normal` / `1.6` | Shell output, Claude logs, rewritten URLs |
-
----
-
-## 4. Key Component Specs (Superset Design Language)
-
-### 4.1 Left Navigation Sidebar (`--surface-sidebar: #0E0E12`)
-* **Header:**
-  - Window controls (3 subtle dots: `#FF5F57`, `#FEBC2E`, `#28C840`).
-  - Action button: `+ New Workspace` (`background: var(--surface-secondary)`, border: `1px solid var(--border)`).
-* **Navigation List:**
-  - Icons + Labels: `Search (Cmd+K)`, `Workspaces`, `Automations`, `Tasks`, `Pull requests`, `Pages`.
-  - Active item: highlighted with subtle background `rgba(255,255,255,0.04)` and bright foreground.
-* **Worktrees & Sessions Section:**
-  - Section header: `SESSIONS` or `DESKTOP` with counter badge (`5`).
-  - Session items:
-    - Status icon: Animated spinner `⠋` for active runs, green dot `#10B981` for awake, amber dot for waiting.
-    - Title: e.g. `fix onboarding crash`, `billing webhooks`, `refactor auth flow`.
-    - Git diff badge: Monospace `+46 -1` in `--diff-add` and `--diff-del` colors.
-* **Bottom Profile:**
-  - Team monogram: `HT Hector's Team` with gear settings trigger.
-
-### 4.2 Center Hub & The Floating Omnibar (`--surface-omnibar: #16161B`)
-* **Geometric Branded Glyph:**
-  - Centered monospace bracket glyph: `{< >}` with subtle ambient glow.
-* **Prompt Starter Chips:**
-  - Light pill cards (`background: var(--surface-card)`, border: `1px solid var(--border)`):
-    - 💡 *Set up this project for Congruence*
-    - 💡 *Explain to me how this repository works*
-    - 💡 *Find and fix a small bug*
-* **The Floating Omnibar:**
-  - Container: Rounded rectangle (`border-radius: var(--radius-omnibar)`), border `1px solid var(--border)`, top inset highlight `inset 0 1px 0 rgba(255,255,255,0.08)`, shadow `var(--shadow-omnibar)`.
-  - Multi-line textarea: *"Upgrade a dependency and fix what breaks..."*
-  - Bottom Controls Row:
-    - `+` Context attachment button.
-    - Harness selector dropdown: `Claude v` (with orange Anthropic sunburst icon), `Codex v`, `OpenCode v`.
-    - Model selector dropdown: `Default model v` (e.g. `claude-3-7-sonnet`, `o3-mini`).
-    - Effort selector dropdown: `Default effort v` (`Low`, `Medium`, `High`).
-    - Utility icons: Checkmark toggle, branch target, paperclip.
-    - Submit button: Pill with `↑` arrow icon (`background: var(--primary)`, `color: var(--primary-foreground)`).
-
-### 4.3 Workspace Execution Deck (Split View)
-When a task/session is opened:
-* **Top Header Bar:** Breadcrumb `PARABOX / WORKSPACES / Sample app (Private)` + `● Workspace awake` badge + `Sleep workspace` button.
-* **Left Sub-Sidebar:** Worktree Lanes (`Pair lane [main]`, `Claude Code [claude/progress]`, `Codex [codex/copy]`) with `Files & Git: Persistent` context badges.
-* **Center Tabs:**
-  - `Preview`: Browser chrome with private HTTPS URL (`sample-app.congruence.example`) + rendered Fieldnotes app.
-  - `Terminal`: Dark interactive xterm.js PTY with Claude Code logs and port rewrite detection.
-  - `Changes`: Split git diff viewer with addition/deletion highlights.
-* **Right Sidebar:**
-  - In This Workspace: `You` (Owner), `Claude Code`, `Codex`.
-  - Lane Control: "Watch first, grant when needed" dropdown with `Grant control` / `Revoke control`.
-  - Recent activity feed.
-* **Bottom Status Bar:**
-  - Device/Host: `Fly Sprite (Awake)`
-  - Workspace: `sample-app`
-  - Worktree: `Worktree ⇕ main`
-
----
-
-## 5. Voice & Copy Standards
-
-* Pure precision, zero marketing fluff.
-* Factual, technical, and respectful of developer intelligence:
-  - *"One workspace for Claude Code, Codex, and any coding agent."*
-  - *"Watch first. Grant when needed."*
-  - *"One worktree per writer. One shared place to work."*
-  - *"Files and configured identities survive sleep. Live processes are ephemeral."*
+When creating or modifying workspace components:
+1. **Always use `rounded-none`**: Never add `rounded-md`, `rounded-lg`, or `rounded-full` to cards, buttons, or containers.
+2. **Include Brand Icons**: Use `ClaudeIcon`, `OpenAIIcon`, `AntigravityIcon`, or `SquareTerminal` from `@/components/ui/brand-icons`.
+3. **Respect Tab Group Ownership**: Tabs and chats should support being assigned to `primary` or `secondary` pane groups.
+4. **Preserve Monospace Accents**: Use `font-mono text-[10px]` or `text-[11px]` for session badges, diff statistics, and timestamps.
+5. **Keep Status in StatusBar**: Do not introduce top metadata headers inside canvas panes; pass session and branch info to `StatusBar.tsx`.

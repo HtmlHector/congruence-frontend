@@ -20,6 +20,7 @@ export interface ProjectData {
   name: string;
   slug: string;
   repo_full_name: string;
+  repo_url?: string;
   default_branch?: string;
   host?: {
     id: string;
@@ -246,9 +247,55 @@ export const api = {
   getActivity: (projectId: string, limit = 20) =>
     request<ActivityData[]>(`/projects/${projectId}/activity?limit=${limit}`),
 
+  // Chat Persistence
+  getProjectChats: (projectId: string) =>
+    request<
+      Array<{
+        id: string;
+        lane_id: string;
+        title: string;
+        harness: string;
+        model?: string;
+        state: string;
+        messages: any[];
+        created_at?: string;
+      }>
+    >(`/projects/${projectId}/chats`),
+  saveProjectChat: (
+    projectId: string,
+    payload: {
+      id?: string;
+      lane_id: string;
+      title: string;
+      harness: string;
+      model?: string;
+      state?: string;
+      messages: any[];
+    }
+  ) =>
+    request<{ status: string; id: string }>(`/projects/${projectId}/chats`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  deleteProjectChat: (projectId: string, chatId: string) =>
+    request<{ status: string; id: string }>(`/projects/${projectId}/chats/${chatId}`, {
+      method: "DELETE",
+    }),
+
   // Integrations & Vault
   getIntegrationsStatus: (projectId: string) =>
     request<IntegrationsStatusData>(`/integrations/status/${projectId}`),
+  saveVaultKeys: (
+    projectId: string,
+    keys: { anthropic_api_key?: string; openai_api_key?: string }
+  ) =>
+    request<{ status: string; keys_stored: string[] }>(
+      `/integrations/vault/keys/${projectId}`,
+      {
+        method: "POST",
+        body: JSON.stringify(keys),
+      }
+    ),
   startHarnessLogin: (laneId: string, harness: "claude" | "codex") =>
     request<{ status: string; instruction?: string; prompt?: string }>(
       `/integrations/harnesses/${harness}/login/${laneId}`,
@@ -268,5 +315,51 @@ export const api = {
     request<{ connected: boolean; disconnected: boolean }>("/integrations/github/disconnect", {
       method: "DELETE",
     }),
+
+  // Agent Chat & Host Execution Streaming
+  streamAgentChat: async (
+    data: {
+      prompt: string;
+      harness: string;
+      model?: string;
+      project_id?: string;
+      lane_id?: string;
+      branch?: string;
+      cwd?: string;
+      chat_id?: string;
+    },
+    onChunk: (event: any) => void
+  ) => {
+    const url = `${API_BASE_URL}/agents/chat/stream`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error(`Agent stream request failed: ${response.status}`);
+    }
+    const reader = response.body?.getReader();
+    if (!reader) return;
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          try {
+            const parsed = JSON.parse(line.slice(6));
+            onChunk(parsed);
+          } catch {
+            // ignore
+          }
+        }
+      }
+    }
+  },
 };
 

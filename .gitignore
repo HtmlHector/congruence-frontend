@@ -27,3 +27,7 @@ playwright-report/
 test-results/
 
 theme-shots/
+
+# Runtime worktrees & cache
+worktrees/
+.congruence/

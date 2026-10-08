@@ -10,17 +10,45 @@ import {
   GitBranch,
   CheckCircle2,
   Cpu,
+  Bot,
+  Check,
 } from "lucide-react";
 import { AnthropicIcon, OpenAIIcon } from "@/components/ui/brand-icons";
 import { useWorkspace } from "@/context/WorkspaceContext";
+
+const HARNESS_MODELS: Record<string, string[]> = {
+  Claude: [
+    "Claude Sonnet 4.6 (Thinking)",
+    "Claude Opus 4.6 (Thinking)",
+    "Claude 3.7 Sonnet (Thinking)",
+  ],
+  Antigravity: [
+    "Gemini 3.8 Flash (High)",
+    "Gemini 3.1 Pro (High)",
+    "Gemini 3.7 Flash (High)",
+  ],
+  Codex: [
+    "o3-mini",
+    "GPT-4o",
+    "GPT-OSS 120B (Medium)",
+  ],
+};
 
 export function FloatingOmnibar() {
   const { submitPrompt } = useWorkspace();
   const [promptText, setPromptText] = useState("");
   const [harness, setHarness] = useState("Claude");
-  const [model, setModel] = useState("claude-3-7-sonnet");
+  const [model, setModel] = useState("Claude Sonnet 4.6 (Thinking)");
   const [effort, setEffort] = useState("Default effort");
   const [isHarnessOpen, setIsHarnessOpen] = useState(false);
+  const [isModelOpen, setIsModelOpen] = useState(false);
+
+  const handleSelectHarness = (newHarness: string) => {
+    setHarness(newHarness);
+    setIsHarnessOpen(false);
+    const models = HARNESS_MODELS[newHarness] || HARNESS_MODELS.Claude;
+    setModel(models[0]);
+  };
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -35,6 +63,8 @@ export function FloatingOmnibar() {
       handleSubmit();
     }
   };
+
+  const currentModels = HARNESS_MODELS[harness] || HARNESS_MODELS.Claude;
 
   return (
     <div className="relative w-full max-w-2xl mx-auto">
@@ -66,7 +96,10 @@ export function FloatingOmnibar() {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setIsHarnessOpen(!isHarnessOpen)}
+                onClick={() => {
+                  setIsHarnessOpen(!isHarnessOpen);
+                  setIsModelOpen(false);
+                }}
                 className="flex h-6 items-center gap-1.5 rounded-[var(--radius-sm)] bg-[var(--surface-primary)] border border-[var(--border)] px-2 text-[11px] text-[var(--foreground)] hover:bg-[var(--surface-secondary)] transition-colors cursor-pointer"
               >
                 {harness === "Claude" && (
@@ -75,39 +108,69 @@ export function FloatingOmnibar() {
                 {harness === "Codex" && (
                   <OpenAIIcon className="size-3 text-[var(--accent-codex)]" />
                 )}
-                {harness === "OpenCode" && (
-                  <span className="size-2 rounded-full bg-[var(--accent-opencode)]" />
+                {harness === "Antigravity" && (
+                  <Bot className="size-3 text-indigo-500" />
                 )}
                 <span className="font-medium">{harness}</span>
                 <ChevronDown className="size-2.5 text-[var(--muted-foreground)]" />
               </button>
 
               {isHarnessOpen && (
-                <div className="absolute bottom-full left-0 mb-1 w-36 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-primary)] p-1 shadow-[var(--shadow-dropdown)] z-30">
-                  {["Claude", "Codex", "OpenCode", "Aider"].map((item) => (
+                <div className="absolute bottom-full left-0 mb-1 w-40 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-primary)] p-1 shadow-[var(--shadow-dropdown)] z-30">
+                  {[
+                    { id: "Claude", label: "Claude Code", icon: <AnthropicIcon className="size-3 text-[var(--accent-claude)]" /> },
+                    { id: "Antigravity", label: "Antigravity", icon: <Bot className="size-3 text-indigo-500" /> },
+                    { id: "Codex", label: "OpenAI Codex", icon: <OpenAIIcon className="size-3 text-[var(--accent-codex)]" /> },
+                  ].map((item) => (
                     <button
-                      key={item}
+                      key={item.id}
                       type="button"
-                      onClick={() => {
-                        setHarness(item);
-                        setIsHarnessOpen(false);
-                      }}
-                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-[var(--foreground)] hover:bg-[var(--wash)] cursor-pointer"
+                      onClick={() => handleSelectHarness(item.id)}
+                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-[var(--foreground)] hover:bg-[var(--wash)] cursor-pointer font-mono"
                     >
-                      {item === "Claude" && <AnthropicIcon className="size-3 text-[var(--accent-claude)]" />}
-                      {item === "Codex" && <OpenAIIcon className="size-3 text-[var(--accent-codex)]" />}
-                      {item !== "Claude" && item !== "Codex" && <span className="size-1.5 rounded-full bg-zinc-400" />}
-                      <span className="text-[11px]">{item}</span>
+                      {item.icon}
+                      <span className="text-[11px]">{item.label}</span>
                     </button>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Model Pill */}
-            <div className="hidden sm:flex h-6 items-center gap-1 rounded-[var(--radius-sm)] bg-[var(--surface-primary)] border border-[var(--border)] px-2 text-[11px] text-[var(--muted-foreground)]">
-              <span>{model}</span>
-              <ChevronDown className="size-2.5" />
+            {/* Model Pill & Dropdown */}
+            <div className="relative hidden sm:block">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsModelOpen(!isModelOpen);
+                  setIsHarnessOpen(false);
+                }}
+                className="flex h-6 items-center gap-1.5 rounded-[var(--radius-sm)] bg-[var(--surface-primary)] border border-[var(--border)] px-2 text-[11px] text-[var(--foreground)] hover:bg-[var(--surface-secondary)] transition-colors cursor-pointer"
+              >
+                <span className="truncate max-w-[130px]">{model.replace(" (Thinking)", "")}</span>
+                <ChevronDown className="size-2.5 text-[var(--muted-foreground)]" />
+              </button>
+
+              {isModelOpen && (
+                <div className="absolute bottom-full left-0 mb-1 w-56 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-primary)] p-1 shadow-[var(--shadow-dropdown)] z-30 font-mono">
+                  <div className="text-[9px] uppercase tracking-wider text-[var(--muted-foreground)] px-2 py-1 font-bold">
+                    {harness} Models
+                  </div>
+                  {currentModels.map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => {
+                        setModel(m);
+                        setIsModelOpen(false);
+                      }}
+                      className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs text-[var(--foreground)] hover:bg-[var(--wash)] cursor-pointer"
+                    >
+                      <span className="text-[11px] truncate">{m}</span>
+                      {model === m && <Check className="size-3 text-indigo-500 shrink-0 ml-1" />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Effort Pill */}

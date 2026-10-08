@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   X,
@@ -11,9 +11,20 @@ import {
   Search,
   Star,
   GitBranch,
-  RefreshCw,
+  GitFork,
   ExternalLink,
-  Link2,
+  Check,
+  Copy,
+  FolderGit2,
+  Sparkles,
+  ArrowRight,
+  Terminal,
+  Cpu,
+  Layers,
+  Code2,
+  Plus,
+  RefreshCw,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { api, GitHubRepoItem, GitHubStatusData } from "@/lib/api";
@@ -24,22 +35,163 @@ interface CloneRepoModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+interface RepositoryItem {
+  id: string | number;
+  name: string;
+  full_name: string;
+  description: string | null;
+  html_url: string;
+  clone_url: string;
+  default_branch: string;
+  private: boolean;
+  language: string | null;
+  stargazers_count: number;
+  forks_count?: number;
+  updated_at?: string;
+  isTemplate?: boolean;
+  category: "personal" | "template" | "custom";
+}
+
+const STARTER_TEMPLATES: RepositoryItem[] = [
+  {
+    id: "tpl-meridian",
+    name: "meridian-api",
+    full_name: "congruence-ai/meridian-api",
+    description: "Enterprise e-commerce microservices backend with FastAPI, Redis, and multi-tenant PostgreSQL.",
+    html_url: "https://github.com/congruence-ai/meridian-api",
+    clone_url: "https://github.com/congruence-ai/meridian-api.git",
+    default_branch: "main",
+    private: false,
+    language: "Python",
+    stargazers_count: 840,
+    forks_count: 92,
+    updated_at: "12m ago",
+    isTemplate: true,
+    category: "template",
+  },
+  {
+    id: "tpl-nextjs",
+    name: "next.js",
+    full_name: "vercel/next.js",
+    description: "The React Framework for the Web. Hybrid static & server rendering, TypeScript support, and Turbopack.",
+    html_url: "https://github.com/vercel/next.js",
+    clone_url: "https://github.com/vercel/next.js.git",
+    default_branch: "canary",
+    private: false,
+    language: "TypeScript",
+    stargazers_count: 125400,
+    forks_count: 26800,
+    updated_at: "3m ago",
+    isTemplate: true,
+    category: "template",
+  },
+  {
+    id: "tpl-shadcn",
+    name: "ui",
+    full_name: "shadcn/ui",
+    description: "Beautifully designed components built with Radix UI and Tailwind CSS that you can copy and paste into your apps.",
+    html_url: "https://github.com/shadcn/ui",
+    clone_url: "https://github.com/shadcn/ui.git",
+    default_branch: "main",
+    private: false,
+    language: "TypeScript",
+    stargazers_count: 78900,
+    forks_count: 7300,
+    updated_at: "18m ago",
+    isTemplate: true,
+    category: "template",
+  },
+  {
+    id: "tpl-tailwind",
+    name: "tailwindcss",
+    full_name: "tailwindlabs/tailwindcss",
+    description: "A utility-first CSS framework for rapid UI development and zero-runtime stylesheet optimization.",
+    html_url: "https://github.com/tailwindlabs/tailwindcss",
+    clone_url: "https://github.com/tailwindlabs/tailwindcss.git",
+    default_branch: "main",
+    private: false,
+    language: "Rust",
+    stargazers_count: 83200,
+    forks_count: 4200,
+    updated_at: "1h ago",
+    isTemplate: true,
+    category: "template",
+  },
+  {
+    id: "tpl-fastapi",
+    name: "fastapi",
+    full_name: "fastapi/fastapi",
+    description: "FastAPI framework, high performance, easy to learn, fast to code, ready for production AI & ML APIs.",
+    html_url: "https://github.com/fastapi/fastapi",
+    clone_url: "https://github.com/fastapi/fastapi.git",
+    default_branch: "master",
+    private: false,
+    language: "Python",
+    stargazers_count: 79500,
+    forks_count: 6400,
+    updated_at: "45m ago",
+    isTemplate: true,
+    category: "template",
+  },
+  {
+    id: "tpl-anthropic",
+    name: "anthropic-sdk-typescript",
+    full_name: "anthropics/anthropic-sdk-typescript",
+    description: "Official TypeScript and JavaScript library for the Anthropic Claude API with streaming and tool calling.",
+    html_url: "https://github.com/anthropics/anthropic-sdk-typescript",
+    clone_url: "https://github.com/anthropics/anthropic-sdk-typescript.git",
+    default_branch: "main",
+    private: false,
+    language: "TypeScript",
+    stargazers_count: 3200,
+    forks_count: 420,
+    updated_at: "2h ago",
+    isTemplate: true,
+    category: "template",
+  },
+  {
+    id: "tpl-prisma",
+    name: "prisma",
+    full_name: "prisma/prisma",
+    description: "Next-generation ORM for Node.js & TypeScript with declarative schema modeling and type-safe migrations.",
+    html_url: "https://github.com/prisma/prisma",
+    clone_url: "https://github.com/prisma/prisma.git",
+    default_branch: "main",
+    private: false,
+    language: "TypeScript",
+    stargazers_count: 38400,
+    forks_count: 1600,
+    updated_at: "3h ago",
+    isTemplate: true,
+    category: "template",
+  },
+];
+
+const LANGUAGE_COLORS: Record<string, string> = {
+  TypeScript: "bg-blue-500",
+  JavaScript: "bg-yellow-400",
+  Python: "bg-emerald-500",
+  Rust: "bg-orange-500",
+  Go: "bg-cyan-500",
+  HTML: "bg-rose-500",
+  CSS: "bg-purple-500",
+};
+
 export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
-  const { setMode, refreshProjectData, switchProject } = useWorkspace();
-  const [tab, setTab] = useState<"github" | "manual">("github");
+  const { setMode, switchProject, createProject } = useWorkspace();
+  const [activeCategory, setActiveCategory] = useState<"all" | "personal" | "templates">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   // GitHub Auth & Repos state
   const [ghStatus, setGhStatus] = useState<GitHubStatusData | null>(null);
-  const [repos, setRepos] = useState<GitHubRepoItem[]>([]);
+  const [personalRepos, setPersonalRepos] = useState<RepositoryItem[]>([]);
   const [isLoadingRepos, setIsLoadingRepos] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [cloningRepoId, setCloningRepoId] = useState<number | null>(null);
+  const [isCloning, setIsCloning] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
-  // Manual Clone state
-  const [manualUrl, setManualUrl] = useState("");
-  const [manualName, setManualName] = useState("");
-  const [isManualLoading, setIsManualLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const fetchGithubStatusAndRepos = async () => {
     try {
@@ -49,7 +201,23 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
         setIsLoadingRepos(true);
         try {
           const repoList = await api.getGithubRepos();
-          setRepos(repoList);
+          const formatted: RepositoryItem[] = repoList.map((r) => ({
+            id: r.id,
+            name: r.name,
+            full_name: r.full_name,
+            description: r.description,
+            html_url: r.html_url,
+            clone_url: r.clone_url || r.html_url,
+            default_branch: r.default_branch || "main",
+            private: r.private,
+            language: (r as any).language || "TypeScript",
+            stargazers_count: r.stargazers_count || 0,
+            forks_count: (r as any).forks_count || 0,
+            updated_at: "recently",
+            isTemplate: false,
+            category: "personal",
+          }));
+          setPersonalRepos(formatted);
         } catch (err: any) {
           console.error("Failed to fetch repos:", err);
         } finally {
@@ -63,8 +231,12 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
 
   useEffect(() => {
     if (open) {
-      setError(null);
+      setSearchQuery("");
+      setSelectedIndex(0);
       fetchGithubStatusAndRepos();
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
     }
   }, [open]);
 
@@ -75,7 +247,7 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
         window.location.href = res.authorize_url;
       }
     } catch (err: any) {
-      setError(err.message || "Failed to initiate GitHub OAuth");
+      toast.error(err.message || "Failed to initiate GitHub OAuth");
     }
   };
 
@@ -83,341 +255,482 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
     try {
       await api.disconnectGithub();
       setGhStatus({ connected: false, username: null, avatar_url: null, github_user_id: null });
-      setRepos([]);
+      setPersonalRepos([]);
       toast.success("Disconnected GitHub account");
     } catch (err: any) {
       toast.error("Failed to disconnect GitHub");
     }
   };
 
-  const handleCloneGithubRepo = async (repo: GitHubRepoItem) => {
-    setCloningRepoId(repo.id);
-    setError(null);
+  // Combine repos based on category and search query
+  const allItems = useMemo(() => {
+    let combined: RepositoryItem[] = [];
+
+    if (activeCategory === "all") {
+      combined = [...personalRepos, ...STARTER_TEMPLATES];
+    } else if (activeCategory === "personal") {
+      combined = [...personalRepos];
+    } else if (activeCategory === "templates") {
+      combined = [...STARTER_TEMPLATES];
+    }
+
+    // Check if user entered a custom Git URL
+    const isUrl = searchQuery.trim().startsWith("http") || searchQuery.trim().includes("/");
+    if (searchQuery.trim().length > 0) {
+      const q = searchQuery.toLowerCase().trim();
+      const filtered = combined.filter(
+        (item) =>
+          item.full_name.toLowerCase().includes(q) ||
+          (item.description && item.description.toLowerCase().includes(q)) ||
+          (item.language && item.language.toLowerCase().includes(q))
+      );
+
+      // If typed query looks like a custom repo URL or owner/repo not yet matched
+      if (isUrl && !filtered.some((i) => i.full_name.toLowerCase() === q)) {
+        const repoName = searchQuery.trim().split("/").pop()?.replace(/\.git$/, "") || "custom-repo";
+        const customItem: RepositoryItem = {
+          id: "custom-entry",
+          name: repoName,
+          full_name: searchQuery.trim().replace(/^https?:\/\/github\.com\//, ""),
+          description: `Direct Git repository at ${searchQuery.trim()}`,
+          html_url: searchQuery.trim().startsWith("http")
+            ? searchQuery.trim()
+            : `https://github.com/${searchQuery.trim()}`,
+          clone_url: searchQuery.trim().startsWith("http")
+            ? searchQuery.trim()
+            : `https://github.com/${searchQuery.trim()}.git`,
+          default_branch: "main",
+          private: false,
+          language: "Git",
+          stargazers_count: 1,
+          category: "custom",
+        };
+        return [customItem, ...filtered];
+      }
+
+      return filtered;
+    }
+
+    return combined;
+  }, [activeCategory, personalRepos, searchQuery]);
+
+  // Adjust selection bounds
+  useEffect(() => {
+    if (selectedIndex >= allItems.length) {
+      setSelectedIndex(Math.max(0, allItems.length - 1));
+    }
+  }, [allItems.length, selectedIndex]);
+
+  const selectedRepo: RepositoryItem | undefined = allItems[selectedIndex];
+
+  // Keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev < allItems.length - 1 ? prev + 1 : 0));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : allItems.length - 1));
+    } else if (e.key === "Enter" && selectedRepo) {
+      e.preventDefault();
+      handleCloneSelected(selectedRepo);
+    }
+  };
+
+  const handleCloneSelected = async (repo: RepositoryItem) => {
+    if (!repo) return;
+    setIsCloning(true);
 
     try {
       const cloneUrl = repo.clone_url || repo.html_url;
-      const created = await api.cloneProject({
-        name: repo.name,
-        repo_url: cloneUrl,
-        default_branch: repo.default_branch || "main",
-      });
+      const created = await createProject(repo.name, cloneUrl, repo.full_name);
 
-      setCloningRepoId(null);
+      setIsCloning(false);
       onOpenChange(false);
       setMode("deck");
-      await refreshProjectData();
       if (created?.id) {
         await switchProject(created.id);
       }
-      toast.success(`Repository ${repo.full_name} cloned into isolated host workspace.`);
+      toast.success(`Project ${repo.full_name} loaded into workspace.`);
     } catch (err: any) {
-      setCloningRepoId(null);
-      setError(err.message || "Failed to clone repository");
+      setIsCloning(false);
+      toast.error(err.message || "Failed to clone repository");
     }
   };
 
-  const handleManualClone = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!manualUrl.trim()) return;
-
-    setIsManualLoading(true);
-    setError(null);
-
-    try {
-      const created = await api.cloneProject({
-        name: manualName || "Imported Repo",
-        repo_url: manualUrl.trim(),
-        default_branch: "main",
-      });
-
-      setIsManualLoading(false);
-      onOpenChange(false);
-      setMode("deck");
-      await refreshProjectData();
-      if (created?.id) {
-        await switchProject(created.id);
-      }
-      toast.success("Project cloned and host provisioned.");
-    } catch (err: any) {
-      setIsManualLoading(false);
-      setError(err.message || "An error occurred during clone");
-    }
+  const handleCopyCloneUrl = (url: string) => {
+    navigator.clipboard.writeText(url);
+    setCopiedUrl(true);
+    toast.success("Clone URL copied to clipboard");
+    setTimeout(() => setCopiedUrl(false), 2000);
   };
-
-  const filteredRepos = repos.filter((r) =>
-    r.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (r.description && r.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs animate-in fade-in" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-xl border border-[var(--border-strong)] bg-[var(--surface-primary)] p-6 shadow-2xl focus:outline-none animate-in zoom-in-95 flex flex-col max-h-[85vh]">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--surface-tertiary)] border border-[var(--border)] text-[var(--accent-claude)]">
-                <Github className="size-5" />
-              </div>
-              <div>
-                <Dialog.Title className="text-base font-semibold text-[var(--foreground)]">
-                  Open Repository
-                </Dialog.Title>
-                <Dialog.Description className="text-xs text-[var(--muted-foreground)]">
-                  Provision an isolated host runner with Git worktree isolation.
-                </Dialog.Description>
-              </div>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs animate-in fade-in" />
+        <Dialog.Content
+          onKeyDown={handleKeyDown}
+          className="fixed left-1/2 top-1/2 z-50 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 rounded-[3.5px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0E0E12] shadow-2xl focus:outline-none animate-in zoom-in-95 flex flex-col max-h-[85vh] text-zinc-900 dark:text-zinc-100 overflow-hidden font-sans"
+        >
+          {/* Top Omnibar Search Header */}
+          <div className="flex items-center border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-[#121218] px-3.5 py-2.5">
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              <Search className="size-4 text-zinc-400 shrink-0" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search GitHub repositories, starter kits, or paste clone URL..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSelectedIndex(0);
+                }}
+                className="w-full bg-transparent text-sm placeholder:text-zinc-400 text-zinc-900 dark:text-zinc-100 outline-none border-none ring-0 font-medium"
+              />
             </div>
-            <button
-              onClick={() => onOpenChange(false)}
-              className="rounded p-1 text-[var(--muted-foreground)] hover:bg-[var(--wash)] hover:text-[var(--foreground)]"
-            >
-              <X className="size-4" />
-            </button>
-          </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex items-center gap-2 border-b border-[var(--border)] pt-3 pb-2 text-xs font-mono">
-            <button
-              type="button"
-              onClick={() => setTab("github")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors ${
-                tab === "github"
-                  ? "bg-[var(--surface-tertiary)] text-[var(--foreground)] font-medium"
-                  : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-              }`}
-            >
-              <Github className="size-3.5" />
-              <span>GitHub Repositories</span>
-              {ghStatus?.connected && (
-                <span className="size-1.5 rounded-full bg-emerald-400 ml-1" />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("manual")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors ${
-                tab === "manual"
-                  ? "bg-[var(--surface-tertiary)] text-[var(--foreground)] font-medium"
-                  : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-              }`}
-            >
-              <Link2 className="size-3.5" />
-              <span>Direct Git URL</span>
-            </button>
-          </div>
+            {/* Right Header Badges: Categories + GitHub Auth + Close */}
+            <div className="flex items-center gap-2 shrink-0 ml-2">
+              {/* Category Pills */}
+              <div className="hidden sm:flex items-center border border-zinc-200 dark:border-zinc-800 rounded-[3.5px] bg-white dark:bg-[#0E0E12] p-0.5 text-[11px] font-mono">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory("all");
+                    setSelectedIndex(0);
+                  }}
+                  className={`px-2 py-0.5 transition-colors cursor-pointer rounded-[3.5px] ${
+                    activeCategory === "all"
+                      ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold"
+                      : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory("personal");
+                    setSelectedIndex(0);
+                  }}
+                  className={`px-2 py-0.5 transition-colors cursor-pointer rounded-[3.5px] ${
+                    activeCategory === "personal"
+                      ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold"
+                      : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                  }`}
+                >
+                  Personal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory("templates");
+                    setSelectedIndex(0);
+                  }}
+                  className={`px-2 py-0.5 transition-colors cursor-pointer rounded-[3.5px] ${
+                    activeCategory === "templates"
+                      ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-semibold"
+                      : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                  }`}
+                >
+                  Templates
+                </button>
+              </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mt-3 rounded-lg bg-rose-500/10 border border-rose-500/30 p-3 text-xs text-rose-300 font-mono">
-              {error}
-            </div>
-          )}
-
-          {/* Content Area */}
-          <div className="flex-1 overflow-y-auto py-4 min-h-[300px]">
-            {tab === "github" ? (
-              !ghStatus?.connected ? (
-                /* Disconnected State */
-                <div className="flex flex-col items-center justify-center text-center p-8 border border-dashed border-[var(--border)] rounded-xl bg-[var(--surface-secondary)] space-y-4 my-2">
-                  <div className="size-12 rounded-full bg-[var(--surface-tertiary)] flex items-center justify-center text-[var(--foreground)]">
-                    <Github className="size-6" />
-                  </div>
-                  <div className="max-w-md space-y-1">
-                    <h3 className="text-sm font-medium text-[var(--foreground)]">
-                      Connect your GitHub Account
-                    </h3>
-                    <p className="text-xs text-[var(--muted-foreground)]">
-                      Authenticate with GitHub OAuth to browse your repositories and clone them directly into isolated execution hosts.
-                    </p>
-                  </div>
+              {/* GitHub Auth Status */}
+              {ghStatus?.connected ? (
+                <div className="flex items-center gap-1.5 border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 px-2 py-1 text-[11px] font-mono text-zinc-700 dark:text-zinc-300">
+                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <Github className="size-3 text-zinc-500" />
+                  <span className="truncate max-w-[80px]">@{ghStatus.username}</span>
                   <button
                     type="button"
-                    onClick={handleConnectGithub}
-                    className="flex items-center gap-2 rounded-lg bg-[var(--foreground)] px-4 py-2 text-xs font-semibold text-[var(--background)] hover:opacity-90 transition-opacity cursor-pointer"
+                    onClick={handleDisconnectGithub}
+                    title="Disconnect GitHub account"
+                    className="text-zinc-400 hover:text-rose-500 text-[10px] ml-1"
                   >
-                    <Github className="size-4" />
-                    <span>Authorize with GitHub</span>
+                    ✕
                   </button>
                 </div>
               ) : (
+                <button
+                  type="button"
+                  onClick={handleConnectGithub}
+                  className="flex items-center gap-1.5 border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 px-2 py-1 text-[11px] font-mono text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors cursor-pointer"
+                >
+                  <Github className="size-3" />
+                  <span>Connect GitHub</span>
+                </button>
+              )}
 
-                /* Connected State with Repo List */
-                <div className="space-y-3">
-                  {/* Status header & Search bar */}
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[var(--muted-foreground)]" />
-                      <input
-                        type="text"
-                        placeholder="Search your repositories..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-primary)] pl-8 pr-3 py-1.5 text-xs text-[var(--foreground)] placeholder:text-[var(--subtle-foreground)] focus:border-[var(--accent-claude)] focus:outline-none"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={fetchGithubStatusAndRepos}
-                      disabled={isLoadingRepos}
-                      className="p-1.5 rounded-md border border-[var(--border)] bg-[var(--surface-primary)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--surface-secondary)] transition-colors"
-                      title="Refresh repositories"
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                title="Close (Esc)"
+                className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer rounded-[3.5px]"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Master-Detail Body (2 Columns) */}
+          <div className="grid sm:grid-cols-[1fr_320px] flex-1 min-h-[420px] max-h-[520px] overflow-hidden">
+            {/* Left Column: Repository Master List */}
+            <div
+              ref={listRef}
+              className="border-b sm:border-b-0 sm:border-r border-zinc-200 dark:border-zinc-800 overflow-y-auto scrollbar-thin divide-y divide-zinc-100 dark:divide-zinc-800/60"
+            >
+              {allItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-12 text-center text-zinc-400">
+                  <FolderGit2 className="size-8 text-zinc-300 dark:text-zinc-700 mb-2 stroke-1" />
+                  <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">No repositories found</p>
+                  <p className="text-xs text-zinc-400 mt-1 max-w-xs">
+                    Try searching for another keyword or type a custom Git clone URL.
+                  </p>
+                </div>
+              ) : (
+                allItems.map((repo, idx) => {
+                  const isSelected = idx === selectedIndex;
+                  const dotColor = LANGUAGE_COLORS[repo.language || "TypeScript"] || "bg-zinc-400";
+
+                  return (
+                    <div
+                      key={repo.id}
+                      onClick={() => {
+                        setSelectedIndex(idx);
+                      }}
+                      onDoubleClick={() => handleCloneSelected(repo)}
+                      className={`group flex items-center justify-between gap-3 px-3.5 py-2.5 cursor-pointer text-xs transition-colors rounded-[3.5px] border ${
+                        isSelected
+                          ? "bg-zinc-100 dark:bg-zinc-800/80 text-zinc-950 dark:text-white border-zinc-300 dark:border-zinc-700 font-medium"
+                          : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 border-transparent"
+                      }`}
                     >
-                      <RefreshCw className={`size-3.5 ${isLoadingRepos ? "animate-spin" : ""}`} />
-                    </button>
-                    <div className="flex items-center gap-2 text-xs font-mono text-[var(--muted-foreground)] bg-[var(--surface-secondary)] px-2.5 py-1 rounded-md border border-[var(--border)]">
-                      {ghStatus.avatar_url && (
-                        <img
-                          src={ghStatus.avatar_url}
-                          alt={ghStatus.username || ""}
-                          className="size-4 rounded-full"
+                      {/* Left: Icon + Name + Description */}
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div
+                          className={`flex size-6 shrink-0 items-center justify-center border border-zinc-200 dark:border-zinc-800 ${
+                            repo.isTemplate
+                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                              : repo.category === "custom"
+                              ? "bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                          }`}
+                        >
+                          {repo.isTemplate ? (
+                            <Sparkles className="size-3.5" />
+                          ) : repo.private ? (
+                            <Lock className="size-3.5" />
+                          ) : repo.category === "custom" ? (
+                            <Terminal className="size-3.5" />
+                          ) : (
+                            <FolderGit2 className="size-3.5" />
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                              {repo.full_name}
+                            </span>
+                            {repo.isTemplate && (
+                              <span className="shrink-0 px-1 py-0.2 bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[9px] font-mono uppercase">
+                                Template
+                              </span>
+                            )}
+                          </div>
+                          {repo.description && (
+                            <p className="truncate text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+                              {repo.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right: Language + Stars */}
+                      <div className="flex items-center gap-3 shrink-0 font-mono text-[11px] text-zinc-400">
+                        {repo.language && (
+                          <div className="flex items-center gap-1">
+                            <span className={`size-1.5 rounded-full ${dotColor}`} />
+                            <span className="text-zinc-500 dark:text-zinc-400">{repo.language}</span>
+                          </div>
+                        )}
+                        {repo.stargazers_count > 0 && (
+                          <div className="hidden sm:flex items-center gap-1 text-zinc-500">
+                            <Star className="size-3 text-amber-500 fill-amber-500" />
+                            <span>
+                              {repo.stargazers_count > 999
+                                ? `${(repo.stargazers_count / 1000).toFixed(1)}k`
+                                : repo.stargazers_count}
+                            </span>
+                          </div>
+                        )}
+                        <ArrowRight
+                          className={`size-3.5 transition-transform ${
+                            isSelected
+                              ? "opacity-100 translate-x-0.5 text-zinc-900 dark:text-zinc-100"
+                              : "opacity-0 text-zinc-400"
+                          }`}
                         />
-                      )}
-                      <span>@{ghStatus.username}</span>
-                      <button
-                        type="button"
-                        onClick={handleDisconnectGithub}
-                        className="text-[10px] text-rose-400 hover:underline ml-1"
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Right Column: Detail Preview Panel */}
+            <div className="bg-zinc-50/50 dark:bg-[#121218] p-4 flex flex-col justify-between overflow-y-auto">
+              {selectedRepo ? (
+                <div className="space-y-4">
+                  {/* Detail Header */}
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex size-8 items-center justify-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
+                          <Github className="size-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 break-all leading-tight">
+                            {selectedRepo.name}
+                          </h4>
+                          <span className="text-[10px] font-mono text-zinc-400">
+                            {selectedRepo.full_name.split("/")[0]}
+                          </span>
+                        </div>
+                      </div>
+
+                      <a
+                        href={selectedRepo.html_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                        title="View on GitHub"
                       >
-                        Disconnect
-                      </button>
+                        <ExternalLink className="size-3.5" />
+                      </a>
+                    </div>
+
+                    <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed line-clamp-3">
+                      {selectedRepo.description || "No description provided for this repository."}
+                    </p>
+                  </div>
+
+                  {/* Metadata Spec List */}
+                  <div className="space-y-2 border-t border-b border-zinc-200 dark:border-zinc-800/80 py-3 text-[11px] font-mono">
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-400 flex items-center gap-1.5">
+                        <GitBranch className="size-3 text-zinc-500" /> Default Branch
+                      </span>
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                        {selectedRepo.default_branch || "main"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-400 flex items-center gap-1.5">
+                        <Code2 className="size-3 text-zinc-500" /> Language
+                      </span>
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                        {selectedRepo.language || "TypeScript"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-400 flex items-center gap-1.5">
+                        <Star className="size-3 text-amber-500" /> Stars / Forks
+                      </span>
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                        {selectedRepo.stargazers_count > 999
+                          ? `${(selectedRepo.stargazers_count / 1000).toFixed(1)}k`
+                          : selectedRepo.stargazers_count}{" "}
+                        / {selectedRepo.forks_count || 0}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-400 flex items-center gap-1.5">
+                        <Cpu className="size-3 text-zinc-500" /> Host Isolation
+                      </span>
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400 text-[10px]">
+                        MicroVM NVMe
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-400 flex items-center gap-1.5">
+                        <Layers className="size-3 text-zinc-500" /> Worktree Leases
+                      </span>
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-[10px]">
+                        Enabled
+                      </span>
                     </div>
                   </div>
 
-                  {/* Repository Cards */}
-                  {isLoadingRepos ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-[var(--muted-foreground)] gap-2">
-                      <Loader2 className="size-5 animate-spin text-[var(--accent-claude)]" />
-                      <span className="text-xs">Fetching repositories from GitHub...</span>
-                    </div>
-                  ) : filteredRepos.length === 0 ? (
-                    <div className="text-center py-12 text-xs text-[var(--muted-foreground)] border border-dashed border-[var(--border)] rounded-lg">
-                      {searchQuery ? "No repositories match your search." : "No repositories found for this account."}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
-                      {filteredRepos.map((repo) => {
-                        const isCloning = cloningRepoId === repo.id;
-                        return (
-                          <div
-                            key={repo.id}
-                            className="flex items-center justify-between p-3 rounded-lg border border-[var(--border)] bg-[var(--surface-card)] hover:border-[var(--border-strong)] transition-all"
-                          >
-                            <div className="space-y-1 min-w-0 flex-1 pr-3">
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-xs text-[var(--foreground)] truncate">
-                                  {repo.full_name}
-                                </span>
-                                {repo.private ? (
-                                  <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.2 text-[9px] font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                                    <Lock className="size-2.5" /> Private
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.2 text-[9px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                    <Globe className="size-2.5" /> Public
-                                  </span>
-                                )}
-                              </div>
-                              {repo.description && (
-                                <p className="text-[11px] text-[var(--muted-foreground)] line-clamp-1">
-                                  {repo.description}
-                                </p>
-                              )}
-                              <div className="flex items-center gap-3 text-[10px] font-mono text-[var(--subtle-foreground)] pt-0.5">
-                                <span className="flex items-center gap-1">
-                                  <GitBranch className="size-2.5" /> {repo.default_branch || "main"}
-                                </span>
-                                {(repo.stargazers_count ?? 0) > 0 && (
-                                  <span className="flex items-center gap-1">
-                                    <Star className="size-2.5" /> {repo.stargazers_count}
-                                  </span>
-                                )}
-                                {repo.updated_at && (
-                                  <span>Updated {new Date(repo.updated_at).toLocaleDateString()}</span>
-                                )}
-                              </div>
-                            </div>
+                  {/* Actions */}
+                  <div className="space-y-2 pt-1">
+                    <button
+                      type="button"
+                      disabled={isCloning}
+                      onClick={() => handleCloneSelected(selectedRepo)}
+                      className="w-full flex items-center justify-between px-3 py-2 bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 rounded-[3.5px] shadow-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        {isCloning ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <FolderGit2 className="size-3.5" />
+                        )}
+                        <span>{isCloning ? "Cloning & Provisioning..." : "Open in Congruence"}</span>
+                      </div>
+                      <kbd className="font-mono text-[10px] px-1.5 py-0.5 bg-zinc-800 dark:bg-zinc-300 text-zinc-200 dark:text-zinc-800 rounded-[3.5px]">
+                        ↵
+                      </kbd>
+                    </button>
 
-                            <button
-                              type="button"
-                              onClick={() => handleCloneGithubRepo(repo)}
-                              disabled={isCloning || cloningRepoId !== null}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[var(--surface-secondary)] hover:bg-[var(--surface-tertiary)] border border-[var(--border)] text-xs font-medium text-[var(--foreground)] transition-colors disabled:opacity-50 shrink-0"
-                            >
-                              {isCloning ? (
-                                <>
-                                  <Loader2 className="size-3 animate-spin text-[var(--accent-claude)]" />
-                                  <span>Cloning...</span>
-                                </>
-                              ) : (
-                                <span>Clone & Open</span>
-                              )}
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                    <button
+                      type="button"
+                      onClick={() => handleCopyCloneUrl(selectedRepo.clone_url)}
+                      className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-[11px] font-mono text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer rounded-[3.5px]"
+                    >
+                      {copiedUrl ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
+                      <span>{copiedUrl ? "Copied Git URL" : "Copy Git Clone URL"}</span>
+                    </button>
+                  </div>
                 </div>
-              )
-            ) : (
-              /* Manual Clone Form */
-              <form onSubmit={handleManualClone} className="space-y-4 pt-2">
-                <div className="space-y-1.5">
-                  <label className="block text-[11px] font-mono text-[var(--muted-foreground)]">
-                    Git Repository URL
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="https://github.com/org/repo.git"
-                    value={manualUrl}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setManualUrl(val);
-                      if (!manualName && val) {
-                        const parts = val.replace(".git", "").split("/");
-                        const last = parts[parts.length - 1];
-                        if (last) setManualName(last);
-                      }
-                    }}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-primary)] px-3 py-2 text-xs font-mono text-[var(--foreground)] placeholder:text-[var(--subtle-foreground)] focus:border-[var(--accent-claude)] focus:outline-none"
-                  />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center text-zinc-400 p-4">
+                  <p className="text-xs">Select a repository to preview details</p>
                 </div>
+              )}
+            </div>
+          </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-[11px] font-mono text-[var(--muted-foreground)]">
-                    Workspace Name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="My Application"
-                    value={manualName}
-                    onChange={(e) => setManualName(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-primary)] px-3 py-2 text-xs text-[var(--foreground)] placeholder:text-[var(--subtle-foreground)] focus:border-[var(--accent-claude)] focus:outline-none"
-                  />
-                </div>
+          {/* Bottom Keyboard Shortcuts Bar */}
+          <div className="flex items-center justify-between border-t border-zinc-200 dark:border-zinc-800 bg-zinc-100/70 dark:bg-[#0A0A0E] px-3.5 py-2 text-[11px] font-mono text-zinc-500">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">↑</kbd>
+                <kbd className="px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">↓</kbd>
+                <span className="ml-1 text-zinc-400">Navigate</span>
+              </span>
 
-                <div className="flex items-center justify-end gap-2 pt-4 border-t border-[var(--border)]">
-                  <button
-                    type="button"
-                    onClick={() => onOpenChange(false)}
-                    className="px-3 py-1.5 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isManualLoading || !manualUrl.trim()}
-                    className="flex items-center gap-1.5 rounded-md bg-[var(--foreground)] px-4 py-1.5 text-xs font-medium text-[var(--background)] hover:opacity-90 transition-opacity disabled:opacity-50"
-                  >
-                    {isManualLoading && <Loader2 className="size-3 animate-spin" />}
-                    <span>{isManualLoading ? "Cloning..." : "Clone Repository"}</span>
-                  </button>
-                </div>
-              </form>
-            )}
+              <span className="flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">↵</kbd>
+                <span className="ml-1 text-zinc-400">Open Project</span>
+              </span>
+
+              <span className="flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">ESC</kbd>
+                <span className="ml-1 text-zinc-400">Close</span>
+              </span>
+            </div>
+
+            <div className="text-zinc-400 font-medium">
+              {allItems.length} repositories available
+            </div>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

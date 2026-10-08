@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   Search,
@@ -24,7 +25,8 @@ interface CommandPaletteProps {
 }
 
 export function CommandPaletteModal({ open, onOpenChange }: CommandPaletteProps) {
-  const { setMode, setIsIntegrationsOpen, executeTerminalCommand, lanes, switchLane } = useWorkspace();
+  const router = useRouter();
+  const { setMode, setIsIntegrationsOpen, setIsSettingsOpen, executeTerminalCommand, lanes, switchLane } = useWorkspace();
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -39,6 +41,16 @@ export function CommandPaletteModal({ open, onOpenChange }: CommandPaletteProps)
   }, [open, onOpenChange]);
 
   const items = [
+    {
+      category: "Navigation",
+      id: "nav-settings",
+      label: "Open Workspace Settings (⌘,)",
+      icon: SlidersHorizontal,
+      action: () => {
+        router.push("/settings");
+        onOpenChange(false);
+      },
+    },
     {
       category: "Navigation",
       id: "nav-deck",
