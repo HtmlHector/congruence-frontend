@@ -20,6 +20,7 @@ export function ActorSidebar() {
     activeLane,
     grantControl,
     revokeControl,
+    currentLease,
     toggleAllowWatchers,
     activityEvents,
     setIsIntegrationsOpen,
@@ -182,6 +183,15 @@ export function ActorSidebar() {
         <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
           <span className="font-semibold">Lane write lease</span>
           <Shield className="size-3 text-[var(--accent-claude)]" />
+        </div>
+
+        <div className="text-[10px] text-zinc-500">
+          Current writer:{" "}
+          <span className="text-zinc-900 dark:text-zinc-100">
+            {currentLease?.id && !currentLease.is_revoked
+              ? `${actors.find((a) => a.id === currentLease.actor_id)?.display_name ?? "Unknown actor"} (granted write)`
+              : "Owner (default)"}
+          </span>
         </div>
 
         <div className="space-y-1.5">

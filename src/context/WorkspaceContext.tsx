@@ -11,6 +11,7 @@ import {
   ServiceData,
   GitDiffData,
   ActivityData,
+  GrantData,
 } from "@/lib/api";
 
 export interface ActivityEvent {
@@ -74,6 +75,7 @@ interface WorkspaceContextType {
   toggleDevServer: () => void;
   grantControl: (actorId: string) => Promise<void>;
   revokeControl: () => Promise<void>;
+  currentLease: GrantData | null;
   toggleAllowWatchers: (val: boolean) => void;
   submitPrompt: (promptText: string, harness: string, model: string, effort: string) => Promise<void>;
   pendingCommand: string | null;
@@ -169,6 +171,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [pendingCommand, setPendingCommand] = useState<string | null>(null);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
+  const [currentLease, setCurrentLease] = useState<GrantData | null>(null);
 
   // Backend requires a bearer token on every project route; attach the signed-in user's Clerk token.
   const { getToken } = useAuth();
@@ -469,10 +472,31 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Load the lane's current write lease whenever the active lane changes.
+  useEffect(() => {
+    if (!projectId || !activeLaneId) {
+      setCurrentLease(null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .getLaneGrant(projectId, activeLaneId)
+      .then((grant) => {
+        if (!cancelled) setCurrentLease(grant);
+      })
+      .catch(() => {
+        if (!cancelled) setCurrentLease(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId, activeLaneId]);
+
   const grantControl = async (actorId: string) => {
     if (!projectId || !activeLaneId) return;
     try {
-      await api.grantLaneControl(projectId, activeLaneId, actorId, "write");
+      const grant = await api.grantLaneControl(projectId, activeLaneId, actorId, "write");
+      setCurrentLease(grant);
       logActivity(`Write control lease granted to actor on lane`);
       await refreshProjectData();
     } catch (err) {
@@ -484,6 +508,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     if (!projectId || !activeLaneId) return;
     try {
       await api.revokeLaneControl(projectId, activeLaneId);
+      setCurrentLease(await api.getLaneGrant(projectId, activeLaneId));
       logActivity(`Write control reclaimed by owner`);
       await refreshProjectData();
     } catch (err) {
@@ -636,6 +661,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         toggleDevServer,
         grantControl,
         revokeControl,
+        currentLease,
         toggleAllowWatchers,
         submitPrompt,
         pendingCommand,
