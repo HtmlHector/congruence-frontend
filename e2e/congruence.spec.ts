@@ -150,8 +150,11 @@ test.describe("Congruence Platform End-to-End Suite", () => {
             repo: "parabox-so/parabox-core",
           },
           harnesses: {
-            claude: { label: "Claude Code", state: "connected", credential_path: "~/.claude.json", supports_login: true },
-            codex: { label: "OpenAI Codex", state: "connected", credential_path: "~/.codex", supports_login: true },
+            claude: { label: "Claude Code", state: "connected", credential_path: "~/.claude/.credentials.json", supports_login: true, flow: "loopback_bridge", note: null },
+            codex: { label: "OpenAI Codex", state: "connected", credential_path: "~/.codex/auth.json", supports_login: true, flow: "loopback_bridge", note: null },
+            antigravity: { label: "Antigravity", state: "disconnected", credential_path: "~/.gemini/antigravity-cli/", supports_login: true, flow: "url_paste", note: null },
+            opencode: { label: "OpenCode", state: "disconnected", credential_path: "~/.local/share/opencode/auth.json", supports_login: true, flow: "interactive", note: null },
+            aider: { label: "Aider", state: "disconnected", credential_path: null, supports_login: false, flow: null, note: "Aider has no vendor sign-in flow; it reads API keys from the host environment or a .env file. Provide keys via the Vault instead." },
           },
         }),
       });

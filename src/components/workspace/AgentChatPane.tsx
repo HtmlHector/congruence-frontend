@@ -7,6 +7,7 @@ import {
   Sliders,
   Terminal,
   FileCode,
+  FileCode2,
   ChevronDown,
   ChevronRight,
   Zap,
@@ -56,7 +57,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import { AnthropicIcon, OpenAIIcon } from "@/components/ui/brand-icons";
+import { AnthropicIcon, OpenAIIcon, ClaudeIcon, AntigravityIcon } from "@/components/ui/brand-icons";
 
 export interface ChatMessage {
   id: string;
@@ -236,7 +237,7 @@ function ToolCallGroup({ toolCalls }: { toolCalls: NonNullable<ChatMessage["tool
   const isRunning = toolCalls.some((t) => t.status === "running");
 
   return (
-    <div className="my-2.5 rounded-[3.5px] border border-zinc-200 dark:border-zinc-800/90 bg-zinc-50/80 dark:bg-[#111116] overflow-hidden font-mono text-xs shadow-2xs">
+    <div className="my-2.5 rounded-[3.5px] border border-zinc-200 dark:border-zinc-800/90 bg-zinc-50/80 dark:bg-[#111116] overflow-hidden font-sans text-xs shadow-2xs">
       {/* Collapsible Header */}
       <button
         type="button"
@@ -253,13 +254,13 @@ function ToolCallGroup({ toolCalls }: { toolCalls: NonNullable<ChatMessage["tool
           ) : (
             <Zap className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
           )}
-          <span className="font-semibold text-zinc-900 dark:text-zinc-100 truncate text-[11px]">
+          <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate text-xs">
             {toolCalls.length === 1
               ? `${parseToolInfo(toolCalls[0].tool, toolCalls[0].params).action}: ${parseToolInfo(toolCalls[0].tool, toolCalls[0].params).command}`
               : `Executed ${toolCalls.length} tools`}
           </span>
           {toolCalls.length > 1 && (
-            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 hidden sm:inline truncate">
+            <span className="text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:inline truncate">
               ({Array.from(new Set(toolCalls.map((t) => parseToolInfo(t.tool, t.params).action))).join(", ")})
             </span>
           )}
@@ -267,7 +268,7 @@ function ToolCallGroup({ toolCalls }: { toolCalls: NonNullable<ChatMessage["tool
 
         <div className="flex items-center gap-2 shrink-0">
           <span
-            className={`text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-[3.5px] ${
+            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-[3.5px] ${
               isRunning
                 ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 animate-pulse"
                 : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
@@ -749,89 +750,97 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
   return (
     <div className="flex h-full w-full flex-col bg-white dark:bg-[#0A0A0C] text-zinc-900 dark:text-zinc-100 font-sans antialiased select-text overflow-hidden rounded-[3.5px]">
       {/* Main Conversation Canvas */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 scrollbar-thin bg-white dark:bg-[#0A0A0C] flex flex-col min-h-0">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin bg-white dark:bg-[#0A0A0C] flex flex-col min-h-0">
         {messages.length === 0 ? (
-          <div className="my-auto flex flex-col items-center justify-center max-w-2xl mx-auto w-full text-center select-none py-2">
-            {/* Header Badge */}
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex size-7 items-center justify-center border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-[3.5px]">
-                {isClaude ? (
-                  <AnthropicIcon className="size-4 text-[var(--accent-claude)]" />
-                ) : isCodex ? (
-                  <OpenAIIcon className="size-4 text-[var(--status-awake)]" />
-                ) : isAntigravity ? (
-                  <Bot className="size-4 text-indigo-500 dark:text-indigo-400" />
-                ) : (
-                  <Terminal className="size-4 text-zinc-900 dark:text-zinc-100" />
-                )}
-              </div>
-              <h2 className="text-sm font-semibold tracking-tight uppercase font-mono text-zinc-900 dark:text-zinc-100">
-                {isClaude
-                  ? "Claude Code CLI Connected"
-                  : isCodex
-                  ? "Codex Runner Connected"
-                  : isAntigravity
-                  ? "Google Antigravity Connected"
-                  : "Agent Shell Connected"}
-              </h2>
+          <div className="my-auto flex flex-col items-center justify-center max-w-xl mx-auto w-full text-center select-none py-6">
+            {/* Header Emblem */}
+            <div className="relative mb-3.5 flex size-11 items-center justify-center rounded-[3.5px] border border-zinc-200 dark:border-[#26262c] bg-zinc-50 dark:bg-[#141418] shadow-2xs">
+              {isClaude ? (
+                <ClaudeIcon className="size-5.5 text-[var(--accent-claude)]" />
+              ) : isCodex ? (
+                <OpenAIIcon className="size-5.5 text-[var(--status-awake)]" />
+              ) : isAntigravity ? (
+                <AntigravityIcon className="size-5.5 text-indigo-500 dark:text-indigo-400" />
+              ) : (
+                <Terminal className="size-5 text-zinc-800 dark:text-zinc-200" />
+              )}
+              <span className="absolute -bottom-1 -right-1 flex size-3 items-center justify-center">
+                <span className="size-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#0A0A0C]" />
+              </span>
             </div>
 
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-lg mb-6 leading-relaxed font-mono">
-              Working in isolated git worktree on branch{" "}
-              <span className="text-zinc-900 dark:text-zinc-100 font-bold">
-                [{activeLane?.branch || "main"}]
-              </span>
-              . Capped strictly to this project repository workspace.
+            {/* Agent Title */}
+            <h2 className="text-base font-semibold tracking-tight text-zinc-950 dark:text-white mb-2 font-sans">
+              {isClaude
+                ? "Claude Code CLI"
+                : isCodex
+                ? "OpenAI Codex"
+                : isAntigravity
+                ? "Google Antigravity"
+                : "Pair Human Shell"}
+            </h2>
+
+            {/* Worktree Pill */}
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[3.5px] bg-zinc-100 dark:bg-[#141418] border border-zinc-200/80 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-normal mb-3">
+              <GitBranch className="size-3 text-emerald-500 shrink-0" />
+              <span className="text-zinc-400 dark:text-zinc-500">worktree:</span>
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{activeLane?.branch || "main"}</span>
+            </div>
+
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-md mb-6 leading-relaxed font-sans">
+              Isolated agent workspace with strict sandboxing. Select a prompt starter below or enter an instruction to begin.
             </p>
 
             {/* Command Suggestions Matrix */}
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
               {[
                 {
-                  code: "[1]",
+                  icon: <FileCode2 className="size-3.5 text-sky-500 dark:text-sky-400" />,
                   title: "Inspect repository architecture",
                   desc: "Scan route trees, packages, and components",
                   prompt: "Inspect this project repository structure and explain the key components.",
                 },
                 {
-                  code: "[2]",
+                  icon: <CheckCircle2 className="size-3.5 text-emerald-500 dark:text-emerald-400" />,
                   title: "Run test suite & fix breakages",
                   desc: "Execute tests in worktree PTY and repair errors",
                   prompt: "Run the test suite and fix any failing unit or integration tests.",
                 },
                 {
-                  code: "[3]",
+                  icon: <Zap className="size-3.5 text-amber-500 dark:text-amber-400" />,
                   title: "Implement feature endpoint",
                   desc: "Create API route, data types, and server actions",
                   prompt: "Create a new API route and wire it to the workspace state.",
                 },
                 {
-                  code: "[4]",
+                  icon: <Sparkles className="size-3.5 text-indigo-500 dark:text-indigo-400" />,
                   title: "Audit code diffs & types",
-                  desc: "Inspect uncommitted changes on branch",
+                  desc: "Inspect uncommitted changes and verify type safety",
                   prompt: "Audit all modified files on this branch and check for type safety.",
                 },
-              ].map((item) => (
+              ].map((item, idx) => (
                 <button
-                  key={item.code}
+                  key={idx}
                   type="button"
                   onClick={() => {
                     setInputPrompt(item.prompt);
                     textareaRef.current?.focus();
                   }}
-                  className="flex flex-col items-start p-3 border border-zinc-200 dark:border-zinc-800 bg-[#FAFAFA] dark:bg-[#121216] hover:border-zinc-400 dark:hover:border-zinc-600 hover:bg-zinc-100/70 dark:hover:bg-[#16161c] transition-all text-left rounded-[3.5px] group cursor-pointer"
+                  className="group relative flex items-start gap-2.5 p-3 border border-zinc-200 dark:border-[#222227] bg-zinc-50/50 dark:bg-[#111115] hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-[#16161c] transition-all text-left rounded-[3.5px] cursor-pointer shadow-2xs hover:shadow-xs"
                 >
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 font-bold">
-                      {item.code}
-                    </span>
-                    <ArrowRight className="size-3 text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="flex size-6 items-center justify-center rounded-[3px] bg-white dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/60 shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                    {item.icon}
                   </div>
-                  <div className="font-medium text-xs text-zinc-900 dark:text-zinc-100 mb-0.5">
-                    {item.title}
-                  </div>
-                  <div className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-snug">
-                    {item.desc}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1 mb-0.5">
+                      <span className="font-medium text-xs text-zinc-900 dark:text-zinc-100 group-hover:text-zinc-950 dark:group-hover:text-white transition-colors">
+                        {item.title}
+                      </span>
+                      <ArrowRight className="size-3 text-zinc-400 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all shrink-0" />
+                    </div>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
+                      {item.desc}
+                    </p>
                   </div>
                 </button>
               ))}
@@ -844,9 +853,9 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                 {/* User Message - Clean Right-Aligned Card with Avatar & Header */}
                 {msg.role === "user" && (
                   <div className="flex flex-col items-end w-full py-1 group">
-                    <div className="flex items-center gap-1.5 mb-1 px-1 text-[11px] font-mono text-zinc-400 dark:text-zinc-500">
+                    <div className="flex items-center gap-1.5 mb-1 px-1 text-xs text-zinc-400 dark:text-zinc-500">
                       <User className="size-3" />
-                      <span className="font-semibold">You</span>
+                      <span className="font-medium">You</span>
                       <span>·</span>
                       <span>{msg.timestamp || "Just now"}</span>
                     </div>
@@ -860,18 +869,18 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                 {msg.role === "assistant" && (
                   <div className="w-full space-y-3 py-2 group">
                     {/* Assistant Header */}
-                    <div className="flex items-center justify-between text-[11px] font-mono text-zinc-500 dark:text-zinc-400 border-b border-zinc-200/60 dark:border-zinc-800/60 pb-1.5">
+                    <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 border-b border-zinc-200/60 dark:border-zinc-800/60 pb-1.5">
                       <div className="flex items-center gap-2">
                         <div className="flex size-5 items-center justify-center rounded-[3.5px] bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
                           {isAntigravity ? (
-                            <Bot className="size-3 text-indigo-500" />
+                            <AntigravityIcon className="size-3 text-indigo-500" />
                           ) : isClaude ? (
-                            <AnthropicIcon className="size-3 text-[var(--accent-claude)]" />
+                            <ClaudeIcon className="size-3 text-[var(--accent-claude)]" />
                           ) : (
                             <OpenAIIcon className="size-3 text-[var(--status-awake)]" />
                           )}
                         </div>
-                        <span className="font-semibold text-zinc-900 dark:text-zinc-200">
+                        <span className="font-medium text-zinc-900 dark:text-zinc-200">
                           {model.replace(" (Thinking)", "")}
                         </span>
                         <span className="text-zinc-400 dark:text-zinc-600">·</span>
@@ -879,7 +888,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                       </div>
 
                       {msg.durationSeconds ? (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-[3.5px] bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/60 text-zinc-500 font-mono">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-[3.5px] bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/60 text-zinc-500">
                           {msg.durationSeconds}s
                         </span>
                       ) : null}
@@ -887,7 +896,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
 
                     {/* Collapsible Model Reasoning Accordion */}
                     {msg.thinking && msg.thinking.trim().length > 0 && (
-                      <div className="w-full py-0.5 select-text font-mono text-xs">
+                      <div className="w-full py-0.5 select-text text-xs">
                         <button
                           type="button"
                           onClick={() => toggleThinkingAccordion(msg.id)}
@@ -899,7 +908,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                             <ChevronRight className="size-3 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-transform" />
                           )}
                           <Brain className="size-3.5 text-zinc-500 dark:text-zinc-400" />
-                          <span className="font-medium text-[11px]">
+                          <span className="font-medium text-xs">
                             {isGenerating && idx === messages.length - 1 && !msg.content ? (
                               <span className="inline-flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
                                 <span>Thinking</span>
@@ -917,7 +926,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                         </button>
 
                         {msg.isThinkingExpanded !== false && (
-                          <div className="mt-1.5 rounded-[3.5px] bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/70 dark:border-zinc-800/70 p-3 text-[11px] text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto scrollbar-thin">
+                          <div className="mt-1.5 rounded-[3.5px] bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/70 dark:border-zinc-800/70 p-3 text-xs text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto scrollbar-thin">
                             {msg.thinking}
                           </div>
                         )}
@@ -932,7 +941,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                     {/* Interactive Question Card */}
                     {msg.question && (
                       <div className="rounded-[3.5px] border border-amber-200 dark:border-amber-800/60 bg-amber-50/40 dark:bg-amber-950/20 p-3.5 space-y-2.5">
-                        <div className="flex items-center gap-1.5 text-amber-900 dark:text-amber-200 font-mono text-[11px] font-bold uppercase tracking-wider">
+                        <div className="flex items-center gap-1.5 text-amber-900 dark:text-amber-200 text-xs font-semibold uppercase tracking-wider">
                           <HelpCircle className="size-3.5 text-amber-600 dark:text-amber-400" />
                           <span>Clarification / Input Needed</span>
                         </div>
@@ -946,7 +955,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                                 key={oIdx}
                                 type="button"
                                 onClick={() => handleSendPrompt(opt)}
-                                className="px-3 py-1.5 text-xs font-mono font-medium border border-amber-300 dark:border-amber-700 bg-white dark:bg-[#18181c] text-amber-900 dark:text-amber-100 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors cursor-pointer rounded-[3.5px] shadow-2xs"
+                                className="px-3 py-1.5 text-xs font-medium border border-amber-300 dark:border-amber-700 bg-white dark:bg-[#18181c] text-amber-900 dark:text-amber-100 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors cursor-pointer rounded-[3.5px] shadow-2xs"
                               >
                                 {opt}
                               </button>
@@ -965,7 +974,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                         />
                       ) : isGenerating && idx === messages.length - 1 ? (
                         !msg.thinking ? (
-                          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400 dark:text-zinc-500 py-1">
+                          <div className="flex items-center gap-2 text-xs text-zinc-400 dark:text-zinc-500 py-1">
                             <Loader2 className="size-3.5 text-zinc-400 dark:text-zinc-500 animate-spin" />
                             <span>Generating response... ({liveElapsedSec.toFixed(1)}s)</span>
                           </div>
@@ -979,7 +988,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                       if (quickOptions.length === 0) return null;
                       return (
                         <div className="pt-2">
-                          <div className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 mb-2 flex items-center gap-1.5">
+                          <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2 flex items-center gap-1.5">
                             <Sparkles className="size-3 text-indigo-500" />
                             <span>Quick Selection:</span>
                           </div>
@@ -989,7 +998,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                                 key={oIdx}
                                 type="button"
                                 onClick={() => handleSendPrompt(opt)}
-                                className="group flex items-center gap-2 px-3 py-1.5 text-xs font-mono font-medium border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-[#16161c] text-zinc-800 dark:text-zinc-200 hover:border-indigo-500/60 dark:hover:border-indigo-400/60 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 hover:text-indigo-600 dark:hover:text-indigo-300 transition-all cursor-pointer rounded-[3.5px] shadow-2xs"
+                                className="group flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-[#16161c] text-zinc-800 dark:text-zinc-200 hover:border-indigo-500/60 dark:hover:border-indigo-400/60 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 hover:text-indigo-600 dark:hover:text-indigo-300 transition-all cursor-pointer rounded-[3.5px] shadow-2xs"
                               >
                                 <span>{opt}</span>
                                 <ArrowRight className="size-3 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-indigo-500" />
@@ -1069,10 +1078,10 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
             ))}
 
             {isGenerating && activeChat?.state === "working" && (
-              <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 dark:text-zinc-400 pl-1 py-1">
+              <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 pl-1 py-1">
                 <Loader2 className="size-3 text-amber-500 animate-spin" />
                 <span>
-                  Running tool {activeChat.activeTool || ""} on branch [{activeLane?.branch || "main"}]...
+                  Running tool {activeChat.activeTool || ""} on branch {activeLane?.branch || "main"}...
                 </span>
               </div>
             )}
@@ -1098,18 +1107,18 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
           {/* Action Toolbar */}
           <div className="flex items-center justify-between px-2.5 py-1.5 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#141418] rounded-[3.5px]">
             {/* Left Controls */}
-            <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
+            <div className="flex flex-wrap items-center gap-1.5 text-xs">
               {/* Model Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="flex h-6 items-center gap-1.5 border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 text-[11px] text-zinc-800 dark:text-zinc-200 hover:border-zinc-400 transition-colors font-mono cursor-pointer rounded-[3.5px]"
+                    className="flex h-6 items-center gap-1.5 border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 text-xs text-zinc-800 dark:text-zinc-200 hover:border-zinc-400 transition-colors cursor-pointer rounded-[3.5px]"
                   >
                     {isAntigravity ? (
-                      <Bot className="size-3 text-indigo-500 shrink-0" />
+                      <AntigravityIcon className="size-3 text-indigo-500 shrink-0" />
                     ) : isClaude ? (
-                      <AnthropicIcon className="size-3 text-[var(--accent-claude)] shrink-0" />
+                      <ClaudeIcon className="size-3 text-[var(--accent-claude)] shrink-0" />
                     ) : (
                       <OpenAIIcon className="size-3 text-[var(--status-awake)] shrink-0" />
                     )}
@@ -1121,13 +1130,13 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                   {availableModelGroups.map((group, gIdx) => (
                     <DropdownMenuGroup key={group.group}>
                       {gIdx > 0 && <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800 my-1" />}
-                      <DropdownMenuLabel className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 py-1 font-mono">
+                      <DropdownMenuLabel className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 py-1">
                         {group.group.includes("Anthropic") ? (
-                          <AnthropicIcon className="size-3 text-[var(--accent-claude)]" />
+                          <ClaudeIcon className="size-3 text-[var(--accent-claude)]" />
                         ) : group.group.includes("OpenAI") ? (
                           <OpenAIIcon className="size-3 text-[var(--status-awake)]" />
                         ) : (
-                          <Bot className="size-3 text-indigo-500" />
+                          <AntigravityIcon className="size-3 text-indigo-500" />
                         )}
                         <span>{group.group}</span>
                       </DropdownMenuLabel>
@@ -1147,9 +1156,9 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                           >
                             <div className="flex items-center gap-2">
                               {isAnthropic ? (
-                                <AnthropicIcon className="size-3 text-[var(--accent-claude)] shrink-0" />
+                                <ClaudeIcon className="size-3 text-[var(--accent-claude)] shrink-0" />
                               ) : isGemini ? (
-                                <Bot className="size-3 text-indigo-500 shrink-0" />
+                                <AntigravityIcon className="size-3 text-indigo-500 shrink-0" />
                               ) : (
                                 <OpenAIIcon className="size-3 text-[var(--status-awake)] shrink-0" />
                               )}
@@ -1172,7 +1181,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="flex h-6 items-center gap-1 border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 text-[11px] text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 transition-colors font-mono cursor-pointer rounded-[3.5px]"
+                    className="flex h-6 items-center gap-1 border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 text-xs text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 transition-colors cursor-pointer rounded-[3.5px]"
                   >
                     <Sliders className="size-2.5 text-zinc-500" />
                     <span>Mode: {mode}</span>
@@ -1180,7 +1189,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" side="top" className="w-56 bg-white dark:bg-[#16161b] border border-zinc-200 dark:border-zinc-800 shadow-lg text-xs p-1 rounded-[3.5px] font-sans">
-                  <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 py-1 font-mono">
+                  <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 py-1">
                     Execution Mode
                   </DropdownMenuLabel>
                   {[
@@ -1214,7 +1223,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                   type="button"
                   onClick={() => clearChatHistory(currentChatId)}
                   title="Clear chat history for this worktree session"
-                  className="flex h-6 items-center gap-1 border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 text-[11px] font-mono text-zinc-500 hover:text-red-500 hover:border-red-400/50 transition-colors cursor-pointer rounded-[3.5px]"
+                  className="flex h-6 items-center gap-1 border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 text-xs text-zinc-500 hover:text-red-500 hover:border-red-400/50 transition-colors cursor-pointer rounded-[3.5px]"
                 >
                   <RotateCcw className="size-2.5" />
                   <span>Clear</span>
@@ -1237,14 +1246,14 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
                 {isRecording ? <MicOff className="size-3" /> : <Mic className="size-3" />}
               </button>
 
-              <span className="hidden sm:inline font-mono text-[9px] text-zinc-400">
-                [⇧⏎ line · ⏎ send]
+              <span className="hidden sm:inline text-[10px] text-zinc-400">
+                ⇧⏎ newline · ⏎ send
               </span>
               <button
                 type="button"
                 onClick={() => handleSendPrompt(inputPrompt)}
                 disabled={!inputPrompt.trim() && !isGenerating}
-                className={`flex h-6 items-center gap-1 px-3 text-[11px] font-mono font-semibold transition-all rounded-[3.5px] ${
+                className={`flex h-6 items-center gap-1 px-3 text-xs font-semibold transition-all rounded-[3.5px] ${
                   inputPrompt.trim()
                     ? "bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 hover:opacity-90 shadow-2xs cursor-pointer"
                     : "bg-zinc-200 dark:bg-zinc-800 text-zinc-400 opacity-60 cursor-not-allowed"
