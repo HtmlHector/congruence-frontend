@@ -6,7 +6,7 @@ declare global {
 }
 
 const connectionString =
-  process.env.DATABASE_URL || "postgresql://traceback:traceback@localhost:5432/traceback_dev";
+  process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/congruence_dev";
 
 export const pool =
   global.__pgPool ||

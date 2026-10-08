@@ -14,8 +14,17 @@ import { NewWorkspaceModal } from "@/components/workspace/NewWorkspaceModal";
 import { NewWorktreeModal } from "@/components/workspace/NewWorktreeModal";
 import { WorkspaceContextMenu } from "@/components/workspace/WorkspaceContextMenu";
 
+import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
+
 function WorkspaceAppContent() {
+  const router = useRouter();
+  const { isLoaded, isSignedIn } = useAuth();
   const {
+    currentTenant,
+    tenants,
+    workspaceNotFound,
+    isWorkspaceLoading,
     mode,
     project,
     isLoading,
@@ -33,6 +42,76 @@ function WorkspaceAppContent() {
     isSettingsOpen,
     setIsSettingsOpen,
   } = useWorkspace();
+
+  if (!isLoaded || isWorkspaceLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-[var(--background)] text-[var(--foreground)]">
+        <div className="flex items-center gap-2 text-xs font-mono text-zinc-500">
+          <span className="animate-spin text-emerald-500">⠋</span>
+          <span>Loading workspace context...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoaded && !isSignedIn) {
+    router.replace("/sign-in");
+    return null;
+  }
+
+  if (workspaceNotFound) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-[var(--background)] text-[var(--foreground)] p-6">
+        <div className="max-w-md w-full text-center border border-zinc-200 dark:border-zinc-800 rounded-lg p-8 bg-white dark:bg-[#121216] shadow-sm">
+          <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+            !
+          </div>
+          <h1 className="text-base font-semibold mb-2">Workspace Not Found</h1>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6 leading-relaxed">
+            The requested workspace does not exist or you do not have permission to view it.
+          </p>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => router.push("/workspace")}
+              className="w-full py-2 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 text-xs font-medium rounded-[3.5px] hover:opacity-90 transition-opacity cursor-pointer"
+            >
+              Go to Your Workspaces
+            </button>
+            <button
+              onClick={() => setIsNewWorkspaceOpen(true)}
+              className="w-full py-2 border border-zinc-300 dark:border-zinc-700 text-xs font-medium rounded-[3.5px] hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              + Create New Workspace
+            </button>
+          </div>
+        </div>
+        <NewWorkspaceModal open={isNewWorkspaceOpen} onOpenChange={setIsNewWorkspaceOpen} />
+      </div>
+    );
+  }
+
+  if (tenants.length === 0 && !currentTenant) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-[var(--background)] text-[var(--foreground)] p-6">
+        <div className="max-w-md w-full text-center border border-zinc-200 dark:border-zinc-800 rounded-lg p-8 bg-white dark:bg-[#121216] shadow-sm">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+            +
+          </div>
+          <h1 className="text-base font-semibold mb-2">No Workspaces Found</h1>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6 leading-relaxed">
+            You haven't created any workspaces yet. Create your first workspace to start collaborating.
+          </p>
+          <button
+            onClick={() => setIsNewWorkspaceOpen(true)}
+            className="w-full py-2 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 text-xs font-medium rounded-[3.5px] hover:opacity-90 transition-opacity cursor-pointer"
+          >
+            + Create Your First Workspace
+          </button>
+        </div>
+        <NewWorkspaceModal open={isNewWorkspaceOpen} onOpenChange={setIsNewWorkspaceOpen} />
+      </div>
+    );
+  }
 
   const renderActiveView = () => {
     if (isLoading) {

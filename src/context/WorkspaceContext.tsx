@@ -84,8 +84,10 @@ export interface WorktreeChat {
 }
 
 interface WorkspaceContextType {
-  currentTenant: WorkspaceTenant;
+  currentTenant: WorkspaceTenant | null;
   tenants: WorkspaceTenant[];
+  workspaceNotFound: boolean;
+  isWorkspaceLoading: boolean;
   switchTenant: (tenantId: string) => void;
   createTenant: (name: string, plan?: "Free" | "Pro" | "Enterprise") => Promise<WorkspaceTenant>;
   isNewWorkspaceOpen: boolean;
@@ -208,8 +210,6 @@ interface WorkspaceContextType {
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
 
-
-
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const params = useParams();
@@ -220,80 +220,21 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     user?.primaryEmailAddress?.emailAddress ||
     user?.emailAddresses?.[0]?.emailAddress ||
     "";
-  const userDisplayName =
-    user?.fullName ||
-    (user?.firstName ? `${user.firstName}'s Workspace` : "Personal Workspace");
 
-  const [tenants, setTenants] = useState<WorkspaceTenant[]>(() => {
-    if (workspaceSlugOrId) {
-      const formatted = workspaceSlugOrId
-        .split(/[-_]/)
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ");
-      return [
-        {
-          id: workspaceSlugOrId,
-          name: formatted,
-          slug: workspaceSlugOrId,
-          role: "owner",
-          plan: "Pro",
-          ownerEmail: userEmail,
-          createdAt: new Date().toISOString().split("T")[0],
-          projectsCount: 1,
-        },
-      ];
-    }
-    return [
-      {
-        id: "personal",
-        name: userDisplayName,
-        slug: "personal",
-        role: "owner",
-        plan: "Pro",
-        ownerEmail: userEmail,
-        createdAt: new Date().toISOString().split("T")[0],
-        projectsCount: 0,
-      },
-    ];
-  });
-
-  const [currentTenant, setCurrentTenant] = useState<WorkspaceTenant>(() => {
-    if (workspaceSlugOrId) {
-      const formatted = workspaceSlugOrId
-        .split(/[-_]/)
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ");
-      return {
-        id: workspaceSlugOrId,
-        name: formatted,
-        slug: workspaceSlugOrId,
-        role: "owner",
-        plan: "Pro",
-        ownerEmail: userEmail,
-        createdAt: new Date().toISOString().split("T")[0],
-        projectsCount: 1,
-      };
-    }
-    return {
-      id: "personal",
-      name: userDisplayName,
-      slug: "personal",
-      role: "owner",
-      plan: "Pro",
-      ownerEmail: userEmail,
-      createdAt: new Date().toISOString().split("T")[0],
-      projectsCount: 0,
-    };
-  });
+  const [tenants, setTenants] = useState<WorkspaceTenant[]>([]);
+  const [currentTenant, setCurrentTenant] = useState<WorkspaceTenant | null>(null);
+  const [workspaceNotFound, setWorkspaceNotFound] = useState(false);
+  const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(true);
 
   // Fetch live workspaces directly from Docker PostgreSQL
   useEffect(() => {
     async function loadWorkspacesFromDb() {
+      setIsWorkspaceLoading(true);
       try {
         const res = await fetch("/api/workspaces");
         if (res.ok) {
           const rows = await res.json();
-          if (Array.isArray(rows) && rows.length > 0) {
+          if (Array.isArray(rows)) {
             const mapped: WorkspaceTenant[] = rows.map((r: any) => ({
               id: r.workspace_id,
               name: r.name,
@@ -316,14 +257,24 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
               );
               if (matched) {
                 setCurrentTenant(matched);
+                setWorkspaceNotFound(false);
+              } else {
+                setCurrentTenant(null);
+                setWorkspaceNotFound(true);
               }
             } else if (mapped.length > 0) {
               setCurrentTenant(mapped[0]);
+              setWorkspaceNotFound(false);
+            } else {
+              setCurrentTenant(null);
+              setWorkspaceNotFound(false);
             }
           }
         }
       } catch (err) {
         console.warn("Could not load workspaces from DB API:", err);
+      } finally {
+        setIsWorkspaceLoading(false);
       }
     }
     loadWorkspacesFromDb();
@@ -331,7 +282,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   // Sync currentTenant when route param changes
   useEffect(() => {
-    if (!workspaceSlugOrId) return;
+    if (!workspaceSlugOrId) {
+      setWorkspaceNotFound(false);
+      return;
+    }
+    if (isWorkspaceLoading) return;
 
     const existing = tenants.find(
       (t) => t.slug === workspaceSlugOrId || t.id === workspaceSlugOrId
@@ -339,29 +294,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
     if (existing) {
       setCurrentTenant(existing);
+      setWorkspaceNotFound(false);
     } else {
-      const formatted = workspaceSlugOrId
-        .split(/[-_]/)
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ");
-      const autoTenant: WorkspaceTenant = {
-        id: workspaceSlugOrId,
-        name: formatted,
-        slug: workspaceSlugOrId,
-        role: "owner",
-        plan: "Pro",
-        ownerEmail: userEmail,
-        createdAt: new Date().toISOString().split("T")[0],
-        projectsCount: 1,
-      };
-      setTenants((prev) =>
-        prev.some((t) => t.id === autoTenant.id || t.slug === autoTenant.slug)
-          ? prev
-          : [autoTenant, ...prev]
-      );
-      setCurrentTenant(autoTenant);
+      setCurrentTenant(null);
+      setWorkspaceNotFound(true);
     }
-  }, [workspaceSlugOrId, tenants, userEmail]);
+  }, [workspaceSlugOrId, tenants, isWorkspaceLoading]);
 
   const [isNewWorkspaceOpen, setIsNewWorkspaceOpen] = useState(false);
   const [mode, setMode] = useState<WorkspaceViewMode>("deck");
@@ -1884,6 +1822,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       value={{
         currentTenant,
         tenants,
+        workspaceNotFound,
+        isWorkspaceLoading,
         switchTenant,
         createTenant,
         isNewWorkspaceOpen,

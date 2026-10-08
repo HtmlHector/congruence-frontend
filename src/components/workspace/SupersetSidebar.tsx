@@ -74,7 +74,7 @@ export function SupersetSidebar() {
   const userEmail =
     user?.primaryEmailAddress?.emailAddress ||
     user?.emailAddresses?.[0]?.emailAddress ||
-    currentTenant.ownerEmail ||
+    currentTenant?.ownerEmail ||
     "";
   const userInitial = (user?.firstName || user?.fullName || userEmail || "U")
     .charAt(0)
@@ -242,12 +242,12 @@ export function SupersetSidebar() {
               className="flex items-center gap-2 px-1.5 py-1 text-left rounded-[3.5px] hover:bg-zinc-200/70 dark:hover:bg-zinc-800 transition-colors cursor-pointer min-w-0 max-w-[190px]"
             >
               <div className="flex size-5 shrink-0 items-center justify-center bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-bold text-[10px] rounded-[3.5px]">
-                {currentTenant.name.charAt(0)}
+                {currentTenant?.name?.charAt(0) || "W"}
               </div>
               <div className="flex flex-col min-w-0 leading-tight">
                 <div className="flex items-center gap-1 min-w-0">
                   <span className="truncate font-semibold text-xs text-zinc-900 dark:text-zinc-100">
-                    {currentTenant.name}
+                    {currentTenant?.name || "Select Workspace"}
                   </span>
                   <ChevronDown className="size-2.5 text-zinc-400 shrink-0" />
                 </div>
@@ -266,7 +266,7 @@ export function SupersetSidebar() {
                 key={t.id}
                 onClick={() => switchTenant(t.id)}
                 className={`flex items-center justify-between px-2.5 py-1.5 rounded-[3.5px] cursor-pointer ${
-                  t.id === currentTenant.id
+                  t.id === currentTenant?.id
                     ? "bg-zinc-100 dark:bg-zinc-800/80 font-semibold text-zinc-950 dark:text-white"
                     : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
                 }`}
@@ -281,7 +281,7 @@ export function SupersetSidebar() {
                   <span className="text-[9px] font-mono px-1 py-0.2 rounded-[3.5px] bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 uppercase">
                     {t.plan}
                   </span>
-                  {t.id === currentTenant.id && (
+                  {t.id === currentTenant?.id && (
                     <Check className="size-3 text-emerald-500" />
                   )}
                 </div>

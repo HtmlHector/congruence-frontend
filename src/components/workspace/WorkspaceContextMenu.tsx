@@ -90,9 +90,9 @@ export function WorkspaceContextMenu({ children }: WorkspaceContextMenuProps) {
       </ContextMenuTrigger>
       <ContextMenuContent className="w-64 bg-white/95 dark:bg-[#121216]/95 border border-zinc-200 dark:border-zinc-800 rounded-[3.5px] shadow-2xl p-1 text-xs">
         <ContextMenuLabel className="text-[10px] uppercase font-mono tracking-wider text-zinc-400 dark:text-zinc-500 px-2 py-1 flex items-center justify-between">
-          <span>{currentTenant.name || "Workspace"}</span>
+          <span>{currentTenant?.name || "Workspace"}</span>
           <span className="font-mono text-[9px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">
-            {currentTenant.plan}
+            {currentTenant?.plan || "Free"}
           </span>
         </ContextMenuLabel>
 
