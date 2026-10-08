@@ -404,13 +404,15 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
   const startTimeRef = useRef<number | null>(null);
 
   // Harness connection state from the backend status endpoint. Only used to
-  // *positively* detect a disconnected relatable harness; when the backend is
-  // unreachable we stay quiet and let the honest stream error speak.
+  // *positively* detect a relatable harness that is not connected; when the
+  // backend is unreachable we stay quiet and let the honest stream error speak.
   const [harnessStatus, setHarnessStatus] = useState<IntegrationsStatusData | null>(null);
   const agentHarnessKey = isClaude ? "claude" : isCodex ? "codex" : isAntigravity ? "antigravity" : null;
   const harnessInfo = agentHarnessKey ? harnessStatus?.harnesses?.[agentHarnessKey] : undefined;
+  // Anything other than positively-connected counts as not runnable:
+  // "disconnected", a pending sign-in ("awaiting_user"), or an errored one.
   const harnessDisconnected = Boolean(
-    agentHarnessKey && harnessInfo?.supports_login && harnessInfo.state === "disconnected"
+    agentHarnessKey && harnessInfo?.supports_login && harnessInfo.state !== "connected"
   );
 
   useEffect(() => {
