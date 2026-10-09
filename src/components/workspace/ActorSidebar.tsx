@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface FileNode {
   name: string;
@@ -387,7 +388,12 @@ export function ActorSidebar() {
             <div className="flex items-center gap-2 min-w-0">
               {isDir ? (
                 <span className="text-zinc-400 dark:text-zinc-500 size-3.5 flex items-center justify-center shrink-0">
-                  {isExpanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                  <ChevronRight
+                    className={cn(
+                      "size-3.5 transition-transform duration-150 ease-[var(--ease-out)]",
+                      isExpanded && "rotate-90 text-zinc-600 dark:text-zinc-300"
+                    )}
+                  />
                 </span>
               ) : (
                 <span className="size-3.5 shrink-0" />
@@ -399,7 +405,7 @@ export function ActorSidebar() {
             </div>
 
             {/* Quick Actions on Hover */}
-            <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity">
+            <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0 transition-opacity duration-150">
               {isDir && (
                 <button
                   type="button"
@@ -431,21 +437,27 @@ export function ActorSidebar() {
     });
   };
 
-  if (actorSidebarCollapsed) return null;
-
   return (
-    <aside className="flex h-full w-[280px] shrink-0 flex-col border-l border-zinc-200 dark:border-zinc-800 bg-[#FAFAFA] dark:bg-[#0E0E12] text-xs select-none transition-all duration-150 z-20 font-sans">
+    <aside
+      className={cn(
+        "flex h-full shrink-0 flex-col border-l border-zinc-200 dark:border-zinc-800 bg-[#FAFAFA] dark:bg-[#0E0E12] text-xs select-none transition-[width,min-width,max-width,opacity] duration-200 ease-[var(--ease-out)] z-20 font-sans overflow-hidden",
+        actorSidebarCollapsed
+          ? "w-0 min-w-0 max-w-0 border-l-0 opacity-0 pointer-events-none"
+          : "w-[280px] min-w-[280px] max-w-[280px] opacity-100"
+      )}
+    >
       {/* 1. TOP HEADER & THREE-WAY TAB SWITCHER */}
       <div className="h-10 px-2.5 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/70 dark:bg-[#0E0E12] shrink-0">
         <div className="flex items-center bg-zinc-200/60 dark:bg-zinc-800/60 p-0.5 rounded-[3.5px] text-xs">
           <button
             type="button"
             onClick={() => setActiveMode("files")}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] font-medium transition-all cursor-pointer ${
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] font-medium transition-all duration-140 ease-[var(--ease-out)] active:scale-[0.98] cursor-pointer",
               activeMode === "files"
                 ? "bg-white dark:bg-[#18181D] text-zinc-950 dark:text-white shadow-xs"
                 : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-            }`}
+            )}
           >
             <Folder className="size-3.5 text-zinc-500 dark:text-zinc-400" />
             <span>Files</span>
@@ -457,11 +469,12 @@ export function ActorSidebar() {
               setActiveMode("git");
               loadGit();
             }}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] font-medium transition-all cursor-pointer ${
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] font-medium transition-all duration-140 ease-[var(--ease-out)] active:scale-[0.98] cursor-pointer",
               activeMode === "git"
                 ? "bg-white dark:bg-[#18181D] text-zinc-950 dark:text-white shadow-xs"
                 : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-            }`}
+            )}
           >
             <GitBranch className="size-3.5 text-zinc-500 dark:text-zinc-400" />
             <span>Git</span>
@@ -475,11 +488,12 @@ export function ActorSidebar() {
           <button
             type="button"
             onClick={() => setActiveMode("actors")}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] font-medium transition-all cursor-pointer ${
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] font-medium transition-all duration-140 ease-[var(--ease-out)] active:scale-[0.98] cursor-pointer",
               activeMode === "actors"
                 ? "bg-white dark:bg-[#18181D] text-zinc-950 dark:text-white shadow-xs"
                 : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-            }`}
+            )}
           >
             <Users className="size-3.5 text-zinc-500 dark:text-zinc-400" />
             <span>Leases</span>
@@ -490,7 +504,7 @@ export function ActorSidebar() {
           type="button"
           onClick={toggleActorSidebar}
           title="Close sidebar (⌘J)"
-          className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer rounded-[3.5px]"
+          className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-all duration-140 ease-[var(--ease-out)] active:scale-[0.96] cursor-pointer rounded-[3.5px]"
         >
           <PanelRightClose className="size-4" />
         </button>

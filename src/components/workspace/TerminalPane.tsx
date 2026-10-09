@@ -82,6 +82,7 @@ export function TerminalPane() {
   const localInputBuffer = useRef<string>("");
   const commandHistory = useRef<string[]>([]);
   const historyIdx = useRef<number>(-1);
+  const queuedCommandRef = useRef<string | null>(pendingCommand || null);
 
   // Initialize theme based on user/system preference
   useEffect(() => {
@@ -238,6 +239,17 @@ export function TerminalPane() {
 
       printPrompt();
 
+      // If a command was queued while xterm was mounting and not connected via WS yet, dispatch it
+      if (queuedCommandRef.current) {
+        const queued = queuedCommandRef.current;
+        setTimeout(() => {
+          if (!ptyIdRef.current) {
+            executeCommand(queued);
+            queuedCommandRef.current = null;
+          }
+        }, 150);
+      }
+
       // Connect to real backend WebSocket
       try {
         const wsProtocol =
@@ -282,6 +294,18 @@ export function TerminalPane() {
               term.write(msg.data);
             } else if (msg.type === "pty_spawned") {
               ptyIdRef.current = msg.pty_id;
+              if (queuedCommandRef.current) {
+                const queued = queuedCommandRef.current;
+                queuedCommandRef.current = null;
+                ws?.send(
+                  JSON.stringify({
+                    type: "pty_input",
+                    pty_id: msg.pty_id,
+                    lane_id: activeLane?.id,
+                    data: `${queued}\n`,
+                  })
+                );
+              }
             } else if (msg.type === "pty_input_denied") {
               term.writeln(`\r\n\x1b[31m[Denied] ${msg.reason}\x1b[0m\r\n`);
             }
@@ -513,6 +537,25 @@ export function TerminalPane() {
           ? "\x1b[38;2;4;120;87m14 passed (1.8s)\x1b[0m"
           : "\x1b[38;2;16;185;129m14 passed (1.8s)\x1b[0m"
       );
+    } else if (
+      cmd.startsWith("claude login") ||
+      cmd.startsWith("codex login") ||
+      cmd.startsWith("agy") ||
+      bin === "claude" ||
+      bin === "codex" ||
+      bin === "agy"
+    ) {
+      term.writeln(
+        isLight
+          ? `\x1b[38;2;169;78;25m◆ Initiating interactive CLI session for ${cmd}...\x1b[0m`
+          : `\x1b[38;2;232;128;74m◆ Initiating interactive CLI session for ${cmd}...\x1b[0m`
+      );
+      term.writeln("Opening provider authentication gateway...");
+      term.writeln(
+        isLight
+          ? "\x1b[38;2;4;120;87m✓ Session ready. Authenticate or run commands directly.\x1b[0m"
+          : "\x1b[38;2;16;185;129m✓ Session ready. Authenticate or run commands directly.\x1b[0m"
+      );
     } else {
       term.writeln(`Executed: ${cmd}`);
     }
@@ -522,6 +565,7 @@ export function TerminalPane() {
   // Run pending external commands
   useEffect(() => {
     if (!pendingCommand) return;
+    queuedCommandRef.current = pendingCommand;
     executeCommand(pendingCommand);
     clearPendingCommand();
   }, [pendingCommand, clearPendingCommand]);

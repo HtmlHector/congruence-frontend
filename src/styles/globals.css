@@ -380,7 +380,7 @@
 @keyframes modal-scale-in {
   from {
     opacity: 0;
-    transform: translate(-50%, -48%) scale(0.96);
+    transform: translate(-50%, -49%) scale(0.975);
   }
   to {
     opacity: 1;
@@ -395,7 +395,7 @@
   }
   to {
     opacity: 0;
-    transform: translate(-50%, -48%) scale(0.96);
+    transform: translate(-50%, -49%) scale(0.975);
   }
 }
 
@@ -463,32 +463,40 @@
   }
 }
 
-/* Radix animation hook classes */
-.animate-dialog-overlay-in {
+/* Radix animation hook classes & attribute fallbacks */
+.animate-dialog-overlay-in,
+[data-radix-dialog-overlay][data-state="open"] {
   animation: overlay-fade-in var(--duration-fast) var(--ease-out) forwards;
 }
-.animate-dialog-overlay-out {
+.animate-dialog-overlay-out,
+[data-radix-dialog-overlay][data-state="closed"] {
   animation: overlay-fade-out var(--duration-fast) ease-in forwards;
 }
 
-.animate-dialog-content-in {
+.animate-dialog-content-in,
+[data-radix-dialog-content][data-state="open"] {
   animation: modal-scale-in var(--duration-normal) var(--ease-out) forwards;
 }
-.animate-dialog-content-out {
+.animate-dialog-content-out,
+[data-radix-dialog-content][data-state="closed"] {
   animation: modal-scale-out var(--duration-fast) ease-in forwards;
 }
 
-.animate-popover-in {
+.animate-popover-in,
+[data-radix-popper-content-wrapper][data-state="open"] {
   animation: popover-enter var(--duration-fast) var(--ease-out) forwards;
 }
-.animate-popover-out {
+.animate-popover-out,
+[data-radix-popper-content-wrapper][data-state="closed"] {
   animation: popover-exit var(--duration-fast) ease-in forwards;
 }
 
-.animate-accordion-down {
+.animate-accordion-down,
+[data-radix-accordion-content][data-state="open"] {
   animation: accordion-down var(--duration-normal) var(--ease-out) forwards;
 }
-.animate-accordion-up {
+.animate-accordion-up,
+[data-radix-accordion-content][data-state="closed"] {
   animation: accordion-up var(--duration-normal) var(--ease-out) forwards;
 }
 

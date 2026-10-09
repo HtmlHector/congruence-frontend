@@ -19,7 +19,14 @@ import {
   GitDiffData,
   ActivityData,
   GrantData,
+  IntegrationsStatusData,
+  SupportedHarness,
 } from "@/lib/api";
+import {
+  HARNESS_LOGIN_COMMANDS,
+  HARNESS_LOGIN_HINTS,
+} from "@/lib/harness-login";
+import { toast } from "sonner";
 import {
   playCompletionChime,
   playInputNeededChime,
@@ -212,6 +219,8 @@ interface WorkspaceContextType {
   pendingCommand: string | null;
   clearPendingCommand: () => void;
   executeTerminalCommand: (command: string) => void;
+  integrationsStatus: IntegrationsStatusData | null;
+  refreshIntegrationsStatus: () => Promise<IntegrationsStatusData | null>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -521,7 +530,33 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const { data: tenantProjectsData } = useTenantProjectsQuery(currentTenant?.id);
   const [pendingCommand, setPendingCommand] = useState<string | null>(null);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
+  const logActivity = useCallback((text: string) => {
+    setActivityEvents((prev) => [
+      { id: Date.now().toString(), timestamp: "just now", text },
+      ...prev.slice(0, 19),
+    ]);
+  }, []);
   const [tabOrders, setTabOrders] = useState<Record<string, string[]>>({});
+
+  const [integrationsStatus, setIntegrationsStatus] = useState<IntegrationsStatusData | null>(null);
+  const prevConnectedHarnessesRef = useRef<Set<string>>(new Set());
+
+  const refreshIntegrationsStatus = useCallback(async () => {
+    if (!projectId) return null;
+    try {
+      const status = await api.getIntegrationsStatus(projectId);
+      setIntegrationsStatus(status);
+      return status;
+    } catch {
+      return null;
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    if (projectId) {
+      refreshIntegrationsStatus();
+    }
+  }, [projectId, refreshIntegrationsStatus]);
 
   const [splitState, setSplitState] = useState<SplitState>({
     isSplit: false,
@@ -626,18 +661,36 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   const setGroupActiveTab = useCallback(
     (groupId: "primary" | "secondary", tabId: string) => {
+      const targetChat = chats.find((c) => c.id === tabId);
+      const isAiAgent = targetChat && targetChat.harness !== "Shell";
+      const harnessKey = isAiAgent ? (targetChat.harness.toLowerCase() as SupportedHarness) : null;
+      const isConnected = harnessKey ? integrationsStatus?.harnesses?.[harnessKey]?.state === "connected" : false;
+      const isDisconnected = isAiAgent && !isConnected;
+
+      let targetView: "chat" | "pty" = "chat";
+      if (targetChat?.harness === "Shell" || isDisconnected) {
+        targetView = "pty";
+      }
+
       setPaneGroups((prev) => {
-        const targetChat = chats.find((c) => c.id === tabId);
-        const isAiAgent = targetChat && targetChat.harness !== "Shell";
         return {
           ...prev,
           [groupId]: {
             ...prev[groupId],
             activeTabId: tabId,
-            ...(isAiAgent ? { agentView: "chat" } : targetChat?.harness === "Shell" ? { agentView: "pty" } : {}),
+            ...(targetChat ? { agentView: targetView } : {}),
           },
         };
       });
+
+      if (isDisconnected && harnessKey && HARNESS_LOGIN_COMMANDS[harnessKey]) {
+        const cmd = HARNESS_LOGIN_COMMANDS[harnessKey];
+        setPendingCommand(cmd);
+        toast.info(
+          `Opening terminal for ${targetChat?.harness} authentication (\`${cmd}\`) — ${HARNESS_LOGIN_HINTS[harnessKey]}`
+        );
+      }
+
       if (groupId === "primary") {
         if (tabId === "preview") setActiveTab("preview");
         else if (tabId === "changes") setActiveTab("changes");
@@ -647,7 +700,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         }
       }
     },
-    [chats]
+    [chats, integrationsStatus]
   );
 
   const setGroupAgentView = useCallback((groupId: "primary" | "secondary", view: "chat" | "pty") => {
@@ -919,6 +972,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       setChats((prev) => [...prev, newChat]);
       setActiveChatId(newChatId);
       setActiveTab("terminal");
+
+      const harnessKey = harness === "Shell" ? null : (harness.toLowerCase() as SupportedHarness);
+      const isConnected = harnessKey ? integrationsStatus?.harnesses?.[harnessKey]?.state === "connected" : false;
+      const isDisconnected = harness !== "Shell" && !isConnected;
+      const initialView: "chat" | "pty" = harness === "Shell" || isDisconnected ? "pty" : "chat";
+
       setPaneGroups((prev) => ({
         ...prev,
         primary: {
@@ -927,13 +986,22 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             ? prev.primary.tabIds
             : [...prev.primary.tabIds, newChatId],
           activeTabId: newChatId,
-          agentView: harness === "Shell" ? "pty" : "chat",
+          agentView: initialView,
         },
       }));
+
+      if (isDisconnected && harnessKey && HARNESS_LOGIN_COMMANDS[harnessKey]) {
+        const cmd = HARNESS_LOGIN_COMMANDS[harnessKey];
+        setPendingCommand(cmd);
+        toast.info(
+          `Opening terminal for ${harness} authentication (\`${cmd}\`) — ${HARNESS_LOGIN_HINTS[harnessKey]}`
+        );
+      }
+
       logActivity(`Created new ${harness} chat in worktree`);
       return newChatId;
     },
-    []
+    [integrationsStatus, logActivity]
   );
 
   const createChatInGroup = useCallback(
@@ -943,11 +1011,91 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       const defaultTitle = `${harness} Chat ${count}`;
       const newChatId = createChat(activeLaneId, harness, title || defaultTitle);
       addTabToGroup(groupId, newChatId);
-      setGroupAgentView(groupId, harness === "Shell" ? "pty" : "chat");
+
+      const harnessKey = harness === "Shell" ? null : (harness.toLowerCase() as SupportedHarness);
+      const isConnected = harnessKey ? integrationsStatus?.harnesses?.[harnessKey]?.state === "connected" : false;
+      const isDisconnected = harness !== "Shell" && !isConnected;
+
+      if (harness === "Shell" || isDisconnected) {
+        setGroupAgentView(groupId, "pty");
+      } else {
+        setGroupAgentView(groupId, "chat");
+      }
+
       return newChatId;
     },
-    [activeLaneId, chats, createChat, addTabToGroup, setGroupAgentView]
+    [activeLaneId, chats, createChat, addTabToGroup, setGroupAgentView, integrationsStatus]
   );
+
+  // Background polling for provider authentication resolution and auto-switch back to chat
+  useEffect(() => {
+    if (!projectId) return;
+
+    const isAnyPty =
+      paneGroups.primary.agentView === "pty" ||
+      paneGroups.secondary.agentView === "pty";
+
+    // Only actively poll if at least one pane group is currently in terminal (PTY) mode
+    if (!isAnyPty) return;
+
+    let consecutiveErrors = 0;
+    const timer = setInterval(async () => {
+      if (consecutiveErrors >= 3) return; // Pause polling if unauthorized or project not found
+      try {
+        const status = await api.getIntegrationsStatus(projectId);
+        if (!status) return;
+        consecutiveErrors = 0;
+        setIntegrationsStatus(status);
+
+        Object.entries(status.harnesses || {}).forEach(([hKey, hInfo]) => {
+          const wasConnected = prevConnectedHarnessesRef.current.has(hKey);
+          const isNowConnected = hInfo.state === "connected";
+
+          if (!wasConnected && isNowConnected) {
+            prevConnectedHarnessesRef.current.add(hKey);
+            toast.success(`${hInfo.label || hKey} authenticated successfully! Switched to chat.`);
+
+            // Automatically switch back to chat in any pane group
+            setPaneGroups((prev) => {
+              let updated = false;
+              const nextPrimary = { ...prev.primary };
+              const nextSecondary = { ...prev.secondary };
+
+              const primaryChat = chats.find((c) => c.id === prev.primary.activeTabId);
+              if (
+                primaryChat &&
+                primaryChat.harness.toLowerCase() === hKey &&
+                prev.primary.agentView === "pty"
+              ) {
+                nextPrimary.agentView = "chat";
+                updated = true;
+              }
+
+              const secondaryChat = chats.find((c) => c.id === prev.secondary.activeTabId);
+              if (
+                secondaryChat &&
+                secondaryChat.harness.toLowerCase() === hKey &&
+                prev.secondary.agentView === "pty"
+              ) {
+                nextSecondary.agentView = "chat";
+                updated = true;
+              }
+
+              return updated ? { primary: nextPrimary, secondary: nextSecondary } : prev;
+            });
+          } else if (isNowConnected) {
+            prevConnectedHarnessesRef.current.add(hKey);
+          } else {
+            prevConnectedHarnessesRef.current.delete(hKey);
+          }
+        });
+      } catch (err: any) {
+        consecutiveErrors += 1;
+      }
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [projectId, paneGroups, chats]);
 
   const openSplitWithTab = useCallback(
     (tabId: string, direction: SplitDirection = "vertical", side: "left" | "right" | "top" | "bottom" = "right") => {
@@ -1022,13 +1170,6 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [toggleSidebar, toggleActorSidebar, router]);
 
-
-  const logActivity = (text: string) => {
-    setActivityEvents((prev) => [
-      { id: Date.now().toString(), timestamp: "just now", text },
-      ...prev.slice(0, 19),
-    ]);
-  };
 
   const isHydratedRef = useRef(false);
   const STORAGE_KEY_PREFIX = "congruence:workspace:";
@@ -1304,6 +1445,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       setChats([]);
       setActiveLaneId(null);
       setActiveChatId(null);
+      setPaneGroups({
+        primary: { id: "primary", tabIds: ["preview"], activeTabId: "preview", agentView: "chat" },
+        secondary: { id: "secondary", tabIds: ["preview"], activeTabId: "preview", agentView: "chat" },
+      });
       try {
         localStorage.setItem(`congruence_cached_projects_${currentTenant.id}`, JSON.stringify([]));
       } catch {}
@@ -1960,6 +2105,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         pendingCommand,
         clearPendingCommand,
         executeTerminalCommand,
+        integrationsStatus,
+        refreshIntegrationsStatus,
       }}
     >
       {children}

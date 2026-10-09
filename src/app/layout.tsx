@@ -30,7 +30,10 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "congruence.dev — Your repository, your agents, and the running app. In one place.",
+  title: {
+    default: "Congruence",
+    template: "%s · Congruence",
+  },
   description:
     "A shared browser workspace for the coding agents you already use. Keep the files, terminal, and live preview together, then pick up from another device.",
   keywords: [
@@ -41,6 +44,11 @@ export const metadata: Metadata = {
     "browser workspace",
     "congruence",
   ],
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

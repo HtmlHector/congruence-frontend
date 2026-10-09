@@ -347,6 +347,7 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
     setMode: setWorkspaceMode,
     setActiveTab,
     executeTerminalCommand,
+    setGroupAgentView,
   } = useWorkspace();
 
   const effectiveChatId = chatIdOverride || activeChatId;
@@ -409,11 +410,8 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
   const [harnessStatus, setHarnessStatus] = useState<IntegrationsStatusData | null>(null);
   const agentHarnessKey = isClaude ? "claude" : isCodex ? "codex" : isAntigravity ? "antigravity" : null;
   const harnessInfo = agentHarnessKey ? harnessStatus?.harnesses?.[agentHarnessKey] : undefined;
-  // Anything other than positively-connected counts as not runnable:
-  // "disconnected", a pending sign-in ("awaiting_user"), or an errored one.
-  const harnessDisconnected = Boolean(
-    agentHarnessKey && harnessInfo?.supports_login && harnessInfo.state !== "connected"
-  );
+  const isConnected = agentHarnessKey ? harnessStatus?.harnesses?.[agentHarnessKey]?.state === "connected" : false;
+  const harnessDisconnected = Boolean(agentHarnessKey && !isConnected);
 
   useEffect(() => {
     const projId = project?.id;
@@ -436,20 +434,28 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
     // Re-check after each run completes so a terminal-side sign-in is picked up.
   }, [project?.id, agentHarnessKey, isGenerating]);
 
-  // While a harness is known-disconnected, poll so the banner clears as soon
-  // as the user finishes "Authenticate via Terminal" in the integrations modal.
+  // While a harness is known-disconnected, poll so the banner clears and the view
+  // switches back to chat as soon as the user completes terminal login.
   useEffect(() => {
     if (!harnessDisconnected) return;
     const projId = project?.id;
-    if (!projId) return;
+    if (!projId || !agentHarnessKey) return;
     const t = setInterval(() => {
       api
         .getIntegrationsStatus(projId)
-        .then((s) => setHarnessStatus(s))
+        .then((s) => {
+          setHarnessStatus(s);
+          if (s?.harnesses?.[agentHarnessKey]?.state === "connected") {
+            toast.success(`${harnessInfo?.label || agentHarnessKey} connected! Returned to chat.`);
+            setWorkspaceMode("hub");
+            setGroupAgentView("primary", "chat");
+            setGroupAgentView("secondary", "chat");
+          }
+        })
         .catch(() => {});
-    }, 5000);
+    }, 3000);
     return () => clearInterval(t);
-  }, [harnessDisconnected, project?.id]);
+  }, [harnessDisconnected, project?.id, agentHarnessKey, harnessInfo?.label, setWorkspaceMode, setGroupAgentView]);
 
   // Open the session terminal running the vendor's own login command for the
   // active harness. Used both for the explicit Connect action and for the
@@ -458,6 +464,8 @@ export function AgentChatPane({ chatIdOverride }: { chatIdOverride?: string } = 
     if (!agentHarnessKey) return;
     setWorkspaceMode("deck");
     setActiveTab("terminal");
+    setGroupAgentView("primary", "pty");
+    setGroupAgentView("secondary", "pty");
     const command = HARNESS_LOGIN_COMMANDS[agentHarnessKey];
     executeTerminalCommand(command);
     toast.success(

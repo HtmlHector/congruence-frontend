@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#141417"/>
+      <stop offset="100%" stop-color="#08080a"/>
+    </linearGradient>
+
+    <!-- Emerald Stream (Autonomous AI Agent) -->
+    <linearGradient id="agentEmerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <!-- Cyan/Indigo Stream (Engineering & Browser) -->
+    <linearGradient id="engCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+
+    <!-- Center Convergence Core -->
+    <linearGradient id="coreGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#a7f3d0"/>
+    </linearGradient>
+
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#10b981" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Container Surface -->
+  <rect width="32" height="32" rx="7.5" fill="url(#bg)"/>
+  <rect width="31" height="31" x="0.5" y="0.5" rx="7" stroke="#27272a" stroke-width="1"/>
+
+  <!-- Left Stream: Engineering / Code (Geometric Chevron Bracket) -->
+  <path 
+    d="M7 16 L12.5 10.5 L15 13 L11.5 16 L15 19 L12.5 21.5 Z" 
+    fill="#e4e4e7" 
+    opacity="0.9"
+  />
+
+  <!-- Right Stream: Autonomous AI Agent (Forward Converging Chevron) -->
+  <path 
+    d="M25 16 L19.5 10.5 L17 13 L20.5 16 L17 19 L19.5 21.5 Z" 
+    fill="url(#agentEmerald)" 
+    filter="url(#glow)"
+  />
+
+  <!-- Center Diamond: The Running Web Workspace Convergence -->
+  <polygon 
+    points="16,8.5 20.5,16 16,23.5 11.5,16" 
+    fill="none" 
+    stroke="url(#engCyan)" 
+    stroke-width="1.6" 
+    stroke-linejoin="round"
+  />
+
+  <circle cx="16" cy="16" r="2" fill="url(#coreGlow)"/>
+</svg>
