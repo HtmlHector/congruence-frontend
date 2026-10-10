@@ -1,6 +1,6 @@
 "use client";
 
-import { ClerkProvider } from "@clerk/nextjs";
+import { ClerkProvider, useAuth } from "@clerk/nextjs";
 import {
   QueryClient,
   isServer,
@@ -9,7 +9,10 @@ import {
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { configureApiClient } from "@/lib/api";
+import { AuthProvider } from "@/providers/auth-provider";
+import { Toaster } from "sonner";
 
 const CACHE_KEY = "frontend-starter-query-cache-v1";
 const CACHE_MAX_AGE = 1000 * 60 * 60 * 24;
@@ -69,6 +72,31 @@ const localStoragePersister = createAsyncStoragePersister({
   },
 });
 
+function ApiClientConfigurator() {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  if (!publishableKey) return null;
+  return <ActiveApiClientConfigurator />;
+}
+
+function ActiveApiClientConfigurator() {
+  const { getToken, isSignedIn } = useAuth();
+  const isConfiguredRef = useRef(false);
+
+  useEffect(() => {
+    if (isSignedIn && !isConfiguredRef.current) {
+      configureApiClient(
+        () => getToken(),
+        () => getToken({ skipCache: true }),
+      );
+      isConfiguredRef.current = true;
+    } else if (!isSignedIn) {
+      isConfiguredRef.current = false;
+    }
+  }, [getToken, isSignedIn]);
+
+  return null;
+}
+
 function QueryProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(getQueryClient);
 
@@ -81,7 +109,11 @@ function QueryProviders({ children }: { children: React.ReactNode }) {
         buster: CACHE_KEY,
       }}
     >
-      {children}
+      <ApiClientConfigurator />
+      <AuthProvider>
+        {children}
+        <Toaster richColors position="top-right" />
+      </AuthProvider>
       {process.env.NODE_ENV === "development" ? (
         <ReactQueryDevtools initialIsOpen={false} />
       ) : null}
@@ -92,7 +124,6 @@ function QueryProviders({ children }: { children: React.ReactNode }) {
 function OptionalClerkProvider({ children }: { children: React.ReactNode }) {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-  // Clerk is fully wired app-wide when configured, but remains optional for a clean starter checkout.
   return publishableKey ? (
     <ClerkProvider publishableKey={publishableKey}>{children}</ClerkProvider>
   ) : (

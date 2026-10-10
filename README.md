@@ -25,13 +25,24 @@ Open <http://localhost:3000>.
 
 ## Included foundations
 
-- Next.js App Router, TypeScript, Tailwind CSS, and shadcn/ui (Base UI preset).
-- Clerk provider and `src/proxy.ts`; middleware does not protect routes. No auth UI is included.
-- TanStack Query v5 with query-cache persistence in localStorage, a stable browser QueryClient, a 24-hour retention limit, and an SSR-safe persister. The home page demonstrates a local deterministic query; it does not call a backend.
-- **Privacy:** localStorage is readable by JavaScript on the page and is not secure storage. Do not persist secrets, tokens, or sensitive/user-specific query data. Clear or scope persisted caches when adding auth; disable persistence if product data should not survive reloads.
-- Assistant UI's React library is installed. No chat screen, runtime, provider, API key, or AI request is configured; use the library to compose a product chat after choosing its runtime/backend.
-- `apiFetch<T>` is a typed Axios boundary with configurable base URL and structured `ApiError`s; no backend is selected.
-- React Hook Form and Zod are available through `src/lib/forms.ts`.
+- **Next.js App Router, TypeScript, Tailwind CSS v4, and shadcn/ui**: Clean architecture with Radix UI primitives (`card`, `input`, `label`, `dropdown-menu`, `button`).
+- **Complete Authentication Flow (`/sign-in`, `/sign-up`, `/sso-callback`, `/complete`)**:
+  - Full Clerk auth flow with social OAuth (Google, GitHub) and enterprise SSO.
+  - Custom branded form controllers with verification codes and live profile configuration.
+  - Seamless fallback: app remains 100% runnable without Clerk credentials in dev/test mode.
+- **Billing & Stripe Integration (`/billing`, `/billing/success`)**:
+  - Configurable tier matrix (`Free`, `Pro`, `Enterprise`) via environment variables.
+  - Hosted Stripe Checkout session initiation and Customer Portal redirects.
+  - Real-time plan status and checkout confirmation views.
+- **Multi-Tenant Workspace Scaffolding (`/[workspaceId]`)**:
+  - URL-driven tenant routing with `WorkspaceBinder` injecting the `X-Workspace-Id` header across all API calls.
+  - Compatible with FastAPI backend starter PostgreSQL Row-Level Security (RLS) policies.
+  - Clean error classification and tenant isolation boundaries.
+- **TanStack Query v5 & Safe Persistence**:
+  - User-scoped localStorage persistence with automatic eviction on user sign-out.
+  - Pre-configured `apiClient` singleton wiring Bearer tokens and tenant headers.
+- **Forms & Validation**:
+  - React Hook Form and Zod schemas available through `src/lib/forms.ts`.
 
 ## Commands
 

@@ -7,6 +7,15 @@ vi.mock("@clerk/nextjs", () => ({
   ClerkProvider: ({ children }: { children: ReactNode }) => (
     <div data-testid="clerk-provider">{children}</div>
   ),
+  useAuth: () => ({
+    getToken: vi.fn().mockResolvedValue(null),
+    isSignedIn: false,
+    userId: null,
+  }),
+  useUser: () => ({
+    isSignedIn: false,
+    user: null,
+  }),
 }));
 
 afterEach(() => {
