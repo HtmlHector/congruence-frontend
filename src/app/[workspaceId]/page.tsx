@@ -3,7 +3,7 @@
 import { useWorkspaceQuery } from "@/features/workspace/hooks/use-workspace-query";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Building2, CreditCard, Layers, ShieldCheck, Loader2 } from "lucide-react";
+import { ArrowLeft, Blocks, Building2, CreditCard, Layers, ShieldCheck, Loader2 } from "lucide-react";
 
 export default function WorkspaceDashboardPage() {
   const params = useParams<{ workspaceId: string }>();
@@ -57,6 +57,13 @@ export default function WorkspaceDashboardPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <Link
+            href={`/${workspaceId}/integrations`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-border bg-card hover:bg-muted transition-colors"
+          >
+            <Blocks className="w-3.5 h-3.5" />
+            <span>Integrations</span>
+          </Link>
           <Link
             href="/billing"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-border bg-card hover:bg-muted transition-colors"
