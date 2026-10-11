@@ -253,6 +253,22 @@ export function IntegrationsModal({ open, onOpenChange }: IntegrationsModalProps
             }
           />
 
+          {/* 6. Command Code */}
+          <HarnessLoginCard
+            name="commandcode"
+            icon={<SquareTerminal className="size-4" />}
+            accentClass="bg-[rgba(245,158,11,0.12)] border-[rgba(245,158,11,0.25)] text-amber-500"
+            title="Command Code CLI"
+            subtitle="Adaptive Taste-1 neuro-symbolic agent & Cohere"
+            statusData={statusData}
+            onLogin={handleLaunchHarnessLogin}
+            detail={
+              <>
+                Runs <code className="font-mono text-[10px] bg-[var(--surface-secondary)] px-1 py-0.5 rounded">cmd auth login</code> on the host VM: authenticates your developer taste profile and API key. Credentials persist in <code className="font-mono text-[10px] bg-[var(--surface-secondary)] px-1 py-0.5 rounded">~/.config/commandcode/auth.json</code>.
+              </>
+            }
+          />
+
           {/* 6. Aider — no vendor sign-in exists to relay; keys come from the Vault */}
           {statusData?.harnesses?.aider && (
             <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-card)] p-4 space-y-3">

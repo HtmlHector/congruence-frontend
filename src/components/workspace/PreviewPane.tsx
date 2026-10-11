@@ -167,12 +167,12 @@ export function PreviewPane() {
     ? `${API_BASE_URL.replace("/api/v1", "")}${activeService.url}${
         previewToken ? `?token=${encodeURIComponent(previewToken)}` : ""
       }`
-    : `http://localhost:3000`;
+    : `http://localhost:3001`;
 
   // Browser navigation history & omnibar
-  const [history, setHistory] = useState<string[]>(["https://www.google.com/search?q=wwe"]);
+  const [history, setHistory] = useState<string[]>(["http://localhost:3001"]);
   const [historyIndex, setHistoryIndex] = useState<number>(0);
-  const [urlInput, setUrlInput] = useState<string>("https://www.google.com/search?q=wwe");
+  const [urlInput, setUrlInput] = useState<string>("http://localhost:3001");
   const [isNavigating, setIsNavigating] = useState<boolean>(false);
   const [iframeKey, setIframeKey] = useState<number>(0);
 
@@ -181,7 +181,7 @@ export function PreviewPane() {
   const [previewTheme, setPreviewTheme] = useState<"light" | "dark">("light");
   const [activeTab, setActiveTab] = useState<string>("all");
 
-  const currentUrl = history[historyIndex] || "https://www.google.com/search?q=wwe";
+  const currentUrl = history[historyIndex] || "http://localhost:3001";
 
   useEffect(() => {
     setUrlInput(currentUrl);
@@ -197,9 +197,65 @@ export function PreviewPane() {
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
+  const [detectedPorts, setDetectedPorts] = useState<number[]>([3001, 5173, 3000]);
+  const [isCapturingSnapshot, setIsCapturingSnapshot] = useState<boolean>(false);
+  const [snapshotStatus, setSnapshotStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!project?.id || !activeLane?.id) return;
+    let active = true;
+    const fetchPorts = async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch(`${API_BASE_URL}/projects/${project.id}/lanes/${activeLane.id}/ports`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok && active) {
+          const data = await res.json();
+          if (data.ports && data.ports.length > 0) {
+            setDetectedPorts(Array.from(new Set([3001, 5173, ...data.ports])));
+          }
+        }
+      } catch {}
+    };
+    fetchPorts();
+    const interval = setInterval(fetchPorts, 3000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [project?.id, activeLane?.id, getToken]);
+
+  const handleCaptureSnapshot = async () => {
+    if (!project?.id || !activeLane?.id) return;
+    setIsCapturingSnapshot(true);
+    setSnapshotStatus(null);
+    try {
+      const token = await getToken();
+      const portMatch = currentUrl.match(/:(\d{2,5})/);
+      const port = portMatch ? parseInt(portMatch[1], 10) : 3001;
+      const res = await fetch(
+        `${API_BASE_URL}/projects/${project.id}/lanes/${activeLane.id}/screenshot?port=${port}`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setSnapshotStatus(data.status === "ready" ? `✓ Preview Verified Healthy on port ${port} (HTTP ${data.status_code})` : `⚠ Offline on port ${port}`);
+        setTimeout(() => setSnapshotStatus(null), 4000);
+      }
+    } catch (e: any) {
+      setSnapshotStatus(`Verification failed: ${e.message}`);
+    } finally {
+      setIsCapturingSnapshot(false);
+    }
+  };
+
   const isLocalhost =
     currentUrl.includes("localhost") ||
     currentUrl.includes("127.0.0.1") ||
+    currentUrl === "http://localhost:3001" ||
     currentUrl === "http://localhost:3000" ||
     currentUrl === defaultLocalUrl;
 
@@ -263,11 +319,11 @@ export function PreviewPane() {
 
     let target = raw;
 
-    if (
+    if (raw.startsWith("localhost") || raw.startsWith("127.0.0.1")) {
+      target = `http://${raw}`;
+    } else if (
       !raw.startsWith("http://") &&
-      !raw.startsWith("https://") &&
-      !raw.includes("localhost") &&
-      !raw.includes("127.0.0.1")
+      !raw.startsWith("https://")
     ) {
       if (!raw.includes(".")) {
         target = `https://www.google.com/search?q=${encodeURIComponent(raw)}`;
@@ -373,7 +429,7 @@ export function PreviewPane() {
             <button
               type="button"
               onClick={() => handleNavigate(undefined, "https://www.google.com/search?q=wwe")}
-              className={`px-2.5 py-0.5 rounded-full cursor-pointer transition-colors ${
+              className={`px-2 py-0.5 rounded-full cursor-pointer transition-colors ${
                 isGoogleSearch
                   ? "bg-[#1A73E8] text-white font-medium"
                   : "text-[#5F6368] dark:text-[#9AA0A6] hover:bg-black/5 dark:hover:bg-white/10"
@@ -381,22 +437,41 @@ export function PreviewPane() {
             >
               Google
             </button>
-            <button
-              type="button"
-              onClick={() => handleNavigate(undefined, defaultLocalUrl)}
-              className={`px-2.5 py-0.5 rounded-full cursor-pointer transition-colors ${
-                isLocalhost
-                  ? "bg-[#188038] text-white font-medium"
-                  : "text-[#5F6368] dark:text-[#9AA0A6] hover:bg-black/5 dark:hover:bg-white/10"
-              }`}
-            >
-              Localhost:3000
-            </button>
+            {detectedPorts.map((p) => {
+              const pUrl = `http://localhost:${p}`;
+              const isPActive = currentUrl.includes(`:${p}`);
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => handleNavigate(undefined, pUrl)}
+                  className={`px-2 py-0.5 rounded-full cursor-pointer transition-colors flex items-center gap-1 ${
+                    isPActive
+                      ? "bg-[#188038] text-white font-medium shadow-xs"
+                      : "text-[#5F6368] dark:text-[#9AA0A6] hover:bg-black/5 dark:hover:bg-white/10"
+                  }`}
+                >
+                  <span className={`size-1.5 rounded-full ${isPActive ? "bg-white animate-pulse" : "bg-emerald-500"}`} />
+                  <span>:{p}</span>
+                </button>
+              );
+            })}
           </div>
         </form>
 
         {/* Right Chrome Controls */}
         <div className="flex items-center gap-1 shrink-0 text-[#5F6368] dark:text-[#9AA0A6]">
+          <button
+            type="button"
+            onClick={handleCaptureSnapshot}
+            disabled={isCapturingSnapshot}
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-sans rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer text-indigo-600 dark:text-indigo-400 font-medium"
+            title="Agent Autonomous DOM Snapshot & Health Verification"
+          >
+            <Camera className="size-3.5" />
+            <span className="hidden sm:inline">{isCapturingSnapshot ? "Scanning..." : "Verify"}</span>
+          </button>
+
           <button
             type="button"
             onClick={() => window.open(currentUrl, "_blank")}
@@ -458,6 +533,15 @@ export function PreviewPane() {
           </DropdownMenu>
         </div>
       </div>
+
+      {snapshotStatus && (
+        <div className={`px-4 py-1.5 text-xs font-mono flex items-center justify-between border-b ${
+          snapshotStatus.includes("Healthy") ? "bg-emerald-950 text-emerald-300 border-emerald-800" : "bg-amber-950 text-amber-300 border-amber-800"
+        }`}>
+          <span>{snapshotStatus}</span>
+          <button type="button" onClick={() => setSnapshotStatus(null)} className="hover:opacity-75">✕</button>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 2. MAIN BROWSER CONTENT STAGE                                             */}
@@ -942,55 +1026,16 @@ export function PreviewPane() {
             </div>
           ) : (
             /* ===================================================================== */
-            /* VIEW: LOCALHOST DEV SERVER APP PREVIEW                                */
+            /* VIEW: LOCALHOST DEV SERVER APP PREVIEW (REAL LIVE IFRAME)             */
             /* ===================================================================== */
-            <div className="flex flex-1 flex-col h-full overflow-hidden">
-              <nav className="flex h-12 items-center justify-between border-b border-zinc-200 dark:border-[#222227] px-4 select-none bg-white dark:bg-[#0E0E12] shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex size-7 items-center justify-center bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 font-bold text-xs">
-                    🛍
-                  </div>
-                  <span className="font-semibold text-xs tracking-tight text-zinc-900 dark:text-zinc-100">
-                    {project?.name || "meridian-api"}
-                  </span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
-                    v1.0.4-dev
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleNavigate(undefined, "https://www.google.com/search?q=wwe")}
-                    className="px-3 py-1 text-xs font-sans bg-[#1A73E8] text-white rounded-full font-medium"
-                  >
-                    Open Google Search ↗
-                  </button>
-                </div>
-              </nav>
-
-              <div className="flex-1 p-8 overflow-y-auto bg-white dark:bg-[#0A0A0C]">
-                <div className="max-w-2xl mx-auto space-y-6 text-center py-12">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-mono">
-                    <span className="size-2 bg-emerald-500 animate-pulse rounded-full" />
-                    <span>Local Dev Server Running on Port 3000</span>
-                  </div>
-                  <h1 className="text-2xl font-bold text-zinc-950 dark:text-white font-sans">
-                    {project?.name || "meridian-api"} Live Preview
-                  </h1>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    Your local app server is connected and ready. You can switch between this local web application and live Google search in the top address bar.
-                  </p>
-                  <div className="flex justify-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleNavigate(undefined, "https://www.google.com/search?q=wwe")}
-                      className="px-5 py-2 bg-[#1A73E8] hover:bg-[#1557B0] text-white text-xs font-sans font-medium rounded-full shadow-sm"
-                    >
-                      Search Google for Anything
-                    </button>
-                  </div>
-                </div>
-              </div>
+            <div className="flex-1 flex flex-col h-full w-full relative bg-[#09090b]">
+              <iframe
+                key={iframeKey}
+                src={currentUrl.startsWith("http://") || currentUrl.startsWith("https://") ? currentUrl : `http://${currentUrl}`}
+                title="Local Web Application Preview"
+                className="w-full h-full border-none flex-1"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"
+              />
             </div>
           )}
 

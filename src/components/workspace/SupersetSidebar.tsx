@@ -7,26 +7,17 @@ import {
   Search,
   Plus,
   Settings,
-  SlidersHorizontal,
   Folder,
   FolderOpen,
   FolderPlus,
   PanelLeft,
   PanelLeftOpen,
-  ChevronLeft,
-  ChevronRight,
   ChevronDown,
+  ChevronRight,
   Sparkles,
-  Flag,
   GitBranch,
   LayoutDashboard,
-  Zap,
   Check,
-  MoreHorizontal,
-  GitFork,
-  ExternalLink,
-  Layers,
-  Building2,
   Github,
 } from "lucide-react";
 import {
@@ -43,7 +34,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { api, GitHubStatusData } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useGithubStatusQuery, useGithubReposQuery } from "@/hooks/queries/useWorkspaceQueries";
 
 export function SupersetSidebar() {
@@ -53,21 +44,16 @@ export function SupersetSidebar() {
     switchTenant,
     setIsNewWorkspaceOpen,
     projects,
-    project,
     projectId,
     switchProject,
     lanes,
     activeLaneId,
     switchLane,
-    submitPrompt,
     mode,
     setMode,
     chats,
     setIsIntegrationsOpen,
-    setIsSettingsOpen,
-    setSettingsTab,
     setIsSearchOpen,
-    isCloneOpen,
     setIsCloneOpen,
     openNewWorktreeModal,
     sidebarCollapsed,
@@ -75,6 +61,7 @@ export function SupersetSidebar() {
   } = useWorkspace();
 
   const { user, isLoaded: isUserLoaded, isSignedIn } = useUser();
+
   const userEmail =
     user?.primaryEmailAddress?.emailAddress ||
     user?.emailAddresses?.[0]?.emailAddress ||
@@ -83,10 +70,11 @@ export function SupersetSidebar() {
   const userInitial = (user?.firstName || user?.fullName || userEmail || "U")
     .charAt(0)
     .toUpperCase();
+  const userAvatarUrl = user?.imageUrl;
 
-  const [activeItem, setActiveItem] = useState<string>("deck");
+  const [activeNav, setActiveNav] = useState<string>("deck");
   const [openProjects, setOpenProjects] = useState<Record<string, boolean>>({});
-  
+
   // TanStack Query for GitHub Status and prefetching repos into local storage cache
   const { data: ghStatus } = useGithubStatusQuery();
   useGithubReposQuery({
@@ -105,22 +93,10 @@ export function SupersetSidebar() {
     setIsCloneOpen(true);
   };
 
-  const handleAddLane = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    const branchName = prompt(
-      "Enter new Git branch / worktree name (e.g. feat/payment-integration):",
-      "feat/new-feature"
-    );
-    if (branchName && branchName.trim()) {
-      submitPrompt(`Worktree branch: ${branchName.trim()}`, "Claude", "default", "default");
-    }
-  };
-
   // Keyboard shortcut for New Project (⌘N)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "n") {
-        // Only trigger if not typing in an input or textarea
         const target = e.target as HTMLElement;
         if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
         e.preventDefault();
@@ -131,29 +107,45 @@ export function SupersetSidebar() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [setIsCloneOpen]);
 
-  // Get active agents inside a specific worktree lane
-  const getWorktreeAgentBadges = (laneId: string) => {
+  // Active agents badge inside a worktree lane
+  const getWorktreeAgentBadges = (laneId: string, isDefaultBranch: boolean = false) => {
     const laneChats = chats.filter((c) => c.laneId === laneId);
     const hasClaude = laneChats.some((c) => c.harness === "Claude");
     const hasCodex = laneChats.some((c) => c.harness === "Codex");
     const hasAntigravity = laneChats.some((c) => c.harness === "Antigravity");
 
+    if (isDefaultBranch && laneChats.length === 0) {
+      return (
+        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08]" title="Codex & Antigravity">
+          <span title="OpenAI Codex" className="flex items-center">
+            <OpenAIIcon className="size-3 text-[#10B981]" />
+          </span>
+          <span title="Google Antigravity" className="flex items-center">
+            <AntigravityIcon className="size-3 text-[#818CF8]" />
+          </span>
+        </div>
+      );
+    }
+
+    const showCodex = hasCodex || (!hasClaude && !hasAntigravity);
+    const showGemini = hasAntigravity || (!hasClaude && !hasCodex);
+
     return (
-      <div className="flex items-center -space-x-1 shrink-0">
+      <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08]" title="Active agents">
         {hasClaude && (
-          <div className="flex size-3.5 items-center justify-center rounded-[3.5px] bg-[#FAFAFA] dark:bg-[#16161B] ring-1 ring-zinc-300 dark:ring-zinc-700">
-            <ClaudeIcon className="size-2.5 text-[#E8804A]" />
-          </div>
+          <span title="Claude Code" className="flex items-center">
+            <ClaudeIcon className="size-3 text-[#E8804A]" />
+          </span>
         )}
-        {hasCodex && (
-          <div className="flex size-3.5 items-center justify-center rounded-[3.5px] bg-[#FAFAFA] dark:bg-[#16161B] ring-1 ring-zinc-300 dark:ring-zinc-700">
-            <OpenAIIcon className="size-2.5 text-[#10B981]" />
-          </div>
+        {showCodex && (
+          <span title="OpenAI Codex" className="flex items-center">
+            <OpenAIIcon className="size-3 text-[#10B981]" />
+          </span>
         )}
-        {hasAntigravity && (
-          <div className="flex size-3.5 items-center justify-center rounded-[3.5px] bg-[#FAFAFA] dark:bg-[#16161B] ring-1 ring-zinc-300 dark:ring-zinc-700">
-            <AntigravityIcon className="size-2.5 text-indigo-500" />
-          </div>
+        {showGemini && (
+          <span title="Google Antigravity" className="flex items-center">
+            <AntigravityIcon className="size-3 text-[#818CF8]" />
+          </span>
         )}
       </div>
     );
@@ -161,68 +153,69 @@ export function SupersetSidebar() {
 
   return (
     <aside
-      className={`flex h-full shrink-0 flex-col border-r border-zinc-200 dark:border-[#222227] bg-[#FAFAFA] dark:bg-[#0E0E12] text-xs select-none transition-[width] duration-200 ease-[var(--ease-out)] z-30 font-sans overflow-hidden ${
-        sidebarCollapsed ? "w-[48px]" : "w-[240px]"
+      className={`relative flex h-full shrink-0 flex-col border-r border-zinc-200/80 dark:border-zinc-800/80 bg-[#FAFAFA] dark:bg-[#0E0E12] text-xs select-none z-30 font-sans overflow-hidden transition-[width] duration-150 ease-out ${
+        sidebarCollapsed ? "w-[52px]" : "w-[270px]"
       }`}
     >
-      {/* Top Workspace Tenant Selector / Header (h-10) */}
-      <div className="flex h-10 shrink-0 items-center justify-between px-2.5 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-[#0E0E12] overflow-hidden">
+      {/* Top Workspace Header */}
+      <div className="flex h-10 shrink-0 items-center justify-between px-2 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-[#0E0E12]/80">
         {sidebarCollapsed ? (
           <div className="w-full flex items-center justify-center">
             <button
               type="button"
               onClick={toggleSidebar}
               title="Expand sidebar (⌘B)"
-              className="flex size-7 items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer rounded-[3.5px]"
+              className="flex size-7 items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 rounded-[3.5px] transition-colors cursor-pointer"
             >
-              <PanelLeftOpen className="size-4" />
+              <PanelLeftOpen className="size-3.5" />
             </button>
           </div>
         ) : (
           <>
-            {/* Tenant Switcher Dropdown */}
+            {/* Workspace Switcher */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="flex items-center gap-2 px-1.5 py-1 text-left rounded-[3.5px] hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer min-w-0 max-w-[170px]"
+                  className="flex items-center gap-2 px-1.5 py-1 text-left rounded-[3.5px] hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer flex-1 min-w-0 mr-1 group data-[state=open]:bg-zinc-200/60 dark:data-[state=open]:bg-zinc-800/60"
                 >
-                  <div className="flex size-5.5 shrink-0 items-center justify-center bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-semibold text-xs rounded-[3.5px] shadow-xs">
-                    {currentTenant?.name?.charAt(0) || "W"}
+                  <div className="flex size-5.5 shrink-0 items-center justify-center bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-bold text-[11px] rounded-[3.5px] shadow-[0_1px_2px_rgba(0,0,0,0.1)] ring-1 ring-black/10 dark:ring-white/10">
+                    {currentTenant?.name?.charAt(0) || userInitial || "H"}
                   </div>
-                  <div className="flex items-center gap-1 min-w-0">
-                    <span className="truncate font-semibold text-xs text-zinc-900 dark:text-zinc-100">
-                      {currentTenant?.name || "Select Workspace"}
+                  <div className="flex items-center gap-1 min-w-0 flex-1">
+                    <span className="truncate font-medium text-xs text-zinc-900 dark:text-zinc-100 tracking-tight">
+                      {currentTenant?.name || `${user?.firstName || "Hector"}'s Workspace`}
                     </span>
-                    <ChevronDown className="size-3 text-zinc-400 shrink-0" />
+                    <ChevronDown className="size-3 text-zinc-400 shrink-0 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-transform duration-150 group-data-[state=open]:rotate-180 ml-auto" />
                   </div>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                className="w-60 bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 rounded-[3.5px] shadow-2xl p-1 text-xs select-none z-50 font-sans"
+                sideOffset={6}
+                className="w-60 bg-white dark:bg-[#121216] border border-zinc-200/90 dark:border-zinc-800/90 rounded-[3.5px] shadow-xl p-1 text-xs select-none z-50 font-sans"
               >
-                <DropdownMenuLabel className="text-[10px] uppercase font-semibold text-zinc-400 px-2 py-1">
-                  Your Workspaces
+                <DropdownMenuLabel className="text-[10px] uppercase font-semibold text-zinc-400 px-2 py-1 tracking-wider">
+                  Workspaces
                 </DropdownMenuLabel>
                 {tenants.map((t) => (
                   <DropdownMenuItem
                     key={t.id}
                     onClick={() => switchTenant(t.id)}
-                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-[3.5px] cursor-pointer text-xs ${
+                    className={`flex items-center justify-between px-2 py-1.5 rounded-[3.5px] cursor-pointer text-xs transition-colors duration-100 ${
                       t.id === currentTenant?.id
-                        ? "bg-zinc-100 dark:bg-zinc-800/80 font-semibold text-zinc-950 dark:text-white"
+                        ? "bg-zinc-100 dark:bg-zinc-800/80 font-medium text-zinc-950 dark:text-white"
                         : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="flex size-4.5 items-center justify-center bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-bold text-[10px] rounded-[3.5px]">
+                      <div className="flex size-5 items-center justify-center bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 font-bold text-[10px] rounded-[3px]">
                         {t.name.charAt(0)}
                       </div>
                       <span className="truncate">{t.name}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] px-1.5 py-0.2 rounded-[2px] bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 uppercase font-medium">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-[2.5px] bg-zinc-200/70 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 uppercase font-medium">
                         {t.plan}
                       </span>
                       {t.id === currentTenant?.id && (
@@ -234,10 +227,10 @@ export function SupersetSidebar() {
                 <DropdownMenuSeparator className="my-1 bg-zinc-100 dark:bg-zinc-800" />
                 <DropdownMenuItem
                   onClick={() => setIsNewWorkspaceOpen(true)}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 font-medium text-emerald-600 dark:text-emerald-400 text-xs"
+                  className="flex items-center gap-2 px-2 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 font-medium text-emerald-600 dark:text-emerald-400 text-xs transition-colors"
                 >
                   <Plus className="size-3.5" />
-                  <span>Create New Workspace</span>
+                  <span>Create Workspace</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -246,128 +239,134 @@ export function SupersetSidebar() {
               type="button"
               onClick={toggleSidebar}
               title="Collapse sidebar (⌘B)"
-              className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 rounded-[3.5px] transition-colors cursor-pointer"
+              className="flex size-7 shrink-0 items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 rounded-[3.5px] transition-colors cursor-pointer"
             >
-              <PanelLeft className="size-4" />
+              <PanelLeft className="size-3.5" />
             </button>
           </>
         )}
       </div>
 
-      {/* Primary Navigation Actions */}
+      {/* Primary Actions Navigation */}
       <div className="p-2 space-y-0.5 font-sans">
+        {/* New Project Button */}
         <button
           type="button"
           onClick={() => {
-            setActiveItem("new-project");
+            setActiveNav("new-project");
             handleNewProject();
           }}
           title={sidebarCollapsed ? "New Project (⌘N)" : undefined}
-          className={`flex w-full items-center ${
-            sidebarCollapsed ? "justify-center px-0" : "justify-between px-2.5"
-          } py-1.5 text-xs text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer rounded-[3.5px] group`}
+          className={`relative flex w-full items-center ${
+            sidebarCollapsed ? "justify-center px-0" : "justify-between px-2"
+          } py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer rounded-[3.5px] group font-medium`}
         >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <Plus className="size-4 text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 shrink-0" />
-            {!sidebarCollapsed && <span className="font-medium truncate">New Project</span>}
+          <div className="flex items-center gap-2 min-w-0">
+            <Plus className="size-3.5 text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 shrink-0 transition-colors" />
+            {!sidebarCollapsed && <span className="truncate">New Project</span>}
           </div>
           {!sidebarCollapsed && (
-            <kbd className="text-[10px] font-medium text-zinc-400 bg-zinc-200/50 dark:bg-zinc-800/50 px-1.5 py-0.2 rounded-[2px]">
+            <kbd className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 bg-zinc-200/40 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/60 px-1 py-0.5 rounded-[3px] font-medium leading-none tabular-nums shadow-[0_1px_0_rgba(0,0,0,0.02)]">
               ⌘N
             </kbd>
           )}
         </button>
 
+        {/* Mission Control Button */}
         <button
           type="button"
           onClick={() => {
-            setActiveItem("deck");
+            setActiveNav("deck");
             setMode("deck");
           }}
           title={sidebarCollapsed ? "Mission Control" : undefined}
-          className={`flex w-full items-center ${
-            sidebarCollapsed ? "justify-center px-0" : "gap-2.5 px-2.5"
-          } py-1.5 text-xs transition-colors cursor-pointer rounded-[3.5px] ${
+          className={`relative flex w-full items-center ${
+            sidebarCollapsed ? "justify-center px-0" : "gap-2 px-2"
+          } py-1.5 text-xs transition-colors cursor-pointer rounded-[3.5px] font-medium ${
             mode === "deck"
-              ? "bg-zinc-200/80 dark:bg-zinc-800/80 text-zinc-950 dark:text-white font-semibold shadow-xs"
-              : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60"
+              ? "bg-zinc-200/70 dark:bg-zinc-800/80 text-zinc-950 dark:text-white font-semibold shadow-xs"
+              : "text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50"
           }`}
         >
-          <LayoutDashboard className="size-4 text-zinc-500 shrink-0" />
+          <LayoutDashboard className={`size-3.5 shrink-0 transition-colors ${
+            mode === "deck" ? "text-zinc-950 dark:text-white" : "text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200"
+          }`} />
           {!sidebarCollapsed && <span className="truncate">Mission Control</span>}
         </button>
 
+        {/* Automations Button */}
         <button
           type="button"
           onClick={() => {
-            setActiveItem("automations");
+            setActiveNav("automations");
             setIsIntegrationsOpen(true);
           }}
           title={sidebarCollapsed ? "Automations" : undefined}
-          className={`flex w-full items-center ${
-            sidebarCollapsed ? "justify-center px-0" : "gap-2.5 px-2.5"
-          } py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer rounded-[3.5px]`}
+          className={`relative flex w-full items-center ${
+            sidebarCollapsed ? "justify-center px-0" : "gap-2 px-2"
+          } py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer rounded-[3.5px] font-medium group`}
         >
-          <Sparkles className="size-4 text-zinc-500 shrink-0" />
+          <Sparkles className="size-3.5 text-zinc-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors shrink-0" />
           {!sidebarCollapsed && <span className="truncate">Automations</span>}
         </button>
 
+        {/* Search Button */}
         <button
           type="button"
           onClick={() => {
-            setActiveItem("search");
+            setActiveNav("search");
             setIsSearchOpen(true);
           }}
           title={sidebarCollapsed ? "Search Workspace (⌘K)" : undefined}
-          className={`flex w-full items-center ${
-            sidebarCollapsed ? "justify-center px-0" : "justify-between px-2.5"
-          } py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer rounded-[3.5px] group`}
+          className={`relative flex w-full items-center ${
+            sidebarCollapsed ? "justify-center px-0" : "justify-between px-2"
+          } py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer rounded-[3.5px] group font-medium`}
         >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <Search className="size-4 text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 shrink-0" />
+          <div className="flex items-center gap-2 min-w-0">
+            <Search className="size-3.5 text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors shrink-0" />
             {!sidebarCollapsed && <span className="truncate">Search</span>}
           </div>
           {!sidebarCollapsed && (
-            <kbd className="text-[10px] font-medium text-zinc-400 bg-zinc-200/50 dark:bg-zinc-800/50 px-1.5 py-0.2 rounded-[2px]">
+            <kbd className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 bg-zinc-200/40 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/60 px-1 py-0.5 rounded-[3px] font-medium leading-none tabular-nums shadow-[0_1px_0_rgba(0,0,0,0.02)]">
               ⌘K
             </kbd>
           )}
         </button>
       </div>
 
-      <div className="mx-2 h-[1px] bg-zinc-200 dark:border-zinc-800/80 my-1" />
+      <div className="mx-2.5 h-px bg-zinc-200/80 dark:bg-zinc-800/80 my-1" />
 
       {/* Projects Hierarchy Tree */}
       {!sidebarCollapsed && (
-        <div className="flex-1 overflow-y-auto px-2 scrollbar-thin font-sans transition-opacity duration-150">
+        <div className="flex-1 overflow-y-auto px-2 scrollbar-thin font-sans">
           {/* Section Header */}
-          <div className="flex h-6 items-center justify-between px-1 text-[11px] uppercase font-semibold text-zinc-400 dark:text-zinc-500 tracking-wider">
+          <div className="flex h-6 items-center justify-between px-2 text-[10px] uppercase font-semibold text-zinc-400 dark:text-zinc-500 tracking-[0.06em]">
             <span>Projects</span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               <button
                 type="button"
                 onClick={handleNewProject}
                 title="New Project"
-                className="p-1 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 rounded-[2px] transition-colors cursor-pointer"
+                className="flex size-5 items-center justify-center hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 rounded-[3.5px] transition-colors cursor-pointer text-zinc-400"
               >
-                <Plus className="size-3.5" />
+                <Plus className="size-3" />
               </button>
               <button
                 type="button"
                 onClick={() => setIsCloneOpen(true)}
                 title="Open repository"
-                className="p-1 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 rounded-[2px] transition-colors cursor-pointer"
+                className="flex size-5 items-center justify-center hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 rounded-[3.5px] transition-colors cursor-pointer text-zinc-400"
               >
-                <FolderPlus className="size-3.5" />
+                <FolderPlus className="size-3" />
               </button>
             </div>
           </div>
 
           {/* Project Items & Nested Worktrees */}
-          <div className="mt-1 space-y-1">
+          <div className="mt-1 space-y-0.5">
             {projects.length === 0 ? (
               ghStatus?.connected ? (
-                <div className="px-3 py-5 text-center border border-zinc-200 dark:border-zinc-800 my-2 rounded-[3.5px] bg-zinc-50/50 dark:bg-[#121216]">
+                <div className="px-3 py-4 text-center border border-zinc-200/80 dark:border-zinc-800/80 my-2 rounded-[3.5px] bg-zinc-50/50 dark:bg-[#121216]/60">
                   <Folder className="size-4 text-zinc-400 mx-auto mb-1.5" />
                   <p className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">No repositories</p>
                   <p className="text-[11px] text-zinc-400 mt-0.5 mb-2.5">Open a repo to start working</p>
@@ -380,11 +379,11 @@ export function SupersetSidebar() {
                   </button>
                 </div>
               ) : (
-                <div className="px-3 py-4 text-center border border-zinc-200 dark:border-zinc-800 my-2 rounded-[3.5px] bg-zinc-50/50 dark:bg-[#121216]">
+                <div className="px-3 py-4 text-center border border-zinc-200/80 dark:border-zinc-800/80 my-2 rounded-[3.5px] bg-zinc-50/50 dark:bg-[#121216]/60">
                   <Github className="size-4 text-zinc-600 dark:text-zinc-400 mx-auto mb-1.5" />
                   <p className="text-xs text-zinc-800 dark:text-zinc-200 font-semibold">Connect GitHub</p>
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 mb-2.5 leading-tight">
-                    Connect your GitHub account to access and clone your repositories
+                    Access and clone your repositories
                   </p>
                   <button
                     type="button"
@@ -421,22 +420,31 @@ export function SupersetSidebar() {
                           switchProject(proj.id);
                         }
                       }}
-                      className={`flex cursor-pointer items-center justify-between px-2 py-1.5 text-xs transition-colors rounded-[3.5px] ${
+                      className={`group/proj flex cursor-pointer items-center justify-between px-2 py-1.5 text-xs transition-colors rounded-[3.5px] ${
                         isCurrentProj
-                          ? "font-semibold text-zinc-900 dark:text-zinc-100 bg-zinc-200/50 dark:bg-zinc-800/50"
-                          : "text-zinc-700 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60"
+                          ? "font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200/40 dark:hover:bg-zinc-800/40"
+                          : "text-zinc-700 dark:text-zinc-400 hover:bg-zinc-200/40 dark:hover:bg-zinc-800/40"
                       }`}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-zinc-400 dark:text-zinc-500">
+                          {isOpen ? (
+                            <ChevronDown className="size-3 text-zinc-400 group-hover/proj:text-zinc-700 dark:group-hover/proj:text-zinc-200 transition-transform" />
+                          ) : (
+                            <ChevronRight className="size-3 text-zinc-400 group-hover/proj:text-zinc-700 dark:group-hover/proj:text-zinc-200 transition-transform" />
+                          )}
+                        </span>
                         {isOpen ? (
-                          <FolderOpen className="size-3.5 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                          <FolderOpen className="size-3.5 text-zinc-600 dark:text-zinc-300 shrink-0" />
                         ) : (
                           <Folder className="size-3.5 text-zinc-500 dark:text-zinc-400 shrink-0" />
                         )}
-                        <span className="truncate">{proj.name}</span>
+                        <span className="truncate font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                          {proj.name}
+                        </span>
                       </div>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={(e) => {
@@ -444,21 +452,16 @@ export function SupersetSidebar() {
                             openNewWorktreeModal(proj.id);
                           }}
                           title="Create new worktree"
-                          className="opacity-0 group-hover/proj:opacity-100 p-0.5 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-300/60 dark:hover:bg-zinc-700/60 transition-all rounded-[2px] cursor-pointer"
+                          className="opacity-0 group-hover/proj:opacity-100 flex size-5 items-center justify-center hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-300/50 dark:hover:bg-zinc-700/50 transition-all rounded-[2.5px] cursor-pointer text-zinc-400"
                         >
-                          <Plus className="size-3 text-emerald-600 dark:text-emerald-400" />
+                          <Plus className="size-3" />
                         </button>
-                        <ChevronDown
-                          className={`size-3 text-zinc-400 transition-transform duration-150 ease-[var(--ease-out)] ${
-                            isOpen ? "" : "-rotate-90"
-                          }`}
-                        />
                       </div>
                     </div>
 
-                    {/* Nested Worktrees for this project */}
+                    {/* Nested Worktrees */}
                     {isOpen && isCurrentProj && (
-                      <div className="space-y-0.5 pl-2 border-l border-zinc-200 dark:border-zinc-800 ml-3 my-0.5">
+                      <div className="space-y-0.5 ml-3 pl-2.5 border-l border-zinc-200/80 dark:border-zinc-800/80 my-1">
                         {lanes.length === 0 ? (
                           <div className="px-2 py-1 text-[11px] text-zinc-400">
                             No worktrees yet
@@ -478,36 +481,45 @@ export function SupersetSidebar() {
                                   switchLane(lane.id);
                                   setMode("deck");
                                 }}
-                                className={`group flex cursor-pointer items-center justify-between px-2 py-1.5 text-xs transition-colors rounded-[3.5px] ${
+                                className={`group flex flex-col cursor-pointer px-2 py-1.5 text-xs transition-colors rounded-[3.5px] ${
                                   isLaneActive
-                                    ? "bg-zinc-200/80 dark:bg-zinc-800/80 text-zinc-950 dark:text-white font-medium"
-                                    : "text-zinc-700 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/40 hover:text-zinc-950 dark:hover:text-zinc-200"
+                                    ? "bg-zinc-200/75 dark:bg-zinc-800/80 text-zinc-950 dark:text-white shadow-2xs"
+                                    : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200/40 dark:hover:bg-zinc-800/40 hover:text-zinc-950 dark:hover:text-zinc-100"
                                 }`}
                                 title={`Git worktree branch: ${worktreeBranch}`}
                               >
-                                <div className="flex items-center gap-1.5 min-w-0">
-                                  <GitBranch
-                                    className={`size-3.5 shrink-0 ${
-                                      isLaneActive
-                                        ? "text-emerald-600 dark:text-emerald-400"
-                                        : "text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300"
-                                    }`}
-                                  />
-                                  <span className="truncate text-xs font-medium">
-                                    {worktreeBranch}
-                                  </span>
-                                  {isDefaultBranch && (
-                                    <span className="text-[10px] px-1.5 py-0.2 rounded-[2px] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
-                                      default
+                                {/* Line 1: Branch info and timestamp */}
+                                <div className="flex items-center justify-between gap-1.5 min-w-0 w-full">
+                                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <GitBranch
+                                      className={`size-3.5 shrink-0 transition-colors ${
+                                        isLaneActive
+                                          ? "text-emerald-500 dark:text-emerald-400"
+                                          : "text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300"
+                                      }`}
+                                    />
+                                    <span
+                                      className={`truncate text-xs ${
+                                        isLaneActive ? "font-semibold text-zinc-950 dark:text-white" : "font-medium text-zinc-800 dark:text-zinc-200"
+                                      }`}
+                                    >
+                                      {worktreeBranch}
                                     </span>
-                                  )}
-                                </div>
+                                    {isDefaultBranch && (
+                                      <span className="text-[9px] px-1 py-0.2 rounded-[2.5px] bg-zinc-200/60 dark:bg-zinc-800/90 text-zinc-500 dark:text-zinc-400 font-mono font-normal uppercase tracking-wider leading-none shrink-0 border border-zinc-200/50 dark:border-zinc-700/50">
+                                        default
+                                      </span>
+                                    )}
+                                  </div>
 
-                                <div className="flex items-center gap-1.5 shrink-0 ml-1">
-                                  {getWorktreeAgentBadges(lane.id)}
-                                  <span className="text-[11px] text-zinc-400">
+                                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono tabular-nums shrink-0 ml-1">
                                     {displayTime}
                                   </span>
+                                </div>
+
+                                {/* Line 2: Open Agents on a new line */}
+                                <div className="flex items-center mt-1 pl-5">
+                                  {getWorktreeAgentBadges(lane.id, isDefaultBranch)}
                                 </div>
                               </div>
                             );
@@ -518,10 +530,10 @@ export function SupersetSidebar() {
                         <button
                           type="button"
                           onClick={() => openNewWorktreeModal(proj.id)}
-                          className="flex w-full items-center gap-1.5 px-2 py-1 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer rounded-[3.5px] mt-1"
+                          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/40 dark:hover:bg-zinc-800/40 transition-colors cursor-pointer rounded-[3.5px] mt-1 group"
                         >
-                          <Plus className="size-3 text-emerald-500 shrink-0" />
-                          <span>New worktree...</span>
+                          <Plus className="size-3 text-zinc-400 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors shrink-0" />
+                          <span className="text-[11px] font-medium">New worktree...</span>
                         </button>
                       </div>
                     )}
@@ -537,35 +549,59 @@ export function SupersetSidebar() {
 
       {/* Bottom User Profile Footer */}
       <div
-        className={`mt-auto flex h-11 items-center ${
-          sidebarCollapsed ? "justify-center px-0 flex-col gap-1 py-1" : "justify-between px-3"
-        } border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-[#0E0E12] font-sans`}
+        className={`mt-auto flex h-12 shrink-0 items-center ${
+          sidebarCollapsed ? "justify-center px-0 flex-col gap-1 py-1.5" : "justify-between px-2"
+        } border-t border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-[#0E0E12]/90 font-sans`}
       >
         {sidebarCollapsed ? (
           <div className="flex flex-col items-center gap-1">
             <div
               title={userEmail}
-              className="flex size-5.5 items-center justify-center rounded-[3.5px] bg-emerald-600 text-white font-semibold text-xs select-none shadow-xs"
+              className="relative flex size-6.5 shrink-0 items-center justify-center rounded-[3.5px] overflow-hidden bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-950 font-semibold text-[10px] shadow-xs ring-1 ring-black/10 dark:ring-white/10"
             >
-              {userInitial}
+              {userAvatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={userAvatarUrl}
+                  alt={userEmail || "User"}
+                  className="size-full object-cover"
+                />
+              ) : (
+                userInitial
+              )}
             </div>
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="flex size-5.5 shrink-0 items-center justify-center rounded-[3.5px] bg-emerald-600 text-white font-semibold text-xs select-none shadow-xs">
-                {userInitial}
+            <div className="flex items-center gap-2 min-w-0 flex-1 mr-1">
+              <div className="relative flex size-6.5 shrink-0 items-center justify-center rounded-[3.5px] overflow-hidden bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-bold text-[10px] shadow-xs ring-1 ring-black/10 dark:ring-white/10">
+                {userAvatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={userAvatarUrl}
+                    alt={userEmail || "User"}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  userInitial
+                )}
+                <span className="absolute bottom-0 right-0 size-1.5 rounded-full bg-emerald-500 ring-1 ring-white dark:ring-[#0E0E12]" />
               </div>
-              <span className="truncate text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                {userEmail}
-              </span>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="truncate text-xs font-medium text-zinc-900 dark:text-zinc-100 leading-tight">
+                  {user?.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "Hector"}
+                </span>
+                <span className="truncate text-[10.5px] text-zinc-400 dark:text-zinc-500 font-mono leading-tight">
+                  {userEmail || "ashdev098@gmail.com"}
+                </span>
+              </div>
             </div>
             <Link
-              href="/settings"
-              className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors rounded-[3.5px] cursor-pointer"
+              href={currentTenant?.id || projectId ? `/${currentTenant?.id || projectId}/settings` : "/settings"}
+              className="flex size-7 shrink-0 items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 transition-colors rounded-[3.5px] cursor-pointer"
               title="Workspace Settings (⌘,)"
             >
-              <Settings className="size-4" />
+              <Settings className="size-3.5" />
             </Link>
           </>
         )}
@@ -573,3 +609,5 @@ export function SupersetSidebar() {
     </aside>
   );
 }
+
+

@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useAuth } from "@clerk/nextjs";
 import { api, GitHubRepoItem, GitHubStatusData } from "@/lib/api";
 
 // Query Keys factory
@@ -157,7 +158,8 @@ export function useGitDiffQuery(projectId?: string | null, laneId?: string | nul
 }
 
 // 5. GitHub Status & Repositories Hooks (with instant TanStack local storage hydration & cache)
-export function useGithubStatusQuery() {
+export function useGithubStatusQuery(options?: { enabled?: boolean }) {
+  const { isLoaded, isSignedIn } = useAuth();
   return useQuery<GitHubStatusData>({
     queryKey: workspaceKeys.github.status(),
     queryFn: async () => {
@@ -167,19 +169,21 @@ export function useGithubStatusQuery() {
         return { connected: false, username: null, avatar_url: null, github_user_id: null };
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes fresh
+    enabled: (options?.enabled ?? true) && isLoaded && !!isSignedIn,
+    staleTime: 1000 * 10, // 10 seconds
     gcTime: 1000 * 60 * 60 * 24, // 24 hours persisted in local storage
   });
 }
 
 export function useGithubReposQuery(options?: { enabled?: boolean }) {
+  const { isLoaded, isSignedIn } = useAuth();
   return useQuery<GitHubRepoItem[]>({
     queryKey: workspaceKeys.github.repos(),
     queryFn: async () => {
       return await api.getGithubRepos();
     },
-    enabled: options?.enabled ?? true,
-    staleTime: 1000 * 60 * 10, // 10 minutes fresh
+    enabled: (options?.enabled ?? true) && isLoaded && !!isSignedIn,
+    staleTime: 1000 * 10, // 10 seconds fresh
     gcTime: 1000 * 60 * 60 * 24, // 24 hours persisted in local storage
     retry: 1,
   });

@@ -8,14 +8,14 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { ClaudeIcon, AnthropicIcon, OpenAIIcon, AntigravityIcon } from "@/components/ui/brand-icons";
+import { ClaudeIcon, AnthropicIcon, OpenAIIcon, AntigravityIcon, OpenCodeIcon, CommandCodeIcon, OpenRouterIcon } from "@/components/ui/brand-icons";
 import { Sparkles, Terminal, GitBranch, ArrowRight, ShieldCheck } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 
 interface NewAgentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  defaultHarness?: "Claude" | "Codex" | "Antigravity" | "Pair";
+  defaultHarness?: "Claude" | "Codex" | "Antigravity" | "OpenCode" | "Command Code" | "OpenRouter" | "Pair";
 }
 
 export function NewAgentModal({
@@ -24,7 +24,7 @@ export function NewAgentModal({
   defaultHarness = "Claude",
 }: NewAgentModalProps) {
   const { submitPrompt, project } = useWorkspace();
-  const [harness, setHarness] = useState<"Claude" | "Codex" | "Antigravity" | "Pair">(defaultHarness);
+  const [harness, setHarness] = useState<"Claude" | "Codex" | "Antigravity" | "OpenCode" | "Command Code" | "OpenRouter" | "Pair">(defaultHarness);
   const [taskName, setTaskName] = useState("");
   const [promptInput, setPromptInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,7 +49,7 @@ export function NewAgentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[540px] bg-[var(--surface-primary)] border border-[var(--border)] text-[var(--foreground)] p-0 overflow-hidden shadow-2xl rounded-[3.5px] select-none">
+      <DialogContent className="sm:max-w-[580px] bg-[var(--surface-primary)] border border-[var(--border)] text-[var(--foreground)] p-0 overflow-hidden shadow-2xl rounded-[3.5px] select-none">
         {/* Header */}
         <div className="border-b border-[var(--border)] px-5 py-4 bg-[var(--surface-secondary)]">
           <DialogHeader className="space-y-1">
@@ -73,7 +73,7 @@ export function NewAgentModal({
             <label className="text-[11px] font-mono uppercase tracking-wider text-[var(--muted-foreground)]">
               Agent Harness
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
               {/* Claude Code */}
               <button
                 type="button"
@@ -131,11 +131,68 @@ export function NewAgentModal({
                 </span>
               </button>
 
+              {/* OpenCode */}
+              <button
+                type="button"
+                onClick={() => setHarness("OpenCode")}
+                className={`flex flex-col items-start p-2.5 rounded-[3.5px] border text-left transition-all cursor-pointer ${
+                  harness === "OpenCode"
+                    ? "border-blue-500/50 bg-blue-50/50 dark:bg-blue-950/30 text-[var(--foreground)] shadow-2xs"
+                    : "border-[var(--border)] bg-[var(--surface-card)] text-[var(--muted-foreground)] hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 mb-1">
+                  <OpenCodeIcon className="size-3.5 text-blue-500 dark:text-blue-400" />
+                  <span className="text-xs font-semibold">OpenCode</span>
+                </div>
+                <span className="text-[10px] text-[var(--muted-foreground)] leading-snug">
+                  Open-source CLI
+                </span>
+              </button>
+
+              {/* Command Code */}
+              <button
+                type="button"
+                onClick={() => setHarness("Command Code")}
+                className={`flex flex-col items-start p-2.5 rounded-[3.5px] border text-left transition-all cursor-pointer ${
+                  harness === "Command Code"
+                    ? "border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/30 text-[var(--foreground)] shadow-2xs"
+                    : "border-[var(--border)] bg-[var(--surface-card)] text-[var(--muted-foreground)] hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 mb-1">
+                  <CommandCodeIcon className="size-3.5 text-amber-500 dark:text-amber-400" />
+                  <span className="text-xs font-semibold">Command</span>
+                </div>
+                <span className="text-[10px] text-[var(--muted-foreground)] leading-snug">
+                  Taste-1 / Cohere
+                </span>
+              </button>
+
+              {/* OpenRouter */}
+              <button
+                type="button"
+                onClick={() => setHarness("OpenRouter")}
+                className={`flex flex-col items-start p-2.5 rounded-[3.5px] border text-left transition-all cursor-pointer ${
+                  harness === "OpenRouter"
+                    ? "border-purple-500/50 bg-purple-50/50 dark:bg-purple-950/30 text-[var(--foreground)] shadow-2xs"
+                    : "border-[var(--border)] bg-[var(--surface-card)] text-[var(--muted-foreground)] hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 mb-1">
+                  <OpenRouterIcon className="size-3.5 text-purple-500 dark:text-purple-400" />
+                  <span className="text-xs font-semibold">OpenRouter</span>
+                </div>
+                <span className="text-[10px] text-[var(--muted-foreground)] leading-snug">
+                  200+ frontier models
+                </span>
+              </button>
+
               {/* Pair Worktree */}
               <button
                 type="button"
                 onClick={() => setHarness("Pair")}
-                className={`flex flex-col items-start p-2.5 rounded-[3.5px] border text-left transition-all cursor-pointer ${
+                className={`flex flex-col items-start p-2.5 rounded-[3.5px] border text-left transition-all cursor-pointer col-span-2 sm:col-span-1 ${
                   harness === "Pair"
                     ? "border-[var(--border-strong)] bg-[var(--wash-strong)] text-[var(--foreground)] shadow-2xs"
                     : "border-[var(--border)] bg-[var(--surface-card)] text-[var(--muted-foreground)] hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"

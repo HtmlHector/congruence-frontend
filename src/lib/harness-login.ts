@@ -7,6 +7,7 @@ export const HARNESS_LOGIN_COMMANDS: Record<SupportedHarness, string> = {
   codex: "codex login",
   antigravity: "agy",
   opencode: "opencode auth login",
+  commandcode: "cmd auth login",
 };
 
 // What the user must do after the command starts, per sign-in flow.
@@ -16,4 +17,5 @@ export const HARNESS_LOGIN_HINTS: Record<SupportedHarness, string> = {
   antigravity:
     "Open the authorization URL printed in the terminal on any device, then paste the code back into the session.",
   opencode: "Pick your provider in the session terminal and follow its prompts.",
+  commandcode: "Log in or authenticate your Command Code Taste-1 profile in the terminal.",
 };

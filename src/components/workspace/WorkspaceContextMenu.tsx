@@ -15,7 +15,7 @@ import {
   ContextMenuLabel,
 } from "@/components/ui/context-menu";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { ClaudeIcon, OpenAIIcon, AntigravityIcon } from "@/components/ui/brand-icons";
+import { ClaudeIcon, OpenAIIcon, AntigravityIcon, OpenCodeIcon, CommandCodeIcon, OpenRouterIcon, PairShellIcon } from "@/components/ui/brand-icons";
 import {
   Plus,
   Terminal,
@@ -42,6 +42,7 @@ export function WorkspaceContextMenu({ children }: WorkspaceContextMenuProps) {
   const router = useRouter();
   const {
     currentTenant,
+    projectId,
     activeLaneId,
     createChat,
     openSplit,
@@ -63,7 +64,7 @@ export function WorkspaceContextMenu({ children }: WorkspaceContextMenuProps) {
     setIsCloneOpen(true);
   };
 
-  const handleLaunchAgent = (harness: "Claude" | "Codex" | "Antigravity" | "Shell") => {
+  const handleLaunchAgent = (harness: "Claude" | "Codex" | "Antigravity" | "OpenCode" | "Command Code" | "OpenRouter" | "Shell") => {
     const targetLane = activeLaneId || "lane-main";
     createChat(targetLane, harness);
     toast.success(`Launched ${harness} agent`);
@@ -143,14 +144,41 @@ export function WorkspaceContextMenu({ children }: WorkspaceContextMenuProps) {
               <span>Google Antigravity</span>
               <ContextMenuShortcut>⌥3</ContextMenuShortcut>
             </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() => handleLaunchAgent("OpenCode")}
+              onClick={() => handleLaunchAgent("OpenCode")}
+              className="gap-2 cursor-pointer"
+            >
+              <OpenCodeIcon className="size-3.5 text-blue-500 shrink-0" />
+              <span>OpenCode Agent</span>
+              <ContextMenuShortcut>⌥4</ContextMenuShortcut>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() => handleLaunchAgent("Command Code")}
+              onClick={() => handleLaunchAgent("Command Code")}
+              className="gap-2 cursor-pointer"
+            >
+              <CommandCodeIcon className="size-3.5 text-amber-500 shrink-0" />
+              <span>Command Code Agent</span>
+              <ContextMenuShortcut>⌥5</ContextMenuShortcut>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() => handleLaunchAgent("OpenRouter")}
+              onClick={() => handleLaunchAgent("OpenRouter")}
+              className="gap-2 cursor-pointer"
+            >
+              <OpenRouterIcon className="size-3.5 text-purple-500 shrink-0" />
+              <span>OpenRouter Agent</span>
+              <ContextMenuShortcut>⌥6</ContextMenuShortcut>
+            </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem
               onSelect={() => handleLaunchAgent("Shell")}
               onClick={() => handleLaunchAgent("Shell")}
               className="gap-2 cursor-pointer"
             >
-              <Terminal className="size-3.5 text-zinc-500 shrink-0" />
-              <span>Raw Shell / PTY Terminal</span>
+              <PairShellIcon className="size-3.5 text-zinc-500 shrink-0" />
+              <span>Pair Shell / Terminal</span>
               <ContextMenuShortcut>⌥T</ContextMenuShortcut>
             </ContextMenuItem>
           </ContextMenuSubContent>
@@ -254,8 +282,14 @@ export function WorkspaceContextMenu({ children }: WorkspaceContextMenuProps) {
         </ContextMenuItem>
 
         <ContextMenuItem
-          onSelect={() => router.push("/settings")}
-          onClick={() => router.push("/settings")}
+          onSelect={() => {
+            const wsId = currentTenant?.id || projectId;
+            router.push(wsId ? `/${wsId}/settings` : "/settings");
+          }}
+          onClick={() => {
+            const wsId = currentTenant?.id || projectId;
+            router.push(wsId ? `/${wsId}/settings` : "/settings");
+          }}
           className="gap-2 cursor-pointer"
         >
           <SlidersHorizontal className="size-3.5 text-zinc-500 shrink-0" />

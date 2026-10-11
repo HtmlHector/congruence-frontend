@@ -15,11 +15,13 @@ export default function WorkspaceRedirectPage() {
       return;
     }
 
+    const search = typeof window !== "undefined" ? window.location.search : "";
+
     // 1. Check local storage for last active tenant ID
     if (typeof window !== "undefined") {
       const savedTenantId = localStorage.getItem("congruence_active_tenant");
       if (savedTenantId && savedTenantId.trim()) {
-        router.replace(`/${savedTenantId.trim()}`);
+        router.replace(`/${savedTenantId.trim()}${search}`);
         return;
       }
     }
@@ -35,7 +37,7 @@ export default function WorkspaceRedirectPage() {
             if (typeof window !== "undefined") {
               localStorage.setItem("congruence_active_tenant", targetId);
             }
-            router.replace(`/${targetId}`);
+            router.replace(`/${targetId}${search}`);
             return;
           }
         }
@@ -56,7 +58,7 @@ export default function WorkspaceRedirectPage() {
           if (typeof window !== "undefined") {
             localStorage.setItem("congruence_active_tenant", targetId);
           }
-          router.replace(`/${targetId}`);
+          router.replace(`/${targetId}${search}`);
           return;
         }
       } catch (err) {

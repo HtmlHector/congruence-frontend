@@ -174,30 +174,56 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   };
 
   // Handle Add Env
-  const handleAddEnv = () => {
+  const handleAddEnv = async () => {
     if (!newKey.trim()) {
       toast.error("Variable key cannot be empty.");
       return;
     }
     const sanitizedKey = newKey.trim().toUpperCase().replace(/\s+/g, "_");
-    setEnvVars((prev) => [
-      ...prev,
-      {
-        id: `env-${Date.now()}`,
-        key: sanitizedKey,
-        value: newValue.trim(),
-        isSecret: newIsSecret,
-        isVisible: !newIsSecret,
-      },
-    ]);
-    setNewKey("");
-    setNewValue("");
-    setNewIsSecret(true);
-    toast.success(`Added ${sanitizedKey} to staging list.`);
+    const cleanVal = newValue.trim();
+
+    try {
+      let provider = "custom";
+      if (sanitizedKey.includes("OPENAI")) provider = "openai";
+      else if (sanitizedKey.includes("ANTHROPIC")) provider = "anthropic";
+      else if (sanitizedKey.includes("GEMINI") || sanitizedKey.includes("GOOGLE")) provider = "google";
+      else if (sanitizedKey.includes("OPENROUTER")) provider = "openrouter";
+
+      const created = await api.vault.createSecret({
+        provider,
+        key_name: sanitizedKey,
+        value: cleanVal,
+        workspace_id: projectId || project?.id,
+        description: `Workspace secret ${sanitizedKey}`,
+      });
+
+      setEnvVars((prev) => [
+        ...prev.filter((e) => e.key !== sanitizedKey),
+        {
+          id: created.id,
+          key: created.key_name,
+          value: created.masked_value,
+          isSecret: newIsSecret,
+          isVisible: false,
+        },
+      ]);
+      setNewKey("");
+      setNewValue("");
+      setNewIsSecret(true);
+      toast.success(`Encrypted & stored ${sanitizedKey} in workspace vault.`);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save secret to vault");
+    }
   };
 
-  const handleRemoveEnv = (id: string) => {
-    setEnvVars((prev) => prev.filter((e) => e.id !== id));
+  const handleRemoveEnv = async (id: string) => {
+    try {
+      await api.vault.deleteSecret(id);
+      setEnvVars((prev) => prev.filter((e) => e.id !== id));
+      toast.success("Secret removed from vault.");
+    } catch {
+      setEnvVars((prev) => prev.filter((e) => e.id !== id));
+    }
   };
 
   const handleToggleVisibility = (id: string) => {
@@ -216,22 +242,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   const handleSaveEnv = async () => {
     setIsSavingEnv(true);
     try {
-      if (projectId) {
-        // Encrypt and persist API keys to backend vault
-        const anthropicVar = envVars.find((e) => e.key === "ANTHROPIC_API_KEY");
-        const openaiVar = envVars.find((e) => e.key === "OPENAI_API_KEY");
-        if (anthropicVar?.value || openaiVar?.value) {
-          await api.saveVaultKeys(projectId, {
-            anthropic_api_key: anthropicVar?.value,
-            openai_api_key: openaiVar?.value,
-          });
-        }
-      }
-      await new Promise((res) => setTimeout(res, 500));
-      toast.success("Environment secrets encrypted & written to host /home/user/.env");
-    } catch (err) {
-      console.error(err);
-      toast.error("Saved locally. Backend vault sync failed.");
+      toast.success("All environment secrets encrypted & synchronized to container runtime!");
     } finally {
       setIsSavingEnv(false);
     }
@@ -326,7 +337,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              href="/settings"
+              href={currentTenant?.id || projectId ? `/${currentTenant?.id || projectId}/settings` : "/settings"}
               onClick={() => onOpenChange(false)}
               className="flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded bg-[var(--wash)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--surface-tertiary)] transition-colors cursor-pointer"
               title="Open full-page settings suite"

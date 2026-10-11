@@ -5,6 +5,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { useAuth } from "@clerk/nextjs";
+import { setApiTokenProvider } from "@/lib/api";
+
+function AuthTokenBridge() {
+  const { getToken } = useAuth();
+  useEffect(() => {
+    setApiTokenProvider(() => getToken());
+  }, [getToken]);
+  return null;
+}
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -21,20 +31,25 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       })
   );
 
-  const [persister] = useState(() => {
+  const [persister, setPersister] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
     if (typeof window !== "undefined") {
-      return createSyncStoragePersister({
+      const p = createSyncStoragePersister({
         storage: window.localStorage,
         key: "CONGRUENCE_TANSTACK_QUERY_CACHE",
         throttleTime: 1000,
       });
+      setPersister(p);
     }
-    return null;
-  });
+  }, []);
 
-  if (!persister) {
+  if (!mounted || !persister) {
     return (
       <QueryClientProvider client={queryClient}>
+        <AuthTokenBridge />
         {children}
       </QueryClientProvider>
     );
@@ -49,6 +64,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
         buster: "v1.0.1",
       }}
     >
+      <AuthTokenBridge />
       {children}
       {process.env.NODE_ENV === "development" && (
         <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />

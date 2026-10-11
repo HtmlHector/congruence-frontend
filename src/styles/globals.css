@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@xterm/xterm/css/xterm.css";
+@import "tw-shimmer";
 
 @theme {
   --color-background: var(--background);
@@ -12,15 +13,17 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-brand: var(--brand-accent);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-input: var(--input-border);
   --color-ring: var(--ring);
 
-  --font-sans: var(--font-geist-sans), var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: var(--font-inter), var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-lexend), var(--font-geist-sans), var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), var(--font-mono), "JetBrains Mono", "IBM Plex Mono", monospace;
-  --font-ai: var(--font-geist-sans), var(--font-inter), system-ui, sans-serif;
+  --font-ai: var(--font-inter), var(--font-geist-sans), system-ui, sans-serif;
   --font-ai-mono: var(--font-geist-mono), var(--font-mono), "JetBrains Mono", monospace;
 
   --radius: 3.5px;
@@ -96,6 +99,11 @@
   --muted: #1a1a20;
   --muted-foreground: #878790;
   --subtle-foreground: #94949d;
+
+  /* Congruence Brand Accent */
+  --brand-accent: #001427;
+  --brand-accent-glow: rgba(0, 20, 39, 0.6);
+  --brand-accent-subtle: rgba(0, 20, 39, 0.15);
 
   /* Provider Brand Colors */
   --accent-claude: #e8804a; /* Anthropic Claude Coral / Amber */
@@ -242,22 +250,22 @@
  * =================================================================== */
 @media (prefers-color-scheme: light) {
   :root {
-    /* Surfaces (Light base: warm-neutral paper, no cream cast) */
-    --background: #f4f4f5;
+    /* Surfaces (Light base: clean paper white canvas) */
+    --background: #ffffff;
     --foreground: #17171a;
     --foreground-strong: #0b0b0d;
 
     --surface-sidebar: #fafafa;
-    --surface-primary: #fdfdfd;
+    --surface-primary: #ffffff;
     --surface-secondary: #f9f9fa;
-    --surface-tertiary: #eaeaee;
-    --surface-omnibar: #fcfcfd;
-    --surface-card: #fdfdfd;
-    --surface-inset: #efeff2;
+    --surface-tertiary: #f4f4f6;
+    --surface-omnibar: #ffffff;
+    --surface-card: #ffffff;
+    --surface-inset: #f4f4f6;
 
     /* Borders darken as the canvas lightens, so hairlines still separate */
-    --border: #dcdce1;
-    --border-subtle: #e7e7eb;
+    --border: #e4e4e7;
+    --border-subtle: #ececef;
     --border-strong: #bfbfc8;
     --border-focus: #17171a;
 
@@ -380,7 +388,7 @@
 @keyframes modal-scale-in {
   from {
     opacity: 0;
-    transform: translate(-50%, -49%) scale(0.975);
+    transform: translate(-50%, -48%) scale(0.96);
   }
   to {
     opacity: 1;
@@ -395,29 +403,29 @@
   }
   to {
     opacity: 0;
-    transform: translate(-50%, -49%) scale(0.975);
+    transform: translate(-50%, -48%) scale(0.96);
   }
 }
 
 @keyframes popover-enter {
   from {
     opacity: 0;
-    transform: scale(0.96);
+    transform: translateY(-4px) scale(0.97);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 
 @keyframes popover-exit {
   from {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0) scale(1);
   }
   to {
     opacity: 0;
-    transform: scale(0.96);
+    transform: translateY(-4px) scale(0.97);
   }
 }
 
@@ -515,5 +523,34 @@ button:not(:disabled):active,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+/*
+ ---break---
+ */
+@custom-variant data-open (&:where([data-state="open"], [data-open]:not([data-open="false"])));
+/*
+ ---break---
+ */
+@custom-variant data-closed (&:where([data-state="closed"], [data-closed]:not([data-closed="false"])));
+/*
+ ---break---
+ */
+@theme inline {
+  @keyframes collapsible-down {
+  from {
+    height: 0;
+    }
+  to {
+    height: var(--radix-collapsible-content-height, var(--collapsible-panel-height, auto));
+    }
+  }
+  @keyframes collapsible-up {
+  from {
+    height: var(--radix-collapsible-content-height, var(--collapsible-panel-height, auto));
+    }
+  to {
+    height: 0;
+    }
   }
 }

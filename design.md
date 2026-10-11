@@ -130,6 +130,7 @@
   --border-strong: #33333A;
 
   /* Brand Accents */
+  --brand-accent: #001427;
   --accent-claude: #E8804A;
   --accent-codex: #10B981;
   --accent-antigravity: #6366F1;

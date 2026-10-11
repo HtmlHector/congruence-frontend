@@ -15,15 +15,37 @@ import { NewWorktreeModal } from "@/components/workspace/NewWorktreeModal";
 import { WorkspaceContextMenu } from "@/components/workspace/WorkspaceContextMenu";
 import { Github, FolderGit2, Plus, Sparkles } from "lucide-react";
 import { api, GitHubStatusData } from "@/lib/api";
-import { useGithubStatusQuery } from "@/hooks/queries/useWorkspaceQueries";
-
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useGithubStatusQuery, workspaceKeys } from "@/hooks/queries/useWorkspaceQueries";
 
 function WorkspaceAppContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const queryClient = useQueryClient();
   const { isLoaded, isSignedIn } = useAuth();
   const { data: ghStatus } = useGithubStatusQuery();
+
+  useEffect(() => {
+    if (!searchParams) return;
+    const githubParam = searchParams.get("github");
+    const githubError = searchParams.get("github_error");
+    const user = searchParams.get("user");
+    const errorDesc = searchParams.get("error_description");
+
+    if (githubParam === "connected") {
+      toast.success(`Connected GitHub account @${user || "user"}`);
+      queryClient.invalidateQueries({ queryKey: workspaceKeys.github.all });
+      queryClient.refetchQueries({ queryKey: workspaceKeys.github.status() });
+      router.replace(pathname);
+    } else if (githubError) {
+      toast.error(`GitHub Connection Error: ${errorDesc || githubError}`);
+      router.replace(pathname);
+    }
+  }, [searchParams, pathname, queryClient, router]);
   const {
     currentTenant,
     tenants,

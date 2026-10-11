@@ -3,7 +3,6 @@
 import React from "react";
 import { CenterCanvas } from "./CenterCanvas";
 import { ActorSidebar } from "./ActorSidebar";
-import { StatusBar } from "./StatusBar";
 
 export function ExecutionDeck() {
   return (
@@ -18,9 +17,6 @@ export function ExecutionDeck() {
           <ActorSidebar />
         </div>
       </div>
-
-      {/* Bottom Status Bar */}
-      <StatusBar />
     </div>
   );
 }

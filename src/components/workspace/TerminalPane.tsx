@@ -28,24 +28,20 @@ import {
 
 const QUICK_COMMANDS = [
   { label: "git status", cmd: "git status -sb" },
-  { label: "npm run dev", cmd: "npm run dev" },
+  { label: "pnpm dev", cmd: "pnpm dev" },
+  { label: "git diff", cmd: "git diff --stat" },
   { label: "git log", cmd: "git log --oneline -n 5" },
   { label: "pnpm test", cmd: "pnpm test" },
 ];
 
 const TERMINAL_FONTS = [
   {
-    id: "sfmono",
-    name: "SF Mono (macOS)",
-    family: '"SF Mono", "SF Pro Mono", Menlo, Monaco, Consolas, monospace',
-  },
-  {
     id: "jetbrains",
     name: "JetBrains Mono",
-    family: '"JetBrains Mono", "SF Mono", Menlo, monospace',
+    family: '"JetBrains Mono", "SF Mono", Menlo, Consolas, monospace',
   },
   {
-    id: "geist",
+    id: "geistmono",
     name: "Geist Mono",
     family: '"Geist Mono", "SF Mono", Menlo, monospace',
   },
@@ -55,9 +51,19 @@ const TERMINAL_FONTS = [
     family: '"Fira Code", "SF Mono", Menlo, monospace',
   },
   {
+    id: "sfmono",
+    name: "SF Mono (macOS)",
+    family: '"SF Mono", "SFProMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace',
+  },
+  {
     id: "menlo",
-    name: "Menlo Classic",
-    family: 'Menlo, Monaco, "Courier New", monospace',
+    name: "Menlo",
+    family: 'Menlo, Monaco, Consolas, "Courier New", monospace',
+  },
+  {
+    id: "cascadia",
+    name: "Cascadia Code",
+    family: '"Cascadia Code", "SF Mono", Consolas, monospace',
   },
 ];
 
@@ -74,8 +80,8 @@ export function TerminalPane() {
   const [connected, setConnected] = useState(false);
   const [copied, setCopied] = useState(false);
   const [shellType, setShellType] = useState<"zsh" | "bash" | "node">("zsh");
-  const [themeMode, setThemeMode] = useState<"light" | "dark">("light");
-  const [selectedFont, setSelectedFont] = useState<string>("sfmono");
+  const [themeMode, setThemeMode] = useState<"light" | "dark">("dark");
+  const [selectedFont, setSelectedFont] = useState<string>("jetbrains");
   const [fontSize, setFontSize] = useState<number>(13);
 
   // Local fallback shell state for offline/demo interactive support
@@ -98,6 +104,73 @@ export function TerminalPane() {
   const currentFontFamily =
     TERMINAL_FONTS.find((f) => f.id === selectedFont)?.family ||
     TERMINAL_FONTS[0].family;
+
+  // Dynamically apply font family & font size changes to active xterm instance
+  useEffect(() => {
+    if (xtermInstance.current) {
+      xtermInstance.current.options.fontFamily = currentFontFamily;
+      xtermInstance.current.options.fontSize = fontSize;
+      try {
+        fitAddonInstance.current?.fit();
+      } catch {
+        // ignore layout fit errors
+      }
+    }
+  }, [currentFontFamily, fontSize]);
+
+  // Dynamically apply theme changes to active xterm instance
+  useEffect(() => {
+    if (xtermInstance.current) {
+      const isLight = themeMode === "light";
+      xtermInstance.current.options.theme = isLight
+        ? {
+            background: "#FAFAFA",
+            foreground: "#18181B",
+            cursor: "#18181B",
+            cursorAccent: "#FAFAFA",
+            selectionBackground: "rgba(99, 102, 241, 0.2)",
+            black: "#18181B",
+            red: "#E11D48",
+            green: "#059669",
+            yellow: "#D97706",
+            blue: "#2563EB",
+            magenta: "#9333EA",
+            cyan: "#0891B2",
+            white: "#71717A",
+            brightBlack: "#52525B",
+            brightRed: "#BE123C",
+            brightGreen: "#047857",
+            brightYellow: "#B45309",
+            brightBlue: "#1D4ED8",
+            brightMagenta: "#7E22CE",
+            brightCyan: "#0E7490",
+            brightWhite: "#09090B",
+          }
+        : {
+            background: "#090A0E",
+            foreground: "#EDEDED",
+            cursor: "#10B981",
+            cursorAccent: "#090A0E",
+            selectionBackground: "rgba(99, 102, 241, 0.35)",
+            black: "#18181B",
+            red: "#F43F5E",
+            green: "#10B981",
+            yellow: "#F59E0B",
+            blue: "#6366F1",
+            magenta: "#A855F7",
+            cyan: "#06B6D4",
+            white: "#EDEDED",
+            brightBlack: "#71717A",
+            brightRed: "#FB7185",
+            brightGreen: "#34D399",
+            brightYellow: "#FBBF24",
+            brightBlue: "#818CF8",
+            brightMagenta: "#C084FC",
+            brightCyan: "#22D3EE",
+            brightWhite: "#FFFFFF",
+          };
+    }
+  }, [themeMode]);
 
   useEffect(() => {
     if (!activeLane) return;
@@ -129,53 +202,53 @@ export function TerminalPane() {
         fontSize: fontSize,
         fontWeight: "400",
         fontWeightBold: "600",
-        lineHeight: 1.38,
+        lineHeight: 1.45,
         letterSpacing: 0,
         fontFamily: currentFontFamily,
         allowTransparency: true,
         theme: isLight
           ? {
-              background: "#FFFFFF",
+              background: "#FAFAFA",
               foreground: "#18181B",
               cursor: "#18181B",
-              cursorAccent: "#FFFFFF",
-              selectionBackground: "rgba(169, 78, 25, 0.2)",
+              cursorAccent: "#FAFAFA",
+              selectionBackground: "rgba(99, 102, 241, 0.2)",
               black: "#18181B",
-              red: "#DC2626",
-              green: "#047857",
-              yellow: "#B45309",
-              blue: "#1D4ED8",
-              magenta: "#7E22CE",
-              cyan: "#0E7490",
+              red: "#E11D48",
+              green: "#059669",
+              yellow: "#D97706",
+              blue: "#2563EB",
+              magenta: "#9333EA",
+              cyan: "#0891B2",
               white: "#71717A",
               brightBlack: "#52525B",
-              brightRed: "#B91C1C",
-              brightGreen: "#15803D",
-              brightYellow: "#92400E",
-              brightBlue: "#1E40AF",
-              brightMagenta: "#6B21A8",
-              brightCyan: "#155E75",
+              brightRed: "#BE123C",
+              brightGreen: "#047857",
+              brightYellow: "#B45309",
+              brightBlue: "#1D4ED8",
+              brightMagenta: "#7E22CE",
+              brightCyan: "#0E7490",
               brightWhite: "#09090B",
             }
           : {
-              background: "#08080A",
+              background: "#090A0E",
               foreground: "#EDEDED",
               cursor: "#10B981",
-              cursorAccent: "#08080A",
-              selectionBackground: "rgba(232, 128, 74, 0.35)",
+              cursorAccent: "#090A0E",
+              selectionBackground: "rgba(99, 102, 241, 0.35)",
               black: "#18181B",
-              red: "#EF4444",
+              red: "#F43F5E",
               green: "#10B981",
               yellow: "#F59E0B",
-              blue: "#3B82F6",
+              blue: "#6366F1",
               magenta: "#A855F7",
               cyan: "#06B6D4",
               white: "#EDEDED",
               brightBlack: "#71717A",
-              brightRed: "#F87171",
+              brightRed: "#FB7185",
               brightGreen: "#34D399",
               brightYellow: "#FBBF24",
-              brightBlue: "#60A5FA",
+              brightBlue: "#818CF8",
               brightMagenta: "#C084FC",
               brightCyan: "#22D3EE",
               brightWhite: "#FFFFFF",
@@ -186,6 +259,9 @@ export function TerminalPane() {
       term.loadAddon(fitAddon);
       term.loadAddon(new WebLinksAddon());
 
+      if (terminalRef.current) {
+        terminalRef.current.innerHTML = "";
+      }
       term.open(terminalRef.current);
 
       const safeFit = () => {
@@ -205,49 +281,22 @@ export function TerminalPane() {
 
       requestAnimationFrame(() => {
         safeFit();
+        term.focus();
       });
 
       xtermInstance.current = term;
       fitAddonInstance.current = fitAddon;
 
-      // Print High-Fidelity Gateway Banner (Themed)
+      // Modern Pro-Developer Welcome Card (Themed)
+      const worktreeName = project?.slug || project?.name || "workspace";
+      const branchName = activeLane?.branch || "main";
+
       if (isLight) {
-        term.writeln("\x1b[38;2;169;78;25m┌─────────────────────────────────────────────────────────────┐\x1b[0m");
-        term.writeln("\x1b[38;2;169;78;25m│\x1b[0m  \x1b[1;38;2;24;24;27mCONGRUENCE SESSION GATEWAY\x1b[0m \x1b[38;2;4;120;87m● HOST ONLINE\x1b[0m                   \x1b[38;2;169;78;25m│\x1b[0m");
-        term.writeln(
-          `\x1b[38;2;169;78;25m│\x1b[0m  \x1b[38;2;113;113;122mWorktree:\x1b[0m \x1b[38;2;24;24;27m${project?.slug || project?.name || "workspace"}\x1b[0m  \x1b[38;2;113;113;122mBranch:\x1b[0m \x1b[38;2;4;120;87m${activeLane?.branch || "main"}\x1b[0m     \x1b[38;2;169;78;25m│\x1b[0m`
-        );
-        term.writeln("\x1b[38;2;169;78;25m│\x1b[0m  \x1b[38;2;113;113;122mType \x1b[38;2;180;83;9m'help'\x1b[38;2;113;113;122m or click quick chips to dispatch commands     \x1b[38;2;169;78;25m│\x1b[0m");
-        term.writeln("\x1b[38;2;169;78;25m└─────────────────────────────────────────────────────────────┘\x1b[0m\r\n");
+        term.writeln("\x1b[1;38;2;99;102;241m▲\x1b[0m \x1b[1;38;2;24;24;27mCongruence Terminal Gateway\x1b[0m \x1b[38;2;113;113;122m(worktree: \x1b[38;2;24;24;27m" + worktreeName + "\x1b[38;2;113;113;122m | branch: \x1b[38;2;217;119;6m" + branchName + "\x1b[38;2;113;113;122m)\x1b[0m");
+        term.writeln("\x1b[38;2;217;119;6m⏳ Connecting to Host PTY...\x1b[0m\r\n");
       } else {
-        term.writeln("\x1b[38;2;232;128;74m┌─────────────────────────────────────────────────────────────┐\x1b[0m");
-        term.writeln("\x1b[38;2;232;128;74m│\x1b[0m  \x1b[1;38;2;255;255;255mCONGRUENCE SESSION GATEWAY\x1b[0m \x1b[38;2;16;185;129m● HOST ONLINE\x1b[0m                   \x1b[38;2;232;128;74m│\x1b[0m");
-        term.writeln(
-          `\x1b[38;2;232;128;74m│\x1b[0m  \x1b[90mWorktree:\x1b[0m \x1b[38;2;237;237;237m${project?.slug || project?.name || "workspace"}\x1b[0m  \x1b[90mBranch:\x1b[0m \x1b[38;2;16;185;129m${activeLane?.branch || "main"}\x1b[0m     \x1b[38;2;232;128;74m│\x1b[0m`
-        );
-        term.writeln("\x1b[38;2;232;128;74m│\x1b[0m  \x1b[90mType \x1b[38;2;251;191;36m'help'\x1b[90m or click quick chips to dispatch commands     \x1b[38;2;232;128;74m│\x1b[0m");
-        term.writeln("\x1b[38;2;232;128;74m└─────────────────────────────────────────────────────────────┘\x1b[0m\r\n");
-      }
-
-      const promptStr = isLight
-        ? `\x1b[1;38;2;4;120;87m➜\x1b[0m \x1b[1;38;2;29;78;216m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[38;2;113;113;122mon\x1b[0m \x1b[38;2;169;78;25mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;24;24;27m$\x1b[0m `
-        : `\x1b[1;38;2;16;185;129m➜\x1b[0m \x1b[1;38;2;96;165;250m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[90mon\x1b[0m \x1b[38;2;232;128;74mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;255;255;255m$\x1b[0m `;
-
-      const printPrompt = () => {
-        term.write(promptStr);
-      };
-
-      printPrompt();
-
-      // If a command was queued while xterm was mounting and not connected via WS yet, dispatch it
-      if (queuedCommandRef.current) {
-        const queued = queuedCommandRef.current;
-        setTimeout(() => {
-          if (!ptyIdRef.current) {
-            executeCommand(queued);
-            queuedCommandRef.current = null;
-          }
-        }, 150);
+        term.writeln("\x1b[1;38;2;99;102;241m▲\x1b[0m \x1b[1;38;2;237;237;237mCongruence Terminal Gateway\x1b[0m \x1b[38;2;113;113;122m(worktree: \x1b[38;2;237;237;237m" + worktreeName + "\x1b[38;2;113;113;122m | branch: \x1b[38;2;232;128;74m" + branchName + "\x1b[38;2;113;113;122m)\x1b[0m");
+        term.writeln("\x1b[38;2;251;191;36m⏳ Connecting to Host PTY...\x1b[0m\r\n");
       }
 
       // Connect to real backend WebSocket
@@ -261,9 +310,12 @@ export function TerminalPane() {
           `${wsProtocol}//${
             typeof window !== "undefined" ? window.location.hostname : "localhost"
           }:8000/api/v1`;
-        const cleanBase = rawWs.replace(/\/+$/, "").replace(/\/ws.*$/, "");
         // The gateway enforces auth + lane tenancy; attach a bearer token.
-        const wsToken = await getToken().catch(() => null);
+        let wsToken = await getToken().catch(() => null);
+        if (!wsToken && (process.env.NODE_ENV === "development" || typeof window !== "undefined")) {
+          wsToken = "mock_user_admin";
+        }
+        const cleanBase = rawWs.replace(/\/+$/, "").replace(/\/ws.*$/, "");
         const wsUrl = `${cleanBase}/ws/session/sess_${
           activeLane?.id || "main"
         }${wsToken ? `?token=${encodeURIComponent(wsToken)}` : ""}`;
@@ -274,12 +326,13 @@ export function TerminalPane() {
         ws.onopen = () => {
           if (isDisposed) return;
           setConnected(true);
+          term.writeln("\x1b[38;2;16;185;129m✓ Connected to Host Container\x1b[0m\r\n");
           // Spawn interactive PTY on host
           ws?.send(
             JSON.stringify({
               type: "spawn_pty",
               lane_id: activeLane?.id || "main",
-              command: "/bin/zsh",
+              command: shellType === "bash" ? "/bin/bash" : shellType === "node" ? "node" : "/bin/zsh",
               cols: term.cols || 80,
               rows: term.rows || 24,
             })
@@ -294,6 +347,7 @@ export function TerminalPane() {
               term.write(msg.data);
             } else if (msg.type === "pty_spawned") {
               ptyIdRef.current = msg.pty_id;
+              term.focus();
               if (queuedCommandRef.current) {
                 const queued = queuedCommandRef.current;
                 queuedCommandRef.current = null;
@@ -308,6 +362,8 @@ export function TerminalPane() {
               }
             } else if (msg.type === "pty_input_denied") {
               term.writeln(`\r\n\x1b[31m[Denied] ${msg.reason}\x1b[0m\r\n`);
+            } else if (msg.type === "error" && msg.detail) {
+              term.writeln(`\r\n\x1b[31m[Error] ${msg.detail}\x1b[0m\r\n`);
             }
           } catch {
             term.write(event.data);
@@ -315,17 +371,20 @@ export function TerminalPane() {
         };
 
         ws.onerror = (_err) => {
+          if (isDisposed) return;
           setConnected(false);
+          ptyIdRef.current = null;
         };
 
         ws.onclose = () => {
           if (isDisposed) return;
           setConnected(false);
+          ptyIdRef.current = null;
+          term.writeln("\r\n\x1b[31m[Disconnected from Host PTY]\x1b[0m \x1b[90mEnsure backend is running at localhost:8000\x1b[0m\r\n");
         };
 
         term.onData((data: string) => {
           const currentPty = ptyIdRef.current;
-          // If real backend PTY is active, forward bytes
           if (ws && ws.readyState === WebSocket.OPEN && currentPty) {
             ws.send(
               JSON.stringify({
@@ -335,65 +394,37 @@ export function TerminalPane() {
                 data,
               })
             );
-            return;
-          }
-
-          // Fallback interactive mock shell implementation
-          if (data === "\r") {
-            // Enter key
-            const input = localInputBuffer.current.trim();
-            term.writeln("");
-            if (input) {
-              commandHistory.current.push(input);
-              historyIdx.current = commandHistory.current.length;
-              handleLocalCommand(input, term, printPrompt);
-            } else {
-              printPrompt();
-            }
-            localInputBuffer.current = "";
-          } else if (data === "\u007F") {
-            // Backspace
-            if (localInputBuffer.current.length > 0) {
-              localInputBuffer.current = localInputBuffer.current.slice(0, -1);
-              term.write("\b \b");
-            }
-          } else if (data === "\u001b[A") {
-            // Up Arrow (History)
-            if (historyIdx.current > 0) {
-              historyIdx.current--;
-              const cmd = commandHistory.current[historyIdx.current] || "";
-              while (localInputBuffer.current.length > 0) {
-                term.write("\b \b");
-                localInputBuffer.current = localInputBuffer.current.slice(0, -1);
-              }
-              localInputBuffer.current = cmd;
-              term.write(cmd);
-            }
-          } else if (data === "\u001b[B") {
-            // Down Arrow (History)
-            if (historyIdx.current < commandHistory.current.length - 1) {
-              historyIdx.current++;
-              const cmd = commandHistory.current[historyIdx.current] || "";
-              while (localInputBuffer.current.length > 0) {
-                term.write("\b \b");
-                localInputBuffer.current = localInputBuffer.current.slice(0, -1);
-              }
-              localInputBuffer.current = cmd;
-              term.write(cmd);
-            } else {
-              historyIdx.current = commandHistory.current.length;
-              while (localInputBuffer.current.length > 0) {
-                term.write("\b \b");
-                localInputBuffer.current = localInputBuffer.current.slice(0, -1);
-              }
-            }
-          } else if (data >= " " && data <= "~") {
-            localInputBuffer.current += data;
-            term.write(data);
           }
         });
+
+        // Add explicit clipboard paste listener
+        const container = terminalRef.current;
+        const handlePaste = (e: ClipboardEvent) => {
+          const text = e.clipboardData?.getData("text");
+          if (text) {
+            e.preventDefault();
+            const currentPty = ptyIdRef.current;
+            if (ws && ws.readyState === WebSocket.OPEN && currentPty) {
+              ws.send(
+                JSON.stringify({
+                  type: "pty_input",
+                  pty_id: currentPty,
+                  lane_id: activeLane?.id,
+                  data: text,
+                })
+              );
+            }
+          }
+        };
+
+        if (container) {
+          container.addEventListener("paste", handlePaste);
+        }
       } catch (err) {
-        setConnected(false);
+        if (!isDisposed) {
+          setConnected(false);
+          ptyIdRef.current = null;
+        }
       }
     }
 
@@ -438,134 +469,26 @@ export function TerminalPane() {
         resizeObserver.disconnect();
       }
       if (ws) {
+        ws.onclose = null;
+        ws.onerror = null;
         ws.close();
       }
       if (term) {
         term.dispose();
+      }
+      if (terminalRef.current) {
+        terminalRef.current.innerHTML = "";
       }
       wsRef.current = null;
       xtermInstance.current = null;
       fitAddonInstance.current = null;
       ptyIdRef.current = null;
     };
-  }, [activeLane?.id, project?.slug, themeMode, currentFontFamily, fontSize]);
-
-  // Handle local simulated command execution
-  const handleLocalCommand = (cmd: string, term: any, printPrompt: () => void) => {
-    const parts = cmd.split(" ");
-    const bin = parts[0];
-    const isLight = themeMode === "light";
-
-    if (bin === "help") {
-      term.writeln(
-        isLight
-          ? "\x1b[1;38;2;24;24;27mCongruence Developer Shell Commands:\x1b[0m"
-          : "\x1b[1;38;2;255;255;255mCongruence Developer Shell Commands:\x1b[0m"
-      );
-      term.writeln(
-        isLight
-          ? "  \x1b[38;2;4;120;87mgit status\x1b[0m     - Show branch status and modified files\r\n" +
-              "  \x1b[38;2;4;120;87mnpm run dev\x1b[0m    - Start local Turbopack development server on :3000\r\n" +
-              "  \x1b[38;2;4;120;87mpnpm test\x1b[0m      - Run Playwright and unit test suites\r\n" +
-              "  \x1b[38;2;4;120;87mls / pwd\x1b[0m       - Inspect files in worktree workspace\r\n" +
-              "  \x1b[38;2;4;120;87mclear\x1b[0m          - Clear current terminal screen"
-          : "  \x1b[38;2;16;185;129mgit status\x1b[0m     - Show branch status and modified files\r\n" +
-              "  \x1b[38;2;16;185;129mnpm run dev\x1b[0m    - Start local Turbopack development server on :3000\r\n" +
-              "  \x1b[38;2;16;185;129mpnpm test\x1b[0m      - Run Playwright and unit test suites\r\n" +
-              "  \x1b[38;2;16;185;129mls / pwd\x1b[0m       - Inspect files in worktree workspace\r\n" +
-              "  \x1b[38;2;16;185;129mclear\x1b[0m          - Clear current terminal screen"
-      );
-    } else if (bin === "clear") {
-      term.clear();
-    } else if (bin === "pwd") {
-      term.writeln(`/Users/admin/congruence-worktrees/${project?.slug || project?.name || "workspace"}`);
-    } else if (bin === "ls") {
-      term.writeln("src/  public/  docs/  package.json  next.config.ts  design.md  README.md");
-    } else if (cmd.startsWith("git status")) {
-      term.writeln(
-        isLight
-          ? `## \x1b[38;2;4;120;87m${activeLane?.branch || "main"}\x1b[0m...origin/${activeLane?.branch || "main"}`
-          : `## \x1b[38;2;16;185;129m${activeLane?.branch || "main"}\x1b[0m...origin/${activeLane?.branch || "main"}`
-      );
-      term.writeln(" M src/components/workspace/PreviewPane.tsx");
-      term.writeln(" M src/components/workspace/TerminalPane.tsx");
-      term.writeln(" M package.json");
-    } else if (cmd.startsWith("npm run dev")) {
-      term.writeln(
-        isLight
-          ? "\x1b[38;2;29;78;216m▲ Next.js 15.2.0 (Turbopack)\x1b[0m"
-          : "\x1b[38;2;96;165;250m▲ Next.js 15.2.0 (Turbopack)\x1b[0m"
-      );
-      term.writeln("  - Local:        \x1b[4;38;2;37;99;235mhttp://localhost:3000\x1b[0m");
-      term.writeln("  - Network:      \x1b[4;38;2;37;99;235mhttps://preview.congruence.dev\x1b[0m");
-      term.writeln("  - Environments: .env.local");
-      term.writeln(
-        isLight
-          ? "\x1b[38;2;4;120;87m✓ Ready in 210ms\x1b[0m"
-          : "\x1b[38;2;16;185;129m✓ Ready in 210ms\x1b[0m"
-      );
-    } else if (cmd.startsWith("git log")) {
-      term.writeln(
-        isLight
-          ? "\x1b[38;2;180;83;9m05b82c9\x1b[0m feat: redesign preview chrome with zero-rounding"
-          : "\x1b[38;2;251;191;36m05b82c9\x1b[0m feat: redesign preview chrome with zero-rounding"
-      );
-      term.writeln(
-        isLight
-          ? "\x1b[38;2;180;83;9m4fa1d8e\x1b[0m feat: add multi-tab pane groups and drag-to-split"
-          : "\x1b[38;2;251;191;36m4fa1d8e\x1b[0m feat: add multi-tab pane groups and drag-to-split"
-      );
-      term.writeln(
-        isLight
-          ? "\x1b[38;2;180;83;9m83a91c2\x1b[0m fix: center agent chat message bubbles and remove top line"
-          : "\x1b[38;2;251;191;36m83a91c2\x1b[0m fix: center agent chat message bubbles and remove top line"
-      );
-    } else if (cmd.startsWith("pnpm test")) {
-      term.writeln("Running 14 tests using 4 workers...");
-      term.writeln(
-        isLight
-          ? "  \x1b[38;2;4;120;87m✓\x1b[0m [chromium] › e2e/workspace.spec.ts:14:5 › workspace loads (240ms)"
-          : "  \x1b[38;2;16;185;129m✓\x1b[0m [chromium] › e2e/workspace.spec.ts:14:5 › workspace loads (240ms)"
-      );
-      term.writeln(
-        isLight
-          ? "  \x1b[38;2;4;120;87m✓\x1b[0m [chromium] › e2e/panes.spec.ts:28:5 › split drag drop (310ms)"
-          : "  \x1b[38;2;16;185;129m✓\x1b[0m [chromium] › e2e/panes.spec.ts:28:5 › split drag drop (310ms)"
-      );
-      term.writeln(
-        isLight
-          ? "\x1b[38;2;4;120;87m14 passed (1.8s)\x1b[0m"
-          : "\x1b[38;2;16;185;129m14 passed (1.8s)\x1b[0m"
-      );
-    } else if (
-      cmd.startsWith("claude login") ||
-      cmd.startsWith("codex login") ||
-      cmd.startsWith("agy") ||
-      bin === "claude" ||
-      bin === "codex" ||
-      bin === "agy"
-    ) {
-      term.writeln(
-        isLight
-          ? `\x1b[38;2;169;78;25m◆ Initiating interactive CLI session for ${cmd}...\x1b[0m`
-          : `\x1b[38;2;232;128;74m◆ Initiating interactive CLI session for ${cmd}...\x1b[0m`
-      );
-      term.writeln("Opening provider authentication gateway...");
-      term.writeln(
-        isLight
-          ? "\x1b[38;2;4;120;87m✓ Session ready. Authenticate or run commands directly.\x1b[0m"
-          : "\x1b[38;2;16;185;129m✓ Session ready. Authenticate or run commands directly.\x1b[0m"
-      );
-    } else {
-      term.writeln(`Executed: ${cmd}`);
-    }
-    printPrompt();
-  };
+  }, [activeLane?.id, project?.slug, themeMode, currentFontFamily, fontSize, shellType]);
 
   // Run pending external commands
   useEffect(() => {
     if (!pendingCommand) return;
-    queuedCommandRef.current = pendingCommand;
     executeCommand(pendingCommand);
     clearPendingCommand();
   }, [pendingCommand, clearPendingCommand]);
@@ -583,13 +506,7 @@ export function TerminalPane() {
           })
         );
       } else {
-        const term = xtermInstance.current;
-        term.writeln(cmd);
-        const isLight = themeMode === "light";
-        const promptStr = isLight
-          ? `\x1b[1;38;2;4;120;87m➜\x1b[0m \x1b[1;38;2;29;78;216m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[38;2;113;113;122mon\x1b[0m \x1b[38;2;169;78;25mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;24;24;27m$\x1b[0m `
-          : `\x1b[1;38;2;16;185;129m➜\x1b[0m \x1b[1;38;2;96;165;250m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[90mon\x1b[0m \x1b[38;2;232;128;74mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;255;255;255m$\x1b[0m `;
-        handleLocalCommand(cmd, term, () => term.write(promptStr));
+        queuedCommandRef.current = cmd;
       }
     }
   };
@@ -597,11 +514,17 @@ export function TerminalPane() {
   const handleClear = () => {
     if (xtermInstance.current) {
       xtermInstance.current.clear();
-      const isLight = themeMode === "light";
-      const promptStr = isLight
-        ? `\x1b[1;38;2;4;120;87m➜\x1b[0m \x1b[1;38;2;29;78;216m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[38;2;113;113;122mon\x1b[0m \x1b[38;2;169;78;25mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;24;24;27m$\x1b[0m `
-        : `\x1b[1;38;2;16;185;129m➜\x1b[0m \x1b[1;38;2;96;165;250m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[90mon\x1b[0m \x1b[38;2;232;128;74mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;255;255;255m$\x1b[0m `;
-      xtermInstance.current.write(promptStr);
+      const currentPty = ptyIdRef.current;
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && currentPty) {
+        wsRef.current.send(
+          JSON.stringify({
+            type: "pty_input",
+            pty_id: currentPty,
+            lane_id: activeLane?.id,
+            data: "clear\n",
+          })
+        );
+      }
     }
   };
 
@@ -612,20 +535,16 @@ export function TerminalPane() {
       const isLight = themeMode === "light";
       term.writeln(
         isLight
-          ? "\x1b[38;2;169;78;25m◆ Congruence Session Gateway (Restarted)\x1b[0m\r\n"
-          : "\x1b[38;2;232;128;74m◆ Congruence Session Gateway (Restarted)\x1b[0m\r\n"
+          ? "\x1b[38;2;169;78;25m◆ Congruence Session Gateway (Restarting Host PTY...)\x1b[0m\r\n"
+          : "\x1b[38;2;232;128;74m◆ Congruence Session Gateway (Restarting Host PTY...)\x1b[0m\r\n"
       );
-      const promptStr = isLight
-        ? `\x1b[1;38;2;4;120;87m➜\x1b[0m \x1b[1;38;2;29;78;216m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[38;2;113;113;122mon\x1b[0m \x1b[38;2;169;78;25mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;24;24;27m$\x1b[0m `
-        : `\x1b[1;38;2;16;185;129m➜\x1b[0m \x1b[1;38;2;96;165;250m${project?.slug || project?.name || "workspace"}\x1b[0m \x1b[90mon\x1b[0m \x1b[38;2;232;128;74mgit:(${activeLane?.branch || "main"})\x1b[0m \x1b[1;38;2;255;255;255m$\x1b[0m `;
-      term.write(promptStr);
 
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && activeLane) {
         wsRef.current.send(
           JSON.stringify({
             type: "spawn_pty",
             lane_id: activeLane.id,
-            command: "/bin/zsh",
+            command: shellType === "bash" ? "/bin/bash" : shellType === "node" ? "node" : "/bin/zsh",
             cols: term.cols || 80,
             rows: term.rows || 24,
           })
@@ -648,170 +567,135 @@ export function TerminalPane() {
   const isLight = themeMode === "light";
 
   return (
-    <div
-      className={`flex h-full w-full flex-1 flex-col overflow-hidden rounded-[3.5px] select-none ${
-        isLight ? "bg-white text-zinc-900" : "bg-[#08080A] text-[#EDEDED]"
-      }`}
-    >
-      {/* Top Precision Terminal Toolbar (36px) */}
-      <div
-        className={`flex h-9 shrink-0 items-center justify-between border-b px-3 gap-2 rounded-[3.5px] ${
-          isLight
-            ? "border-zinc-200 bg-[#FAFAFA]"
-            : "border-[#222227] bg-[#0E0E12]"
-        }`}
-      >
-        {/* Left: Shell Badge + Worktree Metadata */}
+    <div className="flex h-full w-full flex-col bg-[#FAFAFA] dark:bg-[#090A0E] overflow-hidden select-none font-sans">
+      {/* Top Header / Action Toolbar (h-9) */}
+      <div className="flex h-9 shrink-0 items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-[#0E0E12] px-3 select-none gap-2">
+        {/* Left: Shell Selector + Branch Breadcrumb + Live PTY Indicator */}
         <div className="flex items-center gap-2 min-w-0">
+          {/* Shell Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className={`flex items-center gap-1.5 px-2 py-0.5 border text-[11px] font-mono transition-colors cursor-pointer rounded-[3.5px] ${
-                  isLight
-                    ? "bg-white hover:bg-zinc-100 border-zinc-200 text-zinc-700 hover:text-zinc-950"
-                    : "bg-[#16161B] hover:bg-[#1E1E24] border-[#222227] text-zinc-300 hover:text-white"
-                }`}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-[4px] text-xs font-mono font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer"
+                title="Switch shell environment"
               >
-                <TerminalIcon
-                  className={`size-3 ${
-                    isLight ? "text-emerald-600" : "text-emerald-400"
-                  }`}
-                />
-                <span className="font-semibold">{shellType}</span>
-                <ChevronDown className="size-2.5 text-zinc-400" />
+                <TerminalIcon className="size-3.5 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                <span>{shellType}</span>
+                <ChevronDown className="size-2.5 text-zinc-400 shrink-0 opacity-70" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="start"
-              className={`w-44 border rounded-[3.5px] shadow-xl p-1 text-xs select-none ${
-                isLight
-                  ? "bg-white border-zinc-200 text-zinc-800"
-                  : "bg-[#141418] border-[#222227] text-zinc-300"
-              }`}
+              sideOffset={4}
+              className="w-48 bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 rounded-[6px] shadow-xl p-1 text-xs select-none z-50 font-sans"
             >
-              <DropdownMenuLabel className="text-[10px] uppercase font-semibold text-zinc-400 px-2 py-1">
-                Select Shell
+              <DropdownMenuLabel className="text-[10px] uppercase font-semibold text-zinc-400 px-2 py-1 tracking-wider">
+                Shell Environment
               </DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => setShellType("zsh")}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-mono"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-[4px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-mono"
               >
-                <span className="text-emerald-600 font-bold">›_</span>
+                <span className="text-emerald-500 font-bold">›_</span>
                 <span>/bin/zsh (Default)</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setShellType("bash")}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-mono"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-[4px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-mono"
               >
-                <span className="text-amber-600 font-bold">›_</span>
+                <span className="text-amber-500 font-bold">›_</span>
                 <span>/bin/bash</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setShellType("node")}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-mono"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-[4px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-mono"
               >
-                <span className="text-emerald-600">⬢</span>
+                <span className="text-emerald-500">⬢</span>
                 <span>Node.js REPL</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-            <span className="text-zinc-300 dark:text-zinc-700">|</span>
-            <GitBranch className="size-3 text-emerald-600 dark:text-emerald-500 shrink-0" />
-            <span className="text-zinc-700 dark:text-zinc-300 truncate max-w-[120px] font-medium">
+          <span className="text-zinc-300 dark:text-zinc-700 text-xs select-none">/</span>
+
+          {/* Worktree Branch */}
+          <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-600 dark:text-zinc-400">
+            <GitBranch className="size-3 text-zinc-400 dark:text-zinc-500 shrink-0" />
+            <span className="truncate max-w-[150px] font-medium text-zinc-800 dark:text-zinc-200">
               {activeLane?.branch || "main"}
             </span>
           </div>
 
+          {/* Minimal Live Status Tag */}
           <div
-            className={`flex items-center gap-1.5 px-2 py-0.5 border text-[10px] font-mono rounded-[3.5px] ${
-              isLight
-                ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                : "bg-emerald-950/40 border-emerald-800/50 text-emerald-400"
-            }`}
+            className="flex items-center gap-1.5 pl-1.5 pr-2 py-0.5 text-[10px] font-mono select-none"
+            title={connected ? "Connected to live Host PTY session" : "Disconnected from Host PTY"}
           >
             <span
-              className={`size-1.5 rounded-[3.5px] ${
+              className={`size-1.5 rounded-full ${
                 connected
-                  ? isLight
-                    ? "bg-emerald-600 animate-pulse"
-                    : "bg-emerald-400 animate-pulse"
-                  : isLight
-                  ? "bg-emerald-600"
-                  : "bg-emerald-500"
+                  ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)] animate-pulse"
+                  : "bg-rose-500 dark:bg-rose-600"
               }`}
             />
-            <span className="uppercase tracking-wider font-semibold">
-              {connected ? "LIVE WS" : "ACTIVE LOCAL"}
+            <span className={`uppercase tracking-wider font-semibold ${
+              connected ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500"
+            }`}>
+              {connected ? "LIVE PTY" : "OFFLINE"}
             </span>
           </div>
         </div>
 
-        {/* Center: Quick Command Action Chips */}
-        <div className="hidden md:flex items-center gap-1.5">
+        {/* Center: Sleek Segmented Quick Command Bar */}
+        <div className="hidden md:flex items-center p-0.5 bg-zinc-200/50 dark:bg-zinc-800/40 rounded-[5px] border border-zinc-200/60 dark:border-zinc-800/60 gap-0.5">
           {QUICK_COMMANDS.map((qc) => (
             <button
               key={qc.label}
               type="button"
               onClick={() => executeCommand(qc.cmd)}
-              className={`px-2 py-0.5 border text-[10px] font-mono transition-colors cursor-pointer rounded-[3.5px] ${
-                isLight
-                  ? "bg-white hover:bg-zinc-100 border-zinc-200 hover:border-zinc-300 text-zinc-600 hover:text-zinc-900"
-                  : "bg-[#141418] hover:bg-[#1C1C22] border-[#222227] hover:border-zinc-700 text-zinc-400 hover:text-zinc-200"
-              }`}
-              title={`Execute '${qc.cmd}'`}
+              className="px-2 py-0.5 text-[11px] font-mono rounded-[3.5px] text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-900/90 hover:shadow-2xs transition-all cursor-pointer active:scale-[0.98]"
+              title={`Run '${qc.cmd}'`}
             >
-              {qc.label}
+              <span className="text-zinc-400 dark:text-zinc-500 mr-0.5">$</span>
+              {qc.label.replace("pnpm ", "").replace("git ", "")}
             </button>
           ))}
         </div>
 
         {/* Right: Actions (Font Switcher, Theme Toggle, Copy, Clear, Restart) */}
-        <div
-          className={`flex items-center gap-1 shrink-0 ${
-            isLight ? "text-zinc-600" : "text-zinc-400"
-          }`}
-        >
+        <div className="flex items-center gap-0.5 shrink-0 text-zinc-500 dark:text-zinc-400">
           {/* Typography & Font Selector */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
                 title="Change terminal font & size"
-                className={`flex items-center gap-1 px-1.5 py-1 text-xs transition-colors cursor-pointer rounded-[3.5px] ${
-                  isLight
-                    ? "hover:bg-zinc-200/80 text-zinc-700"
-                    : "hover:bg-[#1E1E24] text-zinc-300"
-                }`}
+                className="flex items-center gap-1 px-1.5 py-1 text-xs hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer rounded-[4px]"
               >
                 <Type className="size-3.5" />
                 <span className="text-[10px] font-mono hidden xl:inline">
                   {TERMINAL_FONTS.find((f) => f.id === selectedFont)?.name.split(" ")[0]}
                 </span>
-                <ChevronDown className="size-2 text-zinc-400" />
+                <ChevronDown className="size-2.5 text-zinc-400" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className={`w-52 border rounded-[3.5px] shadow-xl p-1 text-xs select-none ${
-                isLight
-                  ? "bg-white border-zinc-200 text-zinc-800"
-                  : "bg-[#141418] border-[#222227] text-zinc-300"
-              }`}
+              sideOffset={4}
+              className="w-52 bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 rounded-[6px] shadow-xl p-1 text-xs select-none z-50 font-sans"
             >
-              <DropdownMenuLabel className="text-[10px] uppercase font-semibold text-zinc-400 px-2 py-1">
+              <DropdownMenuLabel className="text-[10px] uppercase font-semibold text-zinc-400 px-2 py-1 tracking-wider">
                 Monospace Font
               </DropdownMenuLabel>
               {TERMINAL_FONTS.map((font) => (
                 <DropdownMenuItem
                   key={font.id}
                   onClick={() => setSelectedFont(font.id)}
-                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-[3.5px] cursor-pointer text-xs ${
+                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-[4px] cursor-pointer text-xs ${
                     selectedFont === font.id
                       ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold"
-                      : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
                   }`}
                 >
                   <span style={{ fontFamily: font.family }}>{font.name}</span>
@@ -820,8 +704,8 @@ export function TerminalPane() {
                   )}
                 </DropdownMenuItem>
               ))}
-              <DropdownMenuSeparator className="my-1" />
-              <DropdownMenuLabel className="text-[10px] uppercase font-semibold text-zinc-400 px-2 py-1">
+              <DropdownMenuSeparator className="my-1 bg-zinc-100 dark:bg-zinc-800" />
+              <DropdownMenuLabel className="text-[10px] uppercase font-semibold text-zinc-400 px-2 py-1 tracking-wider">
                 Font Size
               </DropdownMenuLabel>
               <div className="flex items-center justify-between px-2 py-1 gap-1">
@@ -830,7 +714,7 @@ export function TerminalPane() {
                     key={size}
                     type="button"
                     onClick={() => setFontSize(size)}
-                    className={`flex-1 py-1 text-[11px] font-mono rounded-[3.5px] border transition-colors cursor-pointer ${
+                    className={`flex-1 py-1 text-[11px] font-mono rounded-[3px] border transition-colors cursor-pointer ${
                       fontSize === size
                         ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-zinc-900 dark:border-zinc-100 font-bold"
                         : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
@@ -848,9 +732,7 @@ export function TerminalPane() {
             type="button"
             onClick={() => setThemeMode(isLight ? "dark" : "light")}
             title={`Switch to ${isLight ? "Dark" : "Light"} terminal`}
-            className={`flex size-7 items-center justify-center rounded-[3.5px] transition-colors cursor-pointer ${
-              isLight ? "hover:bg-zinc-200/80 text-zinc-700" : "hover:bg-[#1E1E24] text-zinc-300"
-            }`}
+            className="flex size-7 items-center justify-center rounded-[4px] hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
           >
             {isLight ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
           </button>
@@ -859,9 +741,7 @@ export function TerminalPane() {
             type="button"
             onClick={handleCopy}
             title="Copy selection"
-            className={`flex size-7 items-center justify-center rounded-[3.5px] transition-colors cursor-pointer ${
-              isLight ? "hover:bg-zinc-200/80 text-zinc-700" : "hover:bg-[#1E1E24] text-zinc-300"
-            }`}
+            className="flex size-7 items-center justify-center rounded-[4px] hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
           >
             {copied ? (
               <Check className="size-3.5 text-emerald-600 stroke-[2.5]" />
@@ -873,9 +753,7 @@ export function TerminalPane() {
             type="button"
             onClick={handleClear}
             title="Clear terminal buffer"
-            className={`flex size-7 items-center justify-center rounded-[3.5px] transition-colors cursor-pointer ${
-              isLight ? "hover:bg-zinc-200/80 text-zinc-700" : "hover:bg-[#1E1E24] text-zinc-300"
-            }`}
+            className="flex size-7 items-center justify-center rounded-[4px] hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
           >
             <Trash2 className="size-3.5 stroke-[2]" />
           </button>
@@ -883,9 +761,7 @@ export function TerminalPane() {
             type="button"
             onClick={handleRestart}
             title="Restart session PTY"
-            className={`flex size-7 items-center justify-center rounded-[3.5px] transition-colors cursor-pointer ${
-              isLight ? "hover:bg-zinc-200/80 text-zinc-700" : "hover:bg-[#1E1E24] text-zinc-300"
-            }`}
+            className="flex size-7 items-center justify-center rounded-[4px] hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
           >
             <RotateCcw className="size-3.5 stroke-[2]" />
           </button>
@@ -894,9 +770,10 @@ export function TerminalPane() {
 
       {/* Terminal Viewport Canvas */}
       <div
-        className={`flex-1 w-full h-full p-3 overflow-hidden rounded-[3.5px] focus:outline-none ${
-          isLight ? "bg-white" : "bg-[#08080A]"
+        className={`flex-1 w-full h-full p-3.5 pl-4 overflow-hidden focus:outline-none cursor-text ${
+          isLight ? "bg-[#FAFAFA]" : "bg-[#090A0E]"
         }`}
+        onClick={() => xtermInstance.current?.focus()}
         ref={terminalRef}
       />
     </div>

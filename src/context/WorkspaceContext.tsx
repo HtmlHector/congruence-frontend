@@ -87,7 +87,7 @@ export interface WorktreeChat {
   id: string;
   laneId: string;
   title: string;
-  harness: "Claude" | "Codex" | "Antigravity" | "Shell";
+  harness: "Claude" | "Codex" | "Antigravity" | "OpenCode" | "Command Code" | "OpenRouter" | "Shell";
   model?: string;
   createdAt: string;
   state?: AgentExecutionState;
@@ -150,7 +150,7 @@ interface WorkspaceContextType {
   createWorktree: (
     branchName: string,
     targetProjectId?: string,
-    harness?: "Claude" | "Codex" | "Antigravity" | "Shell"
+    harness?: "Claude" | "Codex" | "Antigravity" | "OpenCode" | "Command Code" | "OpenRouter" | "Shell"
   ) => Promise<void>;
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -190,7 +190,7 @@ interface WorkspaceContextType {
   ) => void;
   createChatInGroup: (
     groupId: "primary" | "secondary",
-    harness: "Claude" | "Codex" | "Antigravity" | "Shell",
+    harness: "Claude" | "Codex" | "Antigravity" | "OpenCode" | "Command Code" | "OpenRouter" | "Shell",
     title?: string
   ) => string;
   openSplitWithTab: (
@@ -205,7 +205,7 @@ interface WorkspaceContextType {
   toggleSleepWake: () => Promise<void>;
   switchLane: (laneId: string) => void;
   closeLane: (laneId: string, e?: React.MouseEvent) => void;
-  createChat: (laneId: string, harness: "Claude" | "Codex" | "Antigravity" | "Shell", title?: string) => string;
+  createChat: (laneId: string, harness: "Claude" | "Codex" | "Antigravity" | "OpenCode" | "Command Code" | "OpenRouter" | "Shell", title?: string) => string;
   switchChat: (chatId: string) => void;
   closeChat: (chatId: string, e?: React.MouseEvent) => void;
   clearChatHistory: (chatId: string) => void;
@@ -300,7 +300,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     }));
 
     if (mapped.length > 0) {
-      setTenants(mapped);
+      setTenants((prev) => {
+        const isSame =
+          prev.length === mapped.length &&
+          prev.every((t, i) => t.id === mapped[i].id && t.name === mapped[i].name && t.slug === mapped[i].slug && t.plan === mapped[i].plan);
+        return isSame ? prev : mapped;
+      });
       try {
         localStorage.setItem("congruence_cached_tenants", JSON.stringify(mapped));
       } catch {}
@@ -310,26 +315,37 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           (m) => m.id === workspaceSlugOrId || m.slug === workspaceSlugOrId
         );
         if (matched) {
-          setCurrentTenant(matched);
+          setCurrentTenant((prev) => (prev?.id === matched.id && prev?.name === matched.name && prev?.slug === matched.slug ? prev : matched));
           setWorkspaceNotFound(false);
+        } else if (mapped.length > 0) {
+          const fallback = mapped[0];
+          setCurrentTenant(fallback);
+          setWorkspaceNotFound(false);
+          router.replace(`/${fallback.slug || fallback.id}`);
         } else {
-          setCurrentTenant(null);
+          setCurrentTenant((prev) => (prev === null ? prev : null));
           setWorkspaceNotFound(true);
         }
-      } else if (!currentTenant || !mapped.some((t) => t.id === currentTenant.id)) {
-        setCurrentTenant(mapped[0]);
+      } else {
+        setCurrentTenant((prev) => {
+          if (prev && mapped.some((t) => t.id === prev.id)) return prev;
+          return mapped[0];
+        });
         setWorkspaceNotFound(false);
       }
     }
     setIsWorkspaceLoading(false);
-  }, [workspacesData, workspaceSlugOrId, userEmail, currentTenant]);
+  }, [workspacesData, workspaceSlugOrId, userEmail]);
 
   // Sync currentTenant when route param changes
   useEffect(() => {
     if (!workspaceSlugOrId) {
       setWorkspaceNotFound(false);
-      if (tenants.length > 0 && (!currentTenant || !tenants.some((t) => t.id === currentTenant.id))) {
-        setCurrentTenant(tenants[0]);
+      if (tenants.length > 0) {
+        setCurrentTenant((prev) => {
+          if (prev && tenants.some((t) => t.id === prev.id)) return prev;
+          return tenants[0];
+        });
       }
       return;
     }
@@ -340,13 +356,13 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     );
 
     if (existing) {
-      setCurrentTenant(existing);
+      setCurrentTenant((prev) => (prev?.id === existing.id && prev?.name === existing.name && prev?.slug === existing.slug ? prev : existing));
       setWorkspaceNotFound(false);
     } else if (tenants.length > 0) {
-      setCurrentTenant(null);
+      setCurrentTenant((prev) => (prev === null ? prev : null));
       setWorkspaceNotFound(true);
     }
-  }, [workspaceSlugOrId, tenants, isWorkspaceLoading, currentTenant]);
+  }, [workspaceSlugOrId, tenants, isWorkspaceLoading]);
 
   const [isNewWorkspaceOpen, setIsNewWorkspaceOpen] = useState(false);
   const [mode, setMode] = useState<WorkspaceViewMode>("deck");
@@ -662,15 +678,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const setGroupActiveTab = useCallback(
     (groupId: "primary" | "secondary", tabId: string) => {
       const targetChat = chats.find((c) => c.id === tabId);
-      const isAiAgent = targetChat && targetChat.harness !== "Shell";
-      const harnessKey = isAiAgent ? (targetChat.harness.toLowerCase() as SupportedHarness) : null;
-      const isConnected = harnessKey ? integrationsStatus?.harnesses?.[harnessKey]?.state === "connected" : false;
-      const isDisconnected = isAiAgent && !isConnected;
-
-      let targetView: "chat" | "pty" = "chat";
-      if (targetChat?.harness === "Shell" || isDisconnected) {
-        targetView = "pty";
-      }
+      const targetView: "chat" | "pty" = targetChat?.harness === "Shell" ? "pty" : "chat";
 
       setPaneGroups((prev) => {
         return {
@@ -683,14 +691,6 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         };
       });
 
-      if (isDisconnected && harnessKey && HARNESS_LOGIN_COMMANDS[harnessKey]) {
-        const cmd = HARNESS_LOGIN_COMMANDS[harnessKey];
-        setPendingCommand(cmd);
-        toast.info(
-          `Opening terminal for ${targetChat?.harness} authentication (\`${cmd}\`) — ${HARNESS_LOGIN_HINTS[harnessKey]}`
-        );
-      }
-
       if (groupId === "primary") {
         if (tabId === "preview") setActiveTab("preview");
         else if (tabId === "changes") setActiveTab("changes");
@@ -700,7 +700,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         }
       }
     },
-    [chats, integrationsStatus]
+    [chats]
   );
 
   const setGroupAgentView = useCallback((groupId: "primary" | "secondary", view: "chat" | "pty") => {
@@ -951,7 +951,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   );
 
   const createChat = useCallback(
-    (laneId: string, harness: "Claude" | "Codex" | "Antigravity" | "Shell", title?: string) => {
+    (laneId: string, harness: "Claude" | "Codex" | "Antigravity" | "OpenCode" | "Command Code" | "OpenRouter" | "Shell", title?: string) => {
       const newChatId = `chat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
       const defaultModel =
         harness === "Claude"
@@ -960,6 +960,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           ? "o3-mini"
           : harness === "Antigravity"
           ? "Gemini 3.8 Flash (High)"
+          : harness === "OpenCode"
+          ? "mimo-v2.6-flash-free"
+          : harness === "Command Code"
+          ? "taste-1 (Adaptive)"
+          : harness === "OpenRouter"
+          ? "deepseek/deepseek-r1"
           : undefined;
       const newChat: WorktreeChat = {
         id: newChatId,
@@ -973,10 +979,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       setActiveChatId(newChatId);
       setActiveTab("terminal");
 
-      const harnessKey = harness === "Shell" ? null : (harness.toLowerCase() as SupportedHarness);
-      const isConnected = harnessKey ? integrationsStatus?.harnesses?.[harnessKey]?.state === "connected" : false;
-      const isDisconnected = harness !== "Shell" && !isConnected;
-      const initialView: "chat" | "pty" = harness === "Shell" || isDisconnected ? "pty" : "chat";
+      const initialView: "chat" | "pty" = harness === "Shell" ? "pty" : "chat";
 
       setPaneGroups((prev) => ({
         ...prev,
@@ -990,41 +993,26 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         },
       }));
 
-      if (isDisconnected && harnessKey && HARNESS_LOGIN_COMMANDS[harnessKey]) {
-        const cmd = HARNESS_LOGIN_COMMANDS[harnessKey];
-        setPendingCommand(cmd);
-        toast.info(
-          `Opening terminal for ${harness} authentication (\`${cmd}\`) — ${HARNESS_LOGIN_HINTS[harnessKey]}`
-        );
-      }
-
       logActivity(`Created new ${harness} chat in worktree`);
       return newChatId;
     },
-    [integrationsStatus, logActivity]
+    [logActivity]
   );
 
   const createChatInGroup = useCallback(
-    (groupId: "primary" | "secondary", harness: "Claude" | "Codex" | "Antigravity" | "Shell", title?: string) => {
+    (groupId: "primary" | "secondary", harness: "Claude" | "Codex" | "Antigravity" | "OpenCode" | "Command Code" | "OpenRouter" | "Shell", title?: string) => {
       if (!activeLaneId) return "";
       const count = chats.filter((c) => c.laneId === activeLaneId).length + 1;
       const defaultTitle = `${harness} Chat ${count}`;
       const newChatId = createChat(activeLaneId, harness, title || defaultTitle);
       addTabToGroup(groupId, newChatId);
 
-      const harnessKey = harness === "Shell" ? null : (harness.toLowerCase() as SupportedHarness);
-      const isConnected = harnessKey ? integrationsStatus?.harnesses?.[harnessKey]?.state === "connected" : false;
-      const isDisconnected = harness !== "Shell" && !isConnected;
-
-      if (harness === "Shell" || isDisconnected) {
-        setGroupAgentView(groupId, "pty");
-      } else {
-        setGroupAgentView(groupId, "chat");
-      }
+      const defaultView: "chat" | "pty" = harness === "Shell" ? "pty" : "chat";
+      setGroupAgentView(groupId, defaultView);
 
       return newChatId;
     },
-    [activeLaneId, chats, createChat, addTabToGroup, setGroupAgentView, integrationsStatus]
+    [activeLaneId, chats, createChat, addTabToGroup, setGroupAgentView]
   );
 
   // Background polling for provider authentication resolution and auto-switch back to chat
@@ -1140,8 +1128,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   // Backend requires a bearer token on every project route; attach the signed-in user's Clerk token.
   const { getToken } = useAuth();
   useEffect(() => {
-    setApiTokenProvider(() => getToken());
-    return () => setApiTokenProvider(null);
+    if (getToken) {
+      setApiTokenProvider(() => getToken());
+    }
   }, [getToken]);
 
   const toggleSidebar = useCallback(() => {
@@ -1282,7 +1271,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           return exists ? exists.id : mappedLanes[0].id;
         });
       } else {
-        const initialLane: WorkLaneData = {
+        const initialMainLane: WorkLaneData = {
           id: `lane-main-${projId.slice(0, 6)}`,
           name: "main",
           slug: "main",
@@ -1291,8 +1280,17 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           is_pair_lane: true,
           status: "ready",
         };
-        setLanes([initialLane]);
-        setActiveLaneId(initialLane.id);
+        const initialAgentLane: WorkLaneData = {
+          id: `lane-feat-${projId.slice(0, 6)}`,
+          name: "feat/synapse-agent",
+          slug: "feat-synapse-agent",
+          branch: "feat/synapse-agent",
+          branch_name: "feat/synapse-agent",
+          is_pair_lane: false,
+          status: "ready",
+        };
+        setLanes([initialMainLane, initialAgentLane]);
+        setActiveLaneId(initialAgentLane.id);
       }
 
       if (actorsData.status === "fulfilled" && actorsData.value.length > 0) {
@@ -1890,7 +1888,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     async (
       branchName: string,
       targetProjectId?: string,
-      harness: "Claude" | "Codex" | "Antigravity" | "Shell" = "Claude"
+      harness: "Claude" | "Codex" | "Antigravity" | "OpenCode" | "Command Code" | "OpenRouter" | "Shell" = "Claude"
     ) => {
       const activeProjId = targetProjectId || projectId;
       if (!activeProjId) throw new Error("No active project selected");

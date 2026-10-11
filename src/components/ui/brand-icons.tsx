@@ -34,19 +34,196 @@ export function OpenAIIcon({ className = "size-3.5", ...props }: React.SVGProps<
 
 export const CodexIcon = OpenAIIcon;
 
-export function AntigravityIcon({ className = "size-3.5", ...props }: React.SVGProps<SVGSVGElement>) {
+const ANTIGRAVITY_PATH =
+  "M89.7 93.7c4.667 3.5 11.667 1.167 5.25-5.25C75.7 69.778 79.783 18.445 55.866 18.445S36.033 69.778 16.783 88.445c-7 7-.417 8.75 4.25 5.25 18.083-12.25 16.916-33.834 33.833-33.834s16.834 21.584 34.834 33.834z";
+
+export function AntigravityIcon({
+  className = "size-3.5",
+  variant = "gradient",
+  ...props
+}: React.SVGProps<SVGSVGElement> & { variant?: "gradient" | "mono" }) {
+  const gradientId = React.useId();
+
+  if (variant === "mono") {
+    return (
+      <svg
+        role="img"
+        viewBox="0 0 112 112"
+        fill="currentColor"
+        className={className}
+        aria-hidden="true"
+        {...props}
+      >
+        <path d={ANTIGRAVITY_PATH} />
+      </svg>
+    );
+  }
+
   return (
     <svg
+      role="img"
+      viewBox="0 0 112 112"
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="currentColor"
       className={className}
+      fill="none"
       aria-hidden="true"
       {...props}
     >
-      <path d="M12 24C12 17.3726 6.62742 12 0 12C6.62742 12 12 6.62742 12 0C12 6.62742 17.3726 12 24 12C17.3726 12 12 17.3726 12 24Z" />
+      <defs>
+        <linearGradient
+          gradientUnits="userSpaceOnUse"
+          id={gradientId}
+          x1="16"
+          y1="18"
+          x2="96"
+          y2="18"
+        >
+          <stop offset="0" stopColor="#00B95C" />
+          <stop offset="0.35" stopColor="#FBBC04" />
+          <stop offset="0.65" stopColor="#FC413D" />
+          <stop offset="1" stopColor="#3186FF" />
+        </linearGradient>
+      </defs>
+      <path d={ANTIGRAVITY_PATH} fill={`url(#${gradientId})`} />
     </svg>
   );
 }
 
 export const GeminiIcon = AntigravityIcon;
+
+export function OpenCodeIcon({ className = "size-3.5", ...props }: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      fillRule="evenodd"
+      className={className}
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M16 6H8v12h8V6zm4 16H4V2h16v20z" />
+    </svg>
+  );
+}
+
+export function CommandCodeIcon({ className = "size-3.5", ...props }: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z" />
+    </svg>
+  );
+}
+
+export function OpenRouterIcon({ className = "size-3.5", ...props }: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+      {...props}
+    >
+      <circle cx="12" cy="12" r="9.5" />
+      <path d="M8 12h8" />
+      <path d="m12 8 4 4-4 4" />
+    </svg>
+  );
+}
+
+export function OpenRouterGlyphIcon({ className = "size-3.5", ...props }: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 1024 730"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M795.893 0C915.776 0 1012.95 97.9963 1012.95 218.88C1012.95 339.764 915.776 437.76 795.893 437.76L1011.2 654.869C1038.55 682.447 1019.18 729.6 980.504 729.6H361.77C161.97 729.6 0 566.273 0 364.8C0 163.327 161.97 0 361.77 0L795.893 0ZM361.77 145.92C241.89 145.92 144.708 243.916 144.708 364.8C144.708 485.684 241.89 583.68 361.77 583.68C481.649 583.68 578.831 485.684 578.831 364.8C578.831 243.916 481.649 145.92 361.77 145.92Z" />
+    </svg>
+  );
+}
+
+export function PairShellIcon({ className = "size-3.5", ...props }: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+      {...props}
+    >
+      <rect width="18" height="18" x="3" y="3" rx="4" />
+      <path d="m8 10 3 2-3 2" />
+      <path d="M13 16h3" />
+    </svg>
+  );
+}
+
+export function PreviewIcon({ className = "size-3.5", ...props }: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+export function ChangesIcon({ className = "size-3.5", ...props }: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M10 12.5 8 15l2 2.5" />
+      <path d="m14 12.5 2 2.5-2 2.5" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z" />
+    </svg>
+  );
+}
+
+
+

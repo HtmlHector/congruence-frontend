@@ -227,11 +227,12 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
       setFilterSource("all");
       setShowPatInput(false);
       setPatToken("");
+      refetchRepos();
       setTimeout(() => {
         searchInputRef.current?.focus();
       }, 50);
     }
-  }, [open]);
+  }, [open, refetchRepos]);
 
   const handleConnectGithub = async () => {
     try {
@@ -532,6 +533,18 @@ export function CloneRepoModal({ open, onOpenChange }: CloneRepoModalProps) {
                   </button>
                 )}
               </div>
+
+              {ghStatus?.connected && (
+                <button
+                  type="button"
+                  onClick={() => refetchRepos()}
+                  disabled={isReposFetching}
+                  title="Refresh repositories from GitHub"
+                  className="h-9 px-2.5 rounded-[3.5px] border border-[var(--border)] bg-[var(--surface-secondary)]/40 hover:bg-[var(--surface-secondary)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center justify-center transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                >
+                  <RefreshCw className={cn("size-3.5", isReposFetching && "animate-spin text-emerald-500")} />
+                </button>
+              )}
             </div>
 
             {/* PAT Token Input Form if opened */}

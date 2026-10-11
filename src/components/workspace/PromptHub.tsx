@@ -4,7 +4,6 @@ import React from "react";
 import { Star, Lightbulb, ArrowRight, Layers } from "lucide-react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { FloatingOmnibar } from "./FloatingOmnibar";
-import { StatusBar } from "./StatusBar";
 
 export function PromptHub() {
   const { setMode, submitPrompt, project } = useWorkspace();
@@ -86,9 +85,6 @@ export function PromptHub() {
         {/* Floating Omnibar */}
         <FloatingOmnibar />
       </div>
-
-      {/* Bottom Status Bar */}
-      <StatusBar />
     </div>
   );
 }

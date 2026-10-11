@@ -16,7 +16,9 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@assistant-ui/react": "^0.15.25",
+    "@assistant-ui/react": "^0.15.26",
+    "@assistant-ui/react-markdown": "^0.14.20",
+    "@assistant-ui/react-syntax-highlighter": "^0.14.7",
     "@clerk/nextjs": "^7.9.11",
     "@clerk/themes": "^2.4.57",
     "@radix-ui/react-accordion": "^1.2.21",
@@ -48,11 +50,14 @@
     "@xterm/xterm": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "lucide-react": "^0.475.0",
+    "motion": "^14.0.0",
     "nanoid": "^6.0.2",
     "next": "^15.2.0",
     "next-themes": "^0.4.6",
     "pg": "^8.23.1",
+    "radix-ui": "^1.7.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
@@ -60,7 +65,9 @@
     "sonner": "^2.0.1",
     "stripe": "^17.7.0",
     "tailwind-merge": "^3.0.1",
-    "zod": "^3.24.2"
+    "tw-shimmer": "^0.4.13",
+    "zod": "^3.24.2",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@playwright/test": "^1.50.0",
@@ -71,7 +78,7 @@
     "@types/react-dom": "^19.0.0",
     "postcss": "^8.4.0",
     "tailwindcss": "^4.0.0",
-    "typescript": "^5.7.0"
+    "typescript": "5.8.2"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

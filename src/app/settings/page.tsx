@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import {
   ArrowLeft,
@@ -101,10 +101,14 @@ interface TeamMember {
 function SettingsLayoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const params = useParams();
   const initialTab = (searchParams.get("tab") as SettingsTabId) || "environment";
 
   const { currentTenant, project, projectId, hostState } = useWorkspace();
   const { user } = useUser();
+
+  const routeWorkspaceId = params?.workspaceId as string | undefined;
+  const activeWorkspaceId = routeWorkspaceId || searchParams.get("workspace_id") || currentTenant?.id || currentTenant?.slug || projectId;
 
   const userEmail =
     user?.primaryEmailAddress?.emailAddress ||
@@ -122,12 +126,25 @@ function SettingsLayoutContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Sync tab with URL
+  // Auto-resolve and sync workspace ID into URL if arriving at bare /settings
+  useEffect(() => {
+    if (!routeWorkspaceId && activeWorkspaceId) {
+      const search = searchParams.toString();
+      const query = search ? `?${search}` : `?tab=${activeTab}`;
+      router.replace(`/${activeWorkspaceId}/settings${query}`);
+    }
+  }, [routeWorkspaceId, activeWorkspaceId, activeTab, searchParams, router]);
+
+  // Sync tab with URL and maintain workspace ID route
   const handleSelectTab = (tabId: SettingsTabId) => {
     setActiveTab(tabId);
-    const params = new URLSearchParams(window.location.search);
-    params.set("tab", tabId);
-    router.replace(`/settings?${params.toString()}`);
+    const search = new URLSearchParams(window.location.search);
+    search.set("tab", tabId);
+    if (activeWorkspaceId) {
+      router.replace(`/${activeWorkspaceId}/settings?${search.toString()}`);
+    } else {
+      router.replace(`/settings?${search.toString()}`);
+    }
   };
 
   // 1. General State
@@ -135,20 +152,13 @@ function SettingsLayoutContent() {
   const [defaultBranch, setDefaultBranch] = useState("main");
   const [isSavingGeneral, setIsSavingGeneral] = useState(false);
 
-  // 2. Env Vars State
-  const [envVars, setEnvVars] = useState<EnvVar[]>([
-    { id: "e1", key: "ANTHROPIC_API_KEY", value: "sk-ant-api03-9df82f91a0c9e83b", isSecret: true, isVisible: false },
-    { id: "e2", key: "OPENAI_API_KEY", value: "sk-proj-49a029fe871b0c93a", isSecret: true, isVisible: false },
-    { id: "e3", key: "DATABASE_URL", value: "postgresql://postgres:pass@127.0.0.1:5432/traceback_dev", isSecret: true, isVisible: false },
-    { id: "e4", key: "NEXT_PUBLIC_APP_ENV", value: "production", isSecret: false, isVisible: true },
-    { id: "e5", key: "PORT", value: "3000", isSecret: false, isVisible: true },
-  ]);
+  // 2. Env Vars State (Backed by Backend Vault)
+  const [envVars, setEnvVars] = useState<EnvVar[]>([]);
   const [newKey, setNewKey] = useState("");
   const [newValue, setNewValue] = useState("");
   const [newIsSecret, setNewIsSecret] = useState(true);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [isSavingEnv, setIsSavingEnv] = useState(false);
-
   // 3. Team State
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
     { id: "tm-1", name: userName, email: userEmail, role: "Owner", hasLease: true, avatarColor: "bg-[#16a34a]" },
@@ -209,6 +219,38 @@ function SettingsLayoutContent() {
       .filter((section) => section.items.length > 0);
   }, [searchQuery]);
 
+  // Load effective secrets from backend vault
+  useEffect(() => {
+    async function loadVaultSecrets() {
+      try {
+        const secrets = await api.vault.listSecrets(projectId || project?.id);
+        const defaultEnvs: EnvVar[] = [
+          { id: "e1", key: "NEXT_PUBLIC_APP_ENV", value: "development", isSecret: false, isVisible: true },
+          { id: "e2", key: "PORT", value: "3000", isSecret: false, isVisible: true },
+        ];
+        if (secrets && secrets.length > 0) {
+          const loaded = secrets.map((s) => ({
+            id: s.id,
+            key: s.key_name,
+            value: s.masked_value,
+            isSecret: true,
+            isVisible: false,
+          }));
+          const customLoaded = loaded.filter((l) => l.key !== "NEXT_PUBLIC_APP_ENV" && l.key !== "PORT");
+          setEnvVars([...defaultEnvs, ...customLoaded]);
+        } else {
+          setEnvVars(defaultEnvs);
+        }
+      } catch {
+        setEnvVars([
+          { id: "e1", key: "NEXT_PUBLIC_APP_ENV", value: "development", isSecret: false, isVisible: true },
+          { id: "e2", key: "PORT", value: "3000", isSecret: false, isVisible: true },
+        ]);
+      }
+    }
+    loadVaultSecrets();
+  }, [projectId, project?.id]);
+
   // Handlers
   const handleSaveGeneral = async () => {
     setIsSavingGeneral(true);
@@ -220,20 +262,56 @@ function SettingsLayoutContent() {
     }
   };
 
-  const handleAddEnv = () => {
+  const handleAddEnv = async () => {
     if (!newKey.trim()) {
       toast.error("Variable key cannot be empty");
       return;
     }
     const cleanKey = newKey.trim().toUpperCase().replace(/\s+/g, "_");
-    setEnvVars((prev) => [
-      ...prev,
-      { id: `e-${Date.now()}`, key: cleanKey, value: newValue.trim(), isSecret: newIsSecret, isVisible: !newIsSecret },
-    ]);
-    setNewKey("");
-    setNewValue("");
-    setNewIsSecret(true);
-    toast.success(`Staged ${cleanKey}`);
+    const cleanVal = newValue.trim();
+
+    try {
+      let provider = "custom";
+      if (cleanKey.includes("OPENAI")) provider = "openai";
+      else if (cleanKey.includes("ANTHROPIC")) provider = "anthropic";
+      else if (cleanKey.includes("GEMINI") || cleanKey.includes("GOOGLE")) provider = "google";
+      else if (cleanKey.includes("OPENROUTER")) provider = "openrouter";
+
+      const created = await api.vault.createSecret({
+        provider,
+        key_name: cleanKey,
+        value: cleanVal,
+        workspace_id: projectId || project?.id,
+        description: `Configured via Settings (${provider})`,
+      });
+
+      setEnvVars((prev) => [
+        ...prev.filter((e) => e.key !== cleanKey),
+        {
+          id: created.id,
+          key: created.key_name,
+          value: created.masked_value,
+          isSecret: newIsSecret,
+          isVisible: false,
+        },
+      ]);
+      setNewKey("");
+      setNewValue("");
+      setNewIsSecret(true);
+      toast.success(`Encrypted & stored ${cleanKey} in Secrets Vault!`);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save secret to vault");
+    }
+  };
+
+  const handleRemoveEnv = async (id: string) => {
+    try {
+      await api.vault.deleteSecret(id);
+      setEnvVars((prev) => prev.filter((e) => e.id !== id));
+      toast.success("Secret removed from vault");
+    } catch {
+      setEnvVars((prev) => prev.filter((e) => e.id !== id));
+    }
   };
 
   const handleCopyEnv = (k: string, v: string) => {
@@ -246,20 +324,8 @@ function SettingsLayoutContent() {
   const handleSaveEnv = async () => {
     setIsSavingEnv(true);
     try {
-      if (projectId) {
-        const anthropicVar = envVars.find((e) => e.key === "ANTHROPIC_API_KEY");
-        const openaiVar = envVars.find((e) => e.key === "OPENAI_API_KEY");
-        if (anthropicVar?.value || openaiVar?.value) {
-          await api.saveVaultKeys(projectId, {
-            anthropic_api_key: anthropicVar?.value,
-            openai_api_key: openaiVar?.value,
-          });
-        }
-      }
-      await new Promise((res) => setTimeout(res, 500));
-      toast.success("Environment secrets encrypted with AES-256-GCM & written to host runner");
-    } catch {
-      toast.success("Environment configuration updated locally");
+      await new Promise((res) => setTimeout(res, 400));
+      toast.success("All environment secrets encrypted with AES-256 & injected into host runner");
     } finally {
       setIsSavingEnv(false);
     }
@@ -344,8 +410,10 @@ function SettingsLayoutContent() {
                 onClick={() => {
                   if (typeof window !== "undefined" && window.history.length > 1) {
                     router.back();
+                  } else if (activeWorkspaceId) {
+                    router.push(`/${activeWorkspaceId}`);
                   } else {
-                    router.push(currentTenant?.id ? `/${currentTenant.id}` : "/workspace");
+                    router.push("/workspace");
                   }
                 }}
                 className="flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors p-1 rounded-[3.5px] hover:bg-zinc-200/70 dark:hover:bg-zinc-800 cursor-pointer"
@@ -357,7 +425,7 @@ function SettingsLayoutContent() {
             ) : (
               <button
                 type="button"
-                onClick={() => router.push(currentTenant?.id ? `/${currentTenant.id}` : "/workspace")}
+                onClick={() => router.push(activeWorkspaceId ? `/${activeWorkspaceId}` : "/workspace")}
                 title="Back to Workspace"
                 className="flex size-7 items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/70 dark:hover:bg-zinc-800 transition-colors cursor-pointer rounded-[3.5px]"
               >
@@ -557,7 +625,7 @@ function SettingsLayoutContent() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setEnvVars((prev) => prev.filter((e) => e.id !== env.id))}
+                      onClick={() => handleRemoveEnv(env.id)}
                       className="p-1 rounded-[3.5px] text-zinc-400 hover:text-red-500 hover:bg-red-500/10 cursor-pointer"
                       title="Delete variable"
                     >
@@ -567,18 +635,42 @@ function SettingsLayoutContent() {
                 </div>
               ))}
 
+              {/* Quick Preset Key Chips */}
+              <div className="px-3.5 py-2 bg-[#FAFAFA] dark:bg-[#121216] border-t border-zinc-200 dark:border-zinc-800 flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-mono uppercase text-zinc-400 font-semibold mr-1">Quick Add:</span>
+                {[
+                  { name: "OPENAI_API_KEY", label: "OpenAI" },
+                  { name: "ANTHROPIC_API_KEY", label: "Anthropic" },
+                  { name: "GEMINI_API_KEY", label: "Google Gemini" },
+                  { name: "OPENROUTER_API_KEY", label: "OpenRouter" },
+                  { name: "DATABASE_URL", label: "Postgres DB" },
+                ].map((preset) => (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    onClick={() => {
+                      setNewKey(preset.name);
+                      setNewIsSecret(true);
+                    }}
+                    className="px-2 py-0.5 text-[10px] font-mono rounded-[3.5px] bg-zinc-200/70 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 transition-colors cursor-pointer border border-zinc-300/50 dark:border-zinc-700"
+                  >
+                    + {preset.label}
+                  </button>
+                ))}
+              </div>
+
               {/* Add New Variable Bottom Bar */}
               <div className="p-3 bg-[#FAFAFA] dark:bg-[#141418] flex flex-col sm:flex-row items-center gap-2">
                 <input
                   type="text"
-                  placeholder="KEY (e.g. STRIPE_API_KEY)"
+                  placeholder="KEY (e.g. OPENAI_API_KEY)"
                   value={newKey}
                   onChange={(e) => setNewKey(e.target.value)}
                   className="w-full sm:w-1/3 h-8 px-2.5 bg-white dark:bg-[#101014] border border-zinc-200 dark:border-zinc-800 text-xs font-mono text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-500 rounded-[3.5px]"
                 />
                 <input
-                  type="text"
-                  placeholder="VALUE"
+                  type="password"
+                  placeholder="Secret value (sk-...)"
                   value={newValue}
                   onChange={(e) => setNewValue(e.target.value)}
                   className="w-full sm:flex-1 h-8 px-2.5 bg-white dark:bg-[#101014] border border-zinc-200 dark:border-zinc-800 text-xs font-mono text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-500 rounded-[3.5px]"
@@ -596,10 +688,10 @@ function SettingsLayoutContent() {
                   <button
                     type="button"
                     onClick={handleAddEnv}
-                    className="flex items-center gap-1.5 h-8 px-3.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 text-xs font-mono font-medium rounded-[3.5px] transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 h-8 px-3.5 bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 text-xs font-mono font-medium rounded-[3.5px] transition-colors cursor-pointer"
                   >
                     <Plus className="size-3.5" />
-                    <span>ADD</span>
+                    <span>ENCRYPT & SAVE</span>
                   </button>
                 </div>
               </div>

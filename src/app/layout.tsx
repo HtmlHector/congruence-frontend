@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inter, JetBrains_Mono, Lexend, Fira_Code } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/QueryProvider";
@@ -23,9 +23,21 @@ const inter = Inter({
   display: "swap",
 });
 
+const lexend = Lexend({
+  subsets: ["latin"],
+  variable: "--font-lexend",
+  display: "swap",
+});
+
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
+  display: "swap",
+});
+
+const firaCode = Fira_Code({
+  subsets: ["latin"],
+  variable: "--font-fira-code",
   display: "swap",
 });
 
@@ -45,9 +57,9 @@ export const metadata: Metadata = {
     "congruence",
   ],
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
-    apple: "/favicon.svg",
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
   },
 };
 
@@ -66,7 +78,7 @@ export default function RootLayout({
         },
       }}
     >
-      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
+      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${lexend.variable} ${jetbrainsMono.variable} ${firaCode.variable}`}>
         <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)] font-sans antialiased selection:bg-[var(--accent-claude-subtle)] selection:text-[var(--selection-fg)]">
           <QueryProvider>
             {children}

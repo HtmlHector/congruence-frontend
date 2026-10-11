@@ -12,6 +12,8 @@ import { SettingsModal } from "./SettingsModal";
 import { NewWorktreeModal } from "./NewWorktreeModal";
 import { WorkspaceContextMenu } from "./WorkspaceContextMenu";
 
+import { CommandPaletteModal } from "./CommandPaletteModal";
+
 export function InteractiveWorkspace() {
   const {
     mode,
@@ -22,6 +24,8 @@ export function InteractiveWorkspace() {
     isNewWorktreeOpen,
     setIsNewWorktreeOpen,
     worktreeTargetProjectId,
+    isSearchOpen,
+    setIsSearchOpen,
   } = useWorkspace();
 
   return (
@@ -76,6 +80,7 @@ export function InteractiveWorkspace() {
         onOpenChange={setIsNewWorktreeOpen}
         targetProjectId={worktreeTargetProjectId || undefined}
       />
+      <CommandPaletteModal open={isSearchOpen} onOpenChange={setIsSearchOpen} />
     </div>
   );
 }

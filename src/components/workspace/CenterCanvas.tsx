@@ -35,6 +35,12 @@ import {
   OpenAIIcon,
   ClaudeIcon,
   AntigravityIcon,
+  OpenCodeIcon,
+  CommandCodeIcon,
+  OpenRouterIcon,
+  PairShellIcon,
+  PreviewIcon,
+  ChangesIcon,
 } from "@/components/ui/brand-icons";
 import {
   DropdownMenu,
@@ -60,6 +66,7 @@ import { TerminalPane } from "./TerminalPane";
 import { AgentChatPane } from "./AgentChatPane";
 import { ChangesPane } from "./ChangesPane";
 import { FileEditorPane } from "./FileEditorPane";
+import { CommandStation } from "./CommandStation";
 
 interface TabItemInfo {
   id: string;
@@ -125,10 +132,19 @@ function renderTabIcon(tab: TabItemInfo) {
   const isClaude = tab.chat?.harness === "Claude";
   const isCodex = tab.chat?.harness === "Codex";
   const isAntigravity = tab.chat?.harness === "Antigravity";
+  const isOpenRouter = tab.chat?.harness === "OpenRouter" || tab.chat?.harness?.toLowerCase() === "openrouter";
+  const isOpenCode = tab.chat?.harness?.toLowerCase() === "opencode";
+  const isCommandCode =
+    tab.chat?.harness?.toLowerCase() === "commandcode" ||
+    tab.chat?.harness?.toLowerCase() === "command code" ||
+    tab.chat?.harness?.toLowerCase() === "command";
 
   if (isClaude) return <ClaudeIcon className="size-3.5 text-[var(--accent-claude)] shrink-0" />;
   if (isCodex) return <OpenAIIcon className="size-3.5 text-[var(--status-awake)] shrink-0" />;
   if (isAntigravity) return <AntigravityIcon className="size-3.5 text-indigo-500 shrink-0" />;
+  if (isOpenRouter) return <OpenRouterIcon className="size-3.5 text-purple-500 dark:text-purple-400 shrink-0" />;
+  if (isOpenCode) return <OpenCodeIcon className="size-3.5 text-blue-500 dark:text-blue-400 shrink-0" />;
+  if (isCommandCode) return <CommandCodeIcon className="size-3.5 text-amber-500 dark:text-amber-400 shrink-0" />;
 
   return (
     <div className="flex items-center justify-center size-3.5 rounded-[3px] bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-sans text-[10px] font-semibold shrink-0">
@@ -388,7 +404,7 @@ function PaneGroupView({
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-white dark:bg-[#0A0A0C] min-w-0">
       {/* Pane Group Tab Bar Header */}
-      <header className="flex h-9 shrink-0 items-center justify-between border-b border-zinc-200 dark:border-[#222227] bg-[#FAFAFA] dark:bg-[#0B0B0E] pl-0 pr-2 select-none gap-2 overflow-hidden">
+      <header className="flex h-10 shrink-0 items-center justify-between border-b border-zinc-200 dark:border-[#222227] bg-[#FAFAFA] dark:bg-[#0B0B0E] pl-0 pr-2 select-none gap-2 overflow-hidden">
         {/* Left: Tab list and '+' button */}
         <div
           ref={tabStripRef}
@@ -437,9 +453,9 @@ function PaneGroupView({
                         <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-emerald-500 z-30 pointer-events-none" />
                       )}
 
-                      {/* Active Top Accent Line */}
+                      {/* Active Bottom Accent Line */}
                       {isActive && !isDragging && (
-                        <div className="absolute top-0 inset-x-0 h-[2px] bg-zinc-950 dark:bg-zinc-100 pointer-events-none" />
+                        <div className="absolute bottom-0 inset-x-0 h-[2px] bg-zinc-950 dark:bg-zinc-100 z-10 pointer-events-none" />
                       )}
 
                       {/* Tab Left Icon */}
@@ -654,28 +670,49 @@ function PaneGroupView({
                 onClick={() => createChatInGroup(groupId, "Claude")}
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
-                <ClaudeIcon className="size-3.5 text-[var(--accent-claude)]" />
+                <ClaudeIcon className="size-3.5 text-[#C85D32] dark:text-[#E8804A]" />
                 <span>Claude Code</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => createChatInGroup(groupId, "Codex")}
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
-                <OpenAIIcon className="size-3.5 text-[var(--status-awake)]" />
+                <OpenAIIcon className="size-3.5 text-[#10B981]" />
                 <span>OpenAI Codex</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => createChatInGroup(groupId, "Antigravity")}
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
-                <AntigravityIcon className="size-3.5 text-indigo-500" />
+                <AntigravityIcon className="size-3.5 shrink-0" />
                 <span>Antigravity</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => createChatInGroup(groupId, "OpenCode")}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              >
+                <OpenCodeIcon className="size-3.5 text-zinc-900 dark:text-zinc-100 shrink-0" />
+                <span>OpenCode</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => createChatInGroup(groupId, "Command Code")}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              >
+                <CommandCodeIcon className="size-3.5 text-[#F59E0B] dark:text-[#FBBF24]" />
+                <span>Command Code</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => createChatInGroup(groupId, "OpenRouter")}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              >
+                <OpenRouterIcon className="size-3.5 text-[#A855F7] dark:text-[#C084FC]" />
+                <span>OpenRouter</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => createChatInGroup(groupId, "Shell")}
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
-                <SquareTerminal className="size-3.5 text-zinc-600 dark:text-zinc-400" />
+                <PairShellIcon className="size-3.5 text-zinc-600 dark:text-zinc-400" />
                 <span>Pair Shell</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-zinc-100 dark:bg-zinc-800 my-1" />
@@ -686,7 +723,7 @@ function PaneGroupView({
                 }}
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
-                <Eye className="size-3.5 text-emerald-500" />
+                <PreviewIcon className="size-3.5 text-[#10B981]" />
                 <span>Preview</span>
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -696,7 +733,7 @@ function PaneGroupView({
                 }}
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
-                <FileCode className="size-3.5 text-zinc-500" />
+                <ChangesIcon className="size-3.5 text-zinc-600 dark:text-zinc-400" />
                 <span>Changes</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -704,72 +741,23 @@ function PaneGroupView({
         </div>
 
         {/* Right: Actions on Pane Tab Bar */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* Chat / PTY switch */}
-          {activeTabItem?.type === "chat" && isAgentChat && (
-            <div className="flex items-center rounded-[3.5px] bg-zinc-200/60 dark:bg-zinc-800/80 p-0.5 text-[10px]">
-              <button
-                type="button"
-                onClick={() => setGroupAgentView(groupId, "chat")}
-                className={`px-2 py-0.5 rounded-[3px] transition-colors cursor-pointer ${
-                  group.agentView === "chat" || !group.agentView
-                    ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-medium shadow-xs"
-                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-                }`}
-              >
-                Chat
-              </button>
-              <button
-                type="button"
-                onClick={() => setGroupAgentView(groupId, "pty")}
-                className={`px-2 py-0.5 rounded-[3px] transition-colors cursor-pointer ${
-                  group.agentView === "pty"
-                    ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-medium shadow-xs"
-                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-                }`}
-              >
-                PTY
-              </button>
-            </div>
-          )}
+        <div className="flex items-center gap-1.5 shrink-0 pr-1">
+          {/* Global Command Station (Run dev, custom scripts, process manager) */}
+          {showGlobalActions && <CommandStation />}
 
-          {/* Global Dev Server Action Button (when in single view or primary group) */}
-          {showGlobalActions && (
-            <button
-              type="button"
-              onClick={toggleDevServer}
-              disabled={hostState === "asleep"}
-              className={`flex items-center gap-1.5 rounded-[3.5px] border px-2.5 py-1 text-xs font-medium transition-all cursor-pointer ${
-                isDevRunning
-                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 shadow-xs"
-                  : "bg-white dark:bg-[#16161b] border-zinc-200 dark:border-zinc-700/80 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 shadow-2xs hover:text-zinc-900 dark:hover:text-white"
-              } disabled:opacity-30 disabled:cursor-not-allowed`}
-            >
-              {isDevRunning ? (
-                <>
-                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <Square className="size-2.5 fill-current text-emerald-600 dark:text-emerald-400" />
-                  <span>Running</span>
-                </>
-              ) : (
-                <>
-                  <Play className="size-2.5 fill-current text-zinc-500 dark:text-zinc-400" />
-                  <span>Run dev</span>
-                </>
-              )}
-            </button>
-          )}
+          {/* Vertical Separator */}
+          <div className="h-3.5 w-px bg-zinc-200 dark:bg-zinc-800/80 shrink-0 mx-0.5" />
 
           {/* Split controls dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                title="Split View"
-                className={`p-1.5 rounded-[3.5px] border transition-colors cursor-pointer ${
+                title="Split View Layout"
+                className={`size-6.5 flex items-center justify-center rounded-[4px] transition-colors cursor-pointer ${
                   splitState.isSplit
-                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                    : "border-transparent text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    ? "bg-zinc-200/70 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80"
                 }`}
               >
                 <Columns2 className="size-3.5" />
@@ -777,9 +765,10 @@ function PaneGroupView({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-56 bg-white dark:bg-[#16161b] border border-zinc-200 dark:border-zinc-800 rounded-[3.5px] shadow-xl p-1 text-xs select-none"
+              sideOffset={4}
+              className="w-56 bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 rounded-[6px] shadow-xl p-1 text-xs select-none z-50 font-sans"
             >
-              <DropdownMenuLabel className="text-[10px] uppercase font-semibold text-zinc-400 px-2 py-1">
+              <DropdownMenuLabel className="text-[10px] uppercase font-semibold text-zinc-400 px-2 py-1 tracking-wider">
                 Split Layout
               </DropdownMenuLabel>
               <DropdownMenuItem
@@ -790,7 +779,7 @@ function PaneGroupView({
                     "right"
                   )
                 }
-                className="flex items-center justify-between px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="flex items-center justify-between px-2.5 py-1.5 rounded-[4px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
                 <div className="flex items-center gap-2">
                   <Columns2 className="size-3.5 text-emerald-500" />
@@ -802,7 +791,7 @@ function PaneGroupView({
                 onClick={() =>
                   openSplitWithTab(group.activeTabId, "horizontal", "bottom")
                 }
-                className="flex items-center justify-between px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="flex items-center justify-between px-2.5 py-1.5 rounded-[4px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
                 <div className="flex items-center gap-2">
                   <Rows2 className="size-3.5 text-purple-500" />
@@ -814,21 +803,21 @@ function PaneGroupView({
                   <DropdownMenuSeparator className="bg-zinc-100 dark:bg-zinc-800 my-1" />
                   <DropdownMenuItem
                     onClick={toggleSplitDirection}
-                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-[4px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
                   >
                     <ArrowLeftRight className="size-3.5" />
                     <span>Toggle Vertical / Horizontal</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={swapSplitPanes}
-                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-[4px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
                   >
                     <ArrowLeftRight className="size-3.5" />
                     <span>Swap Panes</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={closeSplit}
-                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400"
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-[4px] cursor-pointer hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400"
                   >
                     <X className="size-3.5" />
                     <span>Close Split View</span>
@@ -844,7 +833,7 @@ function PaneGroupView({
               type="button"
               onClick={closeSplit}
               title="Close Pane Group"
-              className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-[3.5px] cursor-pointer"
+              className="size-6.5 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-[4px] cursor-pointer"
             >
               <X className="size-3.5" />
             </button>
@@ -860,10 +849,10 @@ function PaneGroupView({
                   ? "Expand Inspector (⌘J)"
                   : "Collapse Inspector (⌘J)"
               }
-              className={`p-1.5 rounded-[3.5px] border transition-colors cursor-pointer ${
+              className={`size-6.5 flex items-center justify-center rounded-[4px] transition-colors cursor-pointer ${
                 !actorSidebarCollapsed
-                  ? "border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-                  : "border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  ? "bg-zinc-200/70 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80"
               }`}
             >
               <PanelRight className="size-3.5" />
@@ -943,11 +932,7 @@ function PaneGroupView({
               )}
               {tab.type === "chat" &&
                 (isAgent ? (
-                  group.agentView === "pty" ? (
-                    <TerminalPane />
-                  ) : (
-                    <AgentChatPane chatIdOverride={tab.chat?.id} />
-                  )
+                  <AgentChatPane chatIdOverride={tab.chat?.id} />
                 ) : (
                   <TerminalPane />
                 ))}

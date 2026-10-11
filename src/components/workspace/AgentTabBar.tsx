@@ -12,7 +12,7 @@ import {
   FileCode,
   Zap,
 } from "lucide-react";
-import { ClaudeIcon, AnthropicIcon, OpenAIIcon, AntigravityIcon } from "@/components/ui/brand-icons";
+import { ClaudeIcon, AnthropicIcon, OpenAIIcon, AntigravityIcon, OpenCodeIcon, CommandCodeIcon, OpenRouterIcon, PairShellIcon, PreviewIcon, ChangesIcon } from "@/components/ui/brand-icons";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -42,7 +42,7 @@ export function AgentTabBar() {
   } = useWorkspace();
 
   const [isNewAgentModalOpen, setIsNewAgentModalOpen] = useState(false);
-  const [modalDefaultHarness, setModalDefaultHarness] = useState<"Claude" | "Codex" | "Pair">("Claude");
+  const [modalDefaultHarness, setModalDefaultHarness] = useState<"Claude" | "Codex" | "Antigravity" | "OpenCode" | "Command Code" | "OpenRouter" | "Pair">("Claude");
 
   // Drag and drop state
   const [draggedTabId, setDraggedTabId] = useState<string | null>(null);
@@ -55,15 +55,15 @@ export function AgentTabBar() {
     (s) => (s.lane_id === activeLaneId || !s.lane_id) && s.is_active
   );
 
-  const handleCreateChatInLane = (harness: "Claude" | "Codex" | "Antigravity" | "Shell") => {
+  const handleCreateChatInLane = (harness: "Claude" | "Codex" | "Antigravity" | "OpenCode" | "Command Code" | "OpenRouter" | "Shell") => {
     if (!activeLaneId) return;
     const title = `${harness} Chat ${laneChats.length + 1}`;
     createChat(activeLaneId, harness, title);
     setActiveTab("terminal");
   };
 
-  const openCustomModal = (harness: "Claude" | "Codex" | "Pair") => {
-    setModalDefaultHarness(harness);
+  const openCustomModal = (harness: "Claude" | "Codex" | "Antigravity" | "OpenCode" | "Command Code" | "OpenRouter" | "Pair") => {
+    setModalDefaultHarness(harness as any);
     setIsNewAgentModalOpen(true);
   };
 
@@ -188,6 +188,12 @@ export function AgentTabBar() {
               const isClaude = chat.harness === "Claude";
               const isCodex = chat.harness === "Codex";
               const isAntigravity = chat.harness === "Antigravity";
+              const isOpenCode = chat.harness?.toLowerCase() === "opencode";
+              const isCommandCode =
+                chat.harness?.toLowerCase() === "commandcode" ||
+                chat.harness?.toLowerCase() === "command code" ||
+                chat.harness?.toLowerCase() === "command";
+              const isOpenRouter = chat.harness === "OpenRouter" || chat.harness?.toLowerCase() === "openrouter";
               const chatTitle = chat.title || `Chat ${idx + 1}`;
 
               return (
@@ -220,9 +226,9 @@ export function AgentTabBar() {
                     <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-emerald-500 z-30 pointer-events-none" />
                   )}
 
-                  {/* Active Top Accent Line */}
+                  {/* Active Bottom Accent Line */}
                   {isActive && !isDragging && (
-                    <div className="absolute top-0 inset-x-0 h-[2px] bg-zinc-950 dark:bg-zinc-100 pointer-events-none" />
+                    <div className="absolute bottom-0 inset-x-0 h-[2px] bg-zinc-950 dark:bg-zinc-100 z-10 pointer-events-none" />
                   )}
 
                   {/* Left Harness Icon */}
@@ -233,10 +239,14 @@ export function AgentTabBar() {
                       <OpenAIIcon className="size-3.5 text-[var(--status-awake)]" />
                     ) : isAntigravity ? (
                       <AntigravityIcon className="size-3.5 text-indigo-500 dark:text-indigo-400" />
+                    ) : isOpenRouter ? (
+                      <OpenRouterIcon className="size-3.5 text-purple-500 dark:text-purple-400" />
+                    ) : isOpenCode ? (
+                      <OpenCodeIcon className="size-3.5 text-blue-500 dark:text-blue-400" />
+                    ) : isCommandCode ? (
+                      <CommandCodeIcon className="size-3.5 text-amber-500 dark:text-amber-400" />
                     ) : (
-                      <div className="flex items-center justify-center size-3.5 rounded-[3px] bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-sans text-[10px] font-semibold">
-                        ›_
-                      </div>
+                      <PairShellIcon className="size-3.5 text-zinc-600 dark:text-zinc-400" />
                     )}
                   </div>
 
@@ -343,9 +353,9 @@ export function AgentTabBar() {
                     <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-emerald-500 z-30 pointer-events-none" />
                   )}
 
-                  {/* Active Top Accent Line */}
+                  {/* Active Bottom Accent Line */}
                   {isActive && !isDragging && (
-                    <div className="absolute top-0 inset-x-0 h-[2px] bg-zinc-950 dark:bg-zinc-100 pointer-events-none" />
+                    <div className="absolute bottom-0 inset-x-0 h-[2px] bg-zinc-950 dark:bg-zinc-100 z-10 pointer-events-none" />
                   )}
                   <div className="flex items-center gap-1.5 shrink-0 pointer-events-none">
                     <Eye className="size-3.5 text-emerald-500" />
@@ -389,9 +399,9 @@ export function AgentTabBar() {
                     <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-emerald-500 z-30 pointer-events-none" />
                   )}
 
-                  {/* Active Top Accent Line */}
+                  {/* Active Bottom Accent Line */}
                   {isActive && !isDragging && (
-                    <div className="absolute top-0 inset-x-0 h-[2px] bg-zinc-950 dark:bg-zinc-100 pointer-events-none" />
+                    <div className="absolute bottom-0 inset-x-0 h-[2px] bg-zinc-950 dark:bg-zinc-100 z-10 pointer-events-none" />
                   )}
                   <div className="flex items-center gap-1.5 shrink-0 pointer-events-none">
                     <FileCode className="size-3.5 text-zinc-400 dark:text-zinc-500" />
@@ -496,6 +506,69 @@ export function AgentTabBar() {
               </span>
             </DropdownMenuItem>
 
+            {/* OpenCode Chat */}
+            <DropdownMenuItem
+              onClick={() => handleCreateChatInLane("OpenCode")}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 group"
+            >
+              <div className="flex items-center gap-2">
+                <span className="flex size-5 items-center justify-center rounded-[3.5px] bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40">
+                  <OpenCodeIcon className="size-3.5 text-blue-500 dark:text-blue-400" />
+                </span>
+                <div className="flex flex-col">
+                  <span className="font-medium text-xs">OpenCode</span>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                    Open-source agent harness
+                  </span>
+                </div>
+              </div>
+              <span className="text-[10px] font-sans text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                + Quick
+              </span>
+            </DropdownMenuItem>
+
+            {/* Command Code Chat */}
+            <DropdownMenuItem
+              onClick={() => handleCreateChatInLane("Command Code")}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 group"
+            >
+              <div className="flex items-center gap-2">
+                <span className="flex size-5 items-center justify-center rounded-[3.5px] bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40">
+                  <CommandCodeIcon className="size-3.5 text-amber-500 dark:text-amber-400" />
+                </span>
+                <div className="flex flex-col">
+                  <span className="font-medium text-xs">Command Code</span>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                    Adaptive Taste-1 CLI agent
+                  </span>
+                </div>
+              </div>
+              <span className="text-[10px] font-sans text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                + Quick
+              </span>
+            </DropdownMenuItem>
+
+            {/* OpenRouter Chat */}
+            <DropdownMenuItem
+              onClick={() => handleCreateChatInLane("OpenRouter")}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-[3.5px] cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 group"
+            >
+              <div className="flex items-center gap-2">
+                <span className="flex size-5 items-center justify-center rounded-[3.5px] bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/40">
+                  <OpenRouterIcon className="size-3.5 text-purple-500 dark:text-purple-400" />
+                </span>
+                <div className="flex flex-col">
+                  <span className="font-medium text-xs">OpenRouter</span>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                    Frontier gateway & DeepSeek
+                  </span>
+                </div>
+              </div>
+              <span className="text-[10px] font-sans text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                + Quick
+              </span>
+            </DropdownMenuItem>
+
             {/* Terminal Shell */}
             <DropdownMenuItem
               onClick={() => handleCreateChatInLane("Shell")}
@@ -503,7 +576,7 @@ export function AgentTabBar() {
             >
               <div className="flex items-center gap-2">
                 <span className="flex size-5 items-center justify-center rounded-[3.5px] bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
-                  <SquareTerminal className="size-3.5 text-zinc-700 dark:text-zinc-300" />
+                  <PairShellIcon className="size-3.5 text-zinc-700 dark:text-zinc-300" />
                 </span>
                 <div className="flex flex-col">
                   <span className="font-medium text-xs">Pair Shell</span>

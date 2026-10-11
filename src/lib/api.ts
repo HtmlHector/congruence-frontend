@@ -3,7 +3,8 @@
  */
 
 const rawApiUrl =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== "undefined" ? "/api/v1" : "http://localhost:8000/api/v1");
 export const API_BASE_URL = rawApiUrl.endsWith("/api/v1")
   ? rawApiUrl
   : `${rawApiUrl.replace(/\/+$/, "")}/api/v1`;
@@ -107,7 +108,7 @@ export interface GrantData {
 }
 
 /** Harnesses for which the backend can relay a host-native sign-in. */
-export type SupportedHarness = "claude" | "codex" | "antigravity" | "opencode";
+export type SupportedHarness = "claude" | "codex" | "antigravity" | "opencode" | "commandcode";
 
 /** How the browser participates in a harness sign-in (mirrors the backend `flow` field). */
 export type HarnessLoginFlow = "loopback_bridge" | "url_paste" | "interactive";
@@ -148,6 +149,15 @@ export function setApiTokenProvider(provider: TokenProvider | null): void {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
   let token: string | null = null;
+
+  // In the browser, wait briefly for AuthTokenBridge to register if not already available
+  if (typeof window !== "undefined" && !tokenProvider) {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      if (tokenProvider) break;
+    }
+  }
+
   if (tokenProvider) {
     try {
       token = await tokenProvider();
@@ -155,16 +165,39 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       token = null;
     }
     if (!token) {
-      // Clerk may still be hydrating on first load; brief retry so early
-      // calls don't fail with a headerless 401.
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      try {
-        token = tokenProvider ? await tokenProvider() : null;
-      } catch {
-        token = null;
+      // Clerk may still be hydrating on first load; retry with backoff so early calls don't fail
+      for (let attempt = 0; attempt < 5; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)));
+        try {
+          token = tokenProvider ? await tokenProvider() : null;
+          if (token) break;
+        } catch {
+          token = null;
+        }
       }
     }
   }
+
+  // Check if caller supplied custom Authorization header
+  const customAuth =
+    options.headers &&
+    (typeof (options.headers as any).get === "function"
+      ? (options.headers as any).get("authorization")
+      : (options.headers as any)["Authorization"] || (options.headers as any)["authorization"]);
+
+  if (!token && !customAuth && typeof window !== "undefined") {
+    // Avoid noisy 401 server roundtrips when session token is not yet available
+    const isProtected =
+      path.startsWith("/integrations/") ||
+      path.startsWith("/workspaces") ||
+      path.startsWith("/projects") ||
+      path.startsWith("/vault") ||
+      path.startsWith("/agents");
+    if (isProtected) {
+      throw new Error(`Authentication required for ${path} (session token not ready)`);
+    }
+  }
+
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -389,6 +422,7 @@ export const api = {
       branch?: string;
       cwd?: string;
       chat_id?: string;
+      signal?: AbortSignal;
     },
     onChunk: (event: any) => void
   ) => {
@@ -401,6 +435,7 @@ export const api = {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(data),
+      signal: data.signal,
     });
     if (!response.ok) {
       throw new Error(`Agent stream request failed: ${response.status}`);
@@ -426,6 +461,57 @@ export const api = {
         }
       }
     }
+  },
+
+  // Secrets Vault & API Key Management
+  vault: {
+    listSecrets: (workspaceId?: string) =>
+      request<
+        Array<{
+          id: string;
+          provider: string;
+          key_name: string;
+          masked_value: string;
+          workspace_id: string | null;
+          description: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        }>
+      >(`/vault/secrets${workspaceId ? `?workspace_id=${encodeURIComponent(workspaceId)}` : ""}`),
+
+    createSecret: (data: {
+      provider: string;
+      key_name: string;
+      value: string;
+      workspace_id?: string;
+      description?: string;
+    }) =>
+      request<{
+        id: string;
+        provider: string;
+        key_name: string;
+        masked_value: string;
+        workspace_id: string | null;
+        description: string | null;
+        is_active: boolean;
+        created_at: string;
+        updated_at: string;
+      }>("/vault/secrets", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+
+    deleteSecret: (secretId: string) =>
+      request<void>(`/vault/secrets/${encodeURIComponent(secretId)}`, {
+        method: "DELETE",
+      }),
+
+    testKey: (provider: string, keyValue: string) =>
+      request<{ valid: boolean; message: string }>("/vault/test-key", {
+        method: "POST",
+        body: JSON.stringify({ provider, key_value: keyValue }),
+      }),
   },
 };
 
