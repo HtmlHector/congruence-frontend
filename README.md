@@ -15,12 +15,13 @@ cp .env.example .env.local # optional; leave auth keys empty to run without Cler
 pnpm dev
 ```
 
-Open <http://localhost:3000>.
+Open <http://localhost:3001>.
 
 ## Environment
 
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` are placeholders for Clerk auth. The root app layout wraps all routes in `ClerkProvider` when the publishable key is present, and `src/proxy.ts` enables Clerk middleware when both keys are set. Without credentials, the public starter still renders without auth; add keys in `.env.local` to activate Clerk. Routes remain public until explicitly protected.
 - `NEXT_PUBLIC_API_BASE_URL` optionally configures the base URL used by the Axios client and `apiFetch` in `src/lib/api.ts`.
+- `NEXT_PUBLIC_HELP_URL` sets the destination of the sidebar help button; it defaults to a placeholder URL.
 - Never commit `.env.local` or real secrets. `.env*` is git-ignored.
 
 ## Included foundations

@@ -1,3 +1,5 @@
+"use client";
+
 import { useSignInController } from "@/features/auth/hooks/use-sign-in-controller";
 import { MinimalAuthShell } from "@/features/auth/components/minimal-auth-shell";
 import { AuthInput } from "@/features/auth/components/auth-input";

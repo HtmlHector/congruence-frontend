@@ -10,7 +10,7 @@ export default async function WorkspaceLayout({
   const { workspaceId } = await params;
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-svh bg-foundation-bg text-foundation-ink">
       <WorkspaceBinder workspaceId={workspaceId} />
       {children}
     </div>

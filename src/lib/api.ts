@@ -43,12 +43,31 @@ export function getWorkspaceId(): string | null {
 let getTokenFn: (() => Promise<string | null>) | null = null;
 let getTokenForceRefreshFn: (() => Promise<string | null>) | null = null;
 
+// Requests can fire from mount effects before the auth provider has configured
+// the token source. They wait on this promise instead of going out unauthenticated.
+let markConfigured: (() => void) | null = null;
+const configured = new Promise<void>((resolve) => {
+  markConfigured = resolve;
+});
+
+const TOKEN_PROVIDER_TIMEOUT_MS = 2_000;
+
+async function waitForTokenProvider(): Promise<void> {
+  if (getTokenFn) return;
+  await Promise.race([
+    configured,
+    new Promise<void>((resolve) => setTimeout(resolve, TOKEN_PROVIDER_TIMEOUT_MS)),
+  ]);
+}
+
 export function configureApiClient(
   getToken: () => Promise<string | null>,
   getTokenForceRefresh?: () => Promise<string | null>,
 ): void {
   getTokenFn = getToken;
   getTokenForceRefreshFn = getTokenForceRefresh ?? getToken;
+  markConfigured?.();
+  markConfigured = null;
 }
 
 // ── Token cache ──────────────────────────────────────────────────────
@@ -106,6 +125,7 @@ export function createApiClient(): AxiosInstance {
 
   // Request interceptor
   client.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+    await waitForTokenProvider();
     const token = await getCachedToken();
     if (token) {
       config.headers.set("Authorization", `Bearer ${token}`);
@@ -116,6 +136,27 @@ export function createApiClient(): AxiosInstance {
     }
 
     return config;
+  });
+
+  // A token that arrived too late (or expired) surfaces as a 401; retry once with
+  // a forced refresh so a single rejected request does not break the UI.
+  client.interceptors.response.use(undefined, async (error: unknown) => {
+    if (!axios.isAxiosError(error)) throw error;
+
+    const config = error.config as
+      | (InternalAxiosRequestConfig & { authRetried?: boolean })
+      | undefined;
+    if (error.response?.status !== 401 || !config || config.authRetried) {
+      throw error;
+    }
+
+    config.authRetried = true;
+    await waitForTokenProvider();
+    const token = await getCachedToken(true);
+    if (!token) throw error;
+
+    config.headers.set("Authorization", `Bearer ${token}`);
+    return client.request(config);
   });
 
   return client;

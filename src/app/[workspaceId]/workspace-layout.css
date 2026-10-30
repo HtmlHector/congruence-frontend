@@ -1,0 +1,161 @@
+/*
+ * FlexLayout chrome mapped onto the foundation design system. The library's
+ * alpha_light theme supplies the mechanics (splitters, drag outlines, overflow
+ * menu); every colour and metric below comes from foundation tokens so light and
+ * dark mode track the rest of the workspace.
+ */
+
+.workspace-layout {
+  --flexlayout-color-text: var(--foundation-ink);
+  --flexlayout-color-background: var(--foundation-surface);
+  --flexlayout-color-base: var(--foundation-surface);
+  --flexlayout-color-1: var(--foundation-bg);
+  --flexlayout-color-2: var(--foundation-sunken);
+  --flexlayout-color-3: var(--foundation-sunken);
+  --flexlayout-color-4: var(--foundation-line);
+  --flexlayout-color-5: var(--foundation-line);
+  --flexlayout-color-6: var(--foundation-line-strong);
+
+  --flexlayout-font-family: var(--font-sans);
+  --flexlayout-font-size: 13px;
+  --flexlayout-font-weight: 500;
+  /* Square tabs: the alpha theme rounds the active tab by default. */
+  --flexlayout-tab-button-radius: 0;
+
+  --flexlayout-color-icon: var(--foundation-ink-secondary);
+  --flexlayout-color-overflow: var(--foundation-ink-secondary);
+  --flexlayout-color-focus: var(--foundation-focus);
+  --flexlayout-color-toolbar-button-hover: var(--foundation-sunken);
+
+  --flexlayout-color-tabset-background: var(--foundation-surface);
+  --flexlayout-color-tabset-divider-line: var(--foundation-line);
+  --flexlayout-color-tab-content: var(--foundation-surface);
+  --flexlayout-color-tab-selected: var(--foundation-ink);
+  --flexlayout-color-tab-selected-background: var(--foundation-sunken);
+  --flexlayout-color-tab-unselected: var(--foundation-ink-secondary);
+  --flexlayout-color-tab-unselected-background: transparent;
+
+  /* Hairline divider with a wider invisible grab area. */
+  --flexlayout-splitter-size: 1px;
+  --flexlayout-splitter-active-size: 7px;
+  --flexlayout-color-splitter: var(--foundation-line);
+  --flexlayout-color-splitter-hover: var(--foundation-ink-tertiary);
+  --flexlayout-color-splitter-drag: var(--foundation-ink);
+
+  --flexlayout-color-drag1: var(--foundation-ink);
+  --flexlayout-color-drag1-background: color-mix(
+    in oklch,
+    var(--foundation-ink) 6%,
+    transparent
+  );
+  --flexlayout-color-drag2: var(--foundation-ink);
+  --flexlayout-color-drag2-background: color-mix(
+    in oklch,
+    var(--foundation-ink) 6%,
+    transparent
+  );
+  --flexlayout-color-edge-marker: var(--foundation-ink-tertiary);
+  --flexlayout-color-drag-rect: var(--foundation-ink);
+  --flexlayout-color-drag-rect-border: var(--foundation-ink);
+  --flexlayout-color-drag-rect-background: var(--foundation-surface);
+
+  --flexlayout-color-popup-border: var(--foundation-line);
+  --flexlayout-color-popup-unselected: var(--foundation-ink-secondary);
+  --flexlayout-color-popup-unselected-background: var(--foundation-surface);
+  --flexlayout-color-popup-selected: var(--foundation-ink);
+  --flexlayout-color-popup-selected-background: var(--foundation-sunken);
+}
+
+/*
+ * Flat strip, sharing the sidebar strip's height (--workspace-strip-height):
+ * square 200px tabs that
+ * butt together with hairline borders, a sunken active tab and a 2px ink
+ * underline. The alpha theme's gaps, rounded active tab and 12px spacers are
+ * removed so a pane strip looks exactly like the old single bar.
+ */
+.workspace-layout .flexlayout__tabset_tabbar_outer_top {
+  height: var(--workspace-strip-height);
+  min-height: var(--workspace-strip-height);
+  padding: 0;
+  border-bottom: 1px solid var(--foundation-line);
+}
+
+.workspace-layout .flexlayout__tabset_tabbar_inner_tab_container {
+  height: 100%;
+  padding: 0;
+  border: 0;
+}
+
+/* The theme inserts 12px spacers around the selected tab; the old bar had none. */
+.workspace-layout .flexlayout__tabset_tab_spacer {
+  display: none;
+}
+
+.workspace-layout .flexlayout__tab_button {
+  position: relative;
+  box-sizing: border-box;
+  width: 200px;
+  min-width: 200px;
+  height: var(--workspace-strip-height);
+  padding: 0 6px 0 12px;
+  gap: 8px;
+  border: 0;
+  border-right: 1px solid var(--foundation-line);
+  border-radius: 0;
+  font-size: 13px;
+  font-weight: 500;
+  transition:
+    background-color 150ms var(--foundation-ease),
+    color 150ms var(--foundation-ease);
+}
+
+.workspace-layout .flexlayout__tab_button--unselected:hover {
+  background-color: color-mix(
+    in oklch,
+    var(--foundation-sunken) 50%,
+    transparent
+  );
+}
+
+/* The theme paints the selected tab white on hover; keep the sunken fill. */
+.workspace-layout .flexlayout__tab_button--selected:hover {
+  background-color: var(--foundation-sunken);
+  color: var(--foundation-ink);
+}
+
+.workspace-layout .flexlayout__tab_button_content {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Active marker: the same 2px ink underline the tab bar used before panes. */
+.workspace-layout .flexlayout__tab_button--selected::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 2px;
+  background-color: var(--foundation-ink);
+}
+
+.workspace-layout .flexlayout__tab_button_trailing {
+  padding: 2px;
+  border-radius: 4px;
+  color: var(--foundation-ink-tertiary);
+}
+
+.workspace-layout .flexlayout__tab_button_trailing:hover {
+  background-color: var(--foundation-line);
+  color: var(--foundation-ink);
+}
+
+.workspace-layout .flexlayout__tab_button_leading {
+  color: var(--foundation-ink-secondary);
+}
+
+.workspace-layout .flexlayout__tab_button--selected .flexlayout__tab_button_leading {
+  color: var(--foundation-ink);
+}

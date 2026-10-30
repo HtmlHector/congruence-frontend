@@ -1,0 +1,28 @@
+/*
+ * xterm's stock viewport is `overflow-y: scroll`, which paints an empty
+ * scrollbar track beside every terminal even when the scrollback fits, and
+ * turns the perpendicular axis into a scroll container, so a horizontal bar
+ * appears as soon as the fitted columns round a pixel past the pane. The
+ * buffer only needs a scrollbar once there is scrollback to move through.
+ */
+.devbox-terminal .xterm-viewport {
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* Trailing space below the last fitted row should read as terminal surface,
+     not as the stylesheet's hard-coded black. */
+  background-color: inherit;
+  scrollbar-width: thin;
+  scrollbar-color: var(--foundation-line-strong) transparent;
+}
+
+/*
+ * FitAddon reads padding from the terminal element, not from its parent, so the
+ * pane inset belongs on `.xterm`. Keeping it on the wrapper made the fitted rows
+ * a couple of pixels taller than the pane and pushed a scrollbar onto the pane.
+ */
+.devbox-terminal .xterm {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 6px 0 0 8px;
+}

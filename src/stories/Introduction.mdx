@@ -1,0 +1,34 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Foundation/Introduction" />
+
+# Foundation
+
+Foundation is the interface layer for this starter. Ink and paper, Geist type, hairlines and compact controls, with Notion-style information architecture around them.
+
+The full reference lives at `/design-system` in the app. Storybook mirrors the component states and the two themes.
+
+## Principles
+
+1. Structure over decoration. Hierarchy comes from scale, weight, hairlines and space.
+2. Ink is the brand. Near-black carries actions, links and selected states.
+3. One hue rule. Color appears for status only.
+4. Density with air. Compact controls, generous space between groups.
+5. Motion confirms state. Nothing enters, loops or parallaxes for effect.
+
+## Theme
+
+Use the Theme toolbar above the canvas to switch between light and dark. Both themes read from the same `--foundation-*` tokens defined in `src/app/globals.css`.
+
+## Components
+
+- Button
+- Input
+- Label
+- Card
+- Dialog
+- Dropdown menu
+
+## Primitives
+
+AppShell, Sidebar, WorkspaceSwitcher, ResourceHeader, ResourceGrid, EmptyState and RealtimeProvider are headless. The stories show a Foundation composition around their `data-slot` hooks.

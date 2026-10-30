@@ -7,6 +7,15 @@ export type IntegrationProvider =
 
 export type CredentialType = "OAUTH_TOKEN" | "API_KEY" | "WEBHOOK_SECRET";
 
+/** Git providers whose connected repositories can be listed. */
+export type RepositoryProvider = "GITHUB" | "GITLAB" | "BITBUCKET";
+
+export interface Repository {
+  fullName: string;
+  isPrivate: boolean;
+  defaultBranch: string | null;
+}
+
 export interface WorkspaceIntegration {
   id: string;
   provider: IntegrationProvider;

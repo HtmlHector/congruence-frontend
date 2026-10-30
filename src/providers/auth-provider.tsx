@@ -8,6 +8,8 @@ import { getAuthMe, type AuthMeResponse } from "@/features/auth/api/get-auth-me"
 // ── Context type ─────────────────────────────────────────
 
 interface IAuthContext {
+  /** True when Clerk is configured and a session is active. */
+  isSignedIn: boolean;
   /** The full /auth/me response, or null if not yet loaded. */
   user: AuthMeResponse | null;
   /** Permissions array from the backend. */
@@ -29,6 +31,7 @@ interface IAuthContext {
 }
 
 const defaultAuthContext: IAuthContext = {
+  isSignedIn: false,
   user: null,
   permissions: [],
   status: null,
@@ -91,6 +94,7 @@ function ActiveAuthProvider({ children }: { children: ReactNode }) {
     clerkUser?.unsafeMetadata?.onboarding_completed === true;
 
   const value: IAuthContext = {
+    isSignedIn: isSignedIn === true,
     user,
     permissions: user?.permissions ?? [],
     status: user?.status ?? null,

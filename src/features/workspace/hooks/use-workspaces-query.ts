@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuthContext } from "@/providers/auth-provider";
 import { getWorkspaces, createWorkspace, type WorkspaceListItem } from "../api/get-workspaces";
 import type { CreateWorkspaceInput, Workspace } from "../types";
 import { toast } from "sonner";
@@ -26,7 +26,7 @@ export function useWorkspacesQuery(): {
   isLoading: boolean;
   error: Error | null;
 } {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn } = useAuthContext();
 
   const { data = [], isLoading, error } = useQuery({
     queryKey: workspaceKeys.lists(),

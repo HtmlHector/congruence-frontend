@@ -46,6 +46,28 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Foundation design system */
+  --color-foundation-bg: var(--foundation-bg);
+  --color-foundation-surface: var(--foundation-surface);
+  --color-foundation-sunken: var(--foundation-sunken);
+  --color-foundation-ink: var(--foundation-ink);
+  --color-foundation-ink-secondary: var(--foundation-ink-secondary);
+  --color-foundation-ink-tertiary: var(--foundation-ink-tertiary);
+  --color-foundation-ink-disabled: var(--foundation-ink-disabled);
+  --color-foundation-line: var(--foundation-line);
+  --color-foundation-line-strong: var(--foundation-line-strong);
+  --color-foundation-focus: var(--foundation-focus);
+  --color-foundation-accent: var(--foundation-accent);
+  --color-foundation-danger: var(--foundation-danger);
+  --color-foundation-success: var(--foundation-success);
+  --color-foundation-warning: var(--foundation-warning);
+  --color-foundation-info: var(--foundation-info);
+  --radius-fd-xs: 4px;
+  --radius-fd-sm: 6px;
+  --radius-fd-md: 8px;
+  --radius-fd-lg: 12px;
+  --ease-fd: var(--foundation-ease);
 }
 
 :root {
@@ -81,6 +103,80 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+}
+
+/* Foundation tokens. The light and dark scopes also exist as standalone
+   classes so token swatches and Storybook previews can show both values at once. */
+:root,
+.foundation-theme-light {
+  color-scheme: light;
+  --foundation-bg: oklch(0.985 0 0);
+  --foundation-surface: oklch(1 0 0);
+  --foundation-sunken: oklch(0.97 0 0);
+  --foundation-ink: oklch(0.205 0 0);
+  --foundation-ink-secondary: oklch(0.439 0 0);
+  --foundation-ink-tertiary: oklch(0.556 0 0);
+  --foundation-ink-disabled: oklch(0.708 0 0);
+  --foundation-line: oklch(0.922 0 0);
+  --foundation-line-strong: oklch(0.62 0 0);
+  --foundation-focus: oklch(0.205 0 0);
+  /* A location signal: links, active navigation and the live tab marker. */
+  --foundation-accent: oklch(0.5 0.1 200);
+  --foundation-danger: oklch(0.577 0.245 27.325);
+  --foundation-success: oklch(0.527 0.135 152);
+  --foundation-warning: oklch(0.51 0.13 62);
+  --foundation-info: oklch(0.51 0.16 258);
+  --foundation-duration-fast: 100ms;
+  --foundation-duration-base: 150ms;
+  --foundation-duration-slow: 200ms;
+  --foundation-ease: cubic-bezier(0.2, 0, 0, 1);
+  /* One height for the workspace chrome: the sidebar strip and every pane tab
+     bar share it so their bottom hairlines always line up. */
+  --workspace-strip-height: 36px;
+}
+
+.dark,
+.foundation-theme-dark {
+  color-scheme: dark;
+  --foundation-bg: oklch(0.145 0 0);
+  --foundation-surface: oklch(0.205 0 0);
+  --foundation-sunken: oklch(0.269 0 0);
+  --foundation-ink: oklch(0.93 0 0);
+  --foundation-ink-secondary: oklch(0.708 0 0);
+  --foundation-ink-tertiary: oklch(0.62 0 0);
+  --foundation-ink-disabled: oklch(0.45 0 0);
+  --foundation-line: oklch(0.269 0 0);
+  --foundation-line-strong: oklch(0.44 0 0);
+  --foundation-focus: oklch(0.93 0 0);
+  --foundation-accent: oklch(0.78 0.1 200);
+  --foundation-danger: oklch(0.704 0.191 22.216);
+  --foundation-success: oklch(0.765 0.15 152);
+  --foundation-warning: oklch(0.79 0.16 70);
+  --foundation-info: oklch(0.72 0.12 255);
+}
+
+@utility foundation-focus {
+  outline: 2px solid var(--foundation-focus);
+  outline-offset: 2px;
+}
+
+/*
+ * The workspace content is offset by the sidebar's live width. Animating that
+ * offset with the rail's curve keeps the panes glued to the sidebar on a
+ * collapse; a drag turns the transition off so the edge tracks the pointer.
+ */
+.workspace-shell-offset {
+  transition: padding-left var(--foundation-duration-slow) var(--foundation-ease);
+}
+
+html[data-sidebar-resizing="true"] .workspace-shell-offset {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-shell-offset {
+    transition: none;
+  }
 }
 
 .dark {
